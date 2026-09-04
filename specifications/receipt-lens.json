@@ -1,0 +1,754 @@
+{
+  "spec_version": "1.0.0",
+
+  "app": {
+    "name": "ReceiptLens",
+    "package_name": "com.huaweiappfactory.receiptlens",
+    "version_name": "1.0.0",
+    "version_code": 1,
+    "type": "app",
+    "category": "Finance",
+    "description": "Scan receipts, automatically extract expense information, and organize spending in one simple app.",
+    "target_audience": "Consumers and small business users who want to organize expenses from receipts.",
+    "problem_solved": "Manually entering receipt information is slow and error-prone. ReceiptLens automates receipt capture, text recognition, expense extraction, and local organization."
+  },
+
+  "product_strategy": {
+    "market_opportunity": "Receipt and expense management is a proven mobile utility category with recurring demand from consumers and small businesses.",
+    "competitive_advantage": "Fast receipt capture, on-device processing, simple expense organization, multilingual support, privacy-first design, and Huawei ecosystem compatibility.",
+    "main_competitors": [
+      "Adobe Scan",
+      "CamScanner",
+      "Microsoft Lens",
+      "Expensify",
+      "Smart Receipts"
+    ],
+    "estimated_development_complexity": 7,
+    "estimated_market_potential": 8,
+    "monetization_strategy": "Free application supported by Huawei Petal Ads. Ads must not interfere with the primary receipt scanning workflow."
+  },
+
+  "technical": {
+    "platform": "Android",
+    "language": "Kotlin",
+    "ui": "Jetpack Compose",
+    "architecture": "MVVM",
+    "min_sdk": 26,
+    "target_sdk": "",
+    "compile_sdk": "",
+    "offline_first": true,
+    "dependency_injection": "Hilt",
+    "database": "Room",
+    "async": "Kotlin Coroutines",
+    "reactive_data": "Kotlin Flow"
+  },
+
+  "features": [
+    {
+      "id": "F001",
+      "name": "Receipt camera scanning",
+      "description": "Capture a receipt using the device camera.",
+      "priority": "P0",
+      "requires_internet": false,
+      "requires_permission": true,
+      "permission": "android.permission.CAMERA"
+    },
+    {
+      "id": "F002",
+      "name": "Receipt image import",
+      "description": "Import an existing receipt image from the device gallery.",
+      "priority": "P0",
+      "requires_internet": false,
+      "requires_permission": true,
+      "permission": "android.permission.READ_MEDIA_IMAGES"
+    },
+    {
+      "id": "F003",
+      "name": "Document detection",
+      "description": "Detect the receipt/document boundaries and correct perspective when possible.",
+      "priority": "P0",
+      "requires_internet": false,
+      "requires_permission": false,
+      "permission": ""
+    },
+    {
+      "id": "F004",
+      "name": "OCR",
+      "description": "Recognize text from receipt images using Huawei ML Kit capabilities where supported.",
+      "priority": "P0",
+      "requires_internet": false,
+      "requires_permission": false,
+      "permission": ""
+    },
+    {
+      "id": "F005",
+      "name": "Receipt information extraction",
+      "description": "Extract merchant name, transaction date, total amount, tax amount, currency, and probable expense category from recognized receipt text.",
+      "priority": "P0",
+      "requires_internet": false,
+      "requires_permission": false,
+      "permission": ""
+    },
+    {
+      "id": "F006",
+      "name": "Receipt review",
+      "description": "Allow the user to review and correct extracted information before saving.",
+      "priority": "P0",
+      "requires_internet": false,
+      "requires_permission": false,
+      "permission": ""
+    },
+    {
+      "id": "F007",
+      "name": "Local receipt storage",
+      "description": "Store receipt records and associated images locally on the device.",
+      "priority": "P0",
+      "requires_internet": false,
+      "requires_permission": false,
+      "permission": ""
+    },
+    {
+      "id": "F008",
+      "name": "Expense dashboard",
+      "description": "Display spending totals and basic expense statistics.",
+      "priority": "P0",
+      "requires_internet": false,
+      "requires_permission": false,
+      "permission": ""
+    },
+    {
+      "id": "F009",
+      "name": "Receipt history",
+      "description": "Display previously saved receipts in chronological order.",
+      "priority": "P0",
+      "requires_internet": false,
+      "requires_permission": false,
+      "permission": ""
+    },
+    {
+      "id": "F010",
+      "name": "Search and filters",
+      "description": "Search receipts and filter them by date, category, merchant, and amount.",
+      "priority": "P1",
+      "requires_internet": false,
+      "requires_permission": false,
+      "permission": ""
+    },
+    {
+      "id": "F011",
+      "name": "Receipt detail",
+      "description": "View the complete stored receipt including image and extracted information.",
+      "priority": "P0",
+      "requires_internet": false,
+      "requires_permission": false,
+      "permission": ""
+    },
+    {
+      "id": "F012",
+      "name": "Receipt editing",
+      "description": "Edit merchant, date, amount, tax, currency, category, and notes.",
+      "priority": "P0",
+      "requires_internet": false,
+      "requires_permission": false,
+      "permission": ""
+    },
+    {
+      "id": "F013",
+      "name": "Receipt deletion",
+      "description": "Delete individual receipts and their locally stored images.",
+      "priority": "P0",
+      "requires_internet": false,
+      "requires_permission": false,
+      "permission": ""
+    },
+    {
+      "id": "F014",
+      "name": "Export",
+      "description": "Export selected expense information in a useful user-readable format.",
+      "priority": "P1",
+      "requires_internet": false,
+      "requires_permission": false,
+      "permission": ""
+    },
+    {
+      "id": "F015",
+      "name": "Petal Ads",
+      "description": "Display Huawei Petal Ads according to the monetization configuration and frequency rules.",
+      "priority": "P1",
+      "requires_internet": true,
+      "requires_permission": false,
+      "permission": ""
+    },
+    {
+      "id": "F016",
+      "name": "Dark mode",
+      "description": "Support light, dark, and system theme modes.",
+      "priority": "P1",
+      "requires_internet": false,
+      "requires_permission": false,
+      "permission": ""
+    },
+    {
+      "id": "F017",
+      "name": "Localization",
+      "description": "Support all configured application languages and automatically select the device language.",
+      "priority": "P0",
+      "requires_internet": false,
+      "requires_permission": false,
+      "permission": ""
+    },
+    {
+      "id": "F018",
+      "name": "Accessibility",
+      "description": "Provide accessible labels, adequate touch targets, readable typography, semantic UI elements, and screen-reader compatibility.",
+      "priority": "P0",
+      "requires_internet": false,
+      "requires_permission": false,
+      "permission": ""
+    }
+  ],
+
+  "screens": [
+    {
+      "id": "S001",
+      "name": "Home",
+      "purpose": "Provide a quick overview of expenses and primary scanning actions.",
+      "components": [
+        "App header",
+        "Total spending summary",
+        "Current period summary",
+        "Scan receipt button",
+        "Import receipt button",
+        "Recent receipts",
+        "Navigation"
+      ],
+      "navigation_to": [
+        "S002",
+        "S003",
+        "S005",
+        "S007"
+      ]
+    },
+    {
+      "id": "S002",
+      "name": "Scan Receipt",
+      "purpose": "Capture and process a receipt.",
+      "components": [
+        "Camera preview",
+        "Capture button",
+        "Flash control",
+        "Image preview",
+        "Retake button",
+        "Use image button",
+        "Processing indicator"
+      ],
+      "navigation_to": [
+        "S004"
+      ]
+    },
+    {
+      "id": "S003",
+      "name": "Receipt Import",
+      "purpose": "Select a receipt image from the device.",
+      "components": [
+        "System image picker",
+        "Selected image preview",
+        "Continue button"
+      ],
+      "navigation_to": [
+        "S004"
+      ]
+    },
+    {
+      "id": "S004",
+      "name": "Review Receipt",
+      "purpose": "Show OCR results and allow the user to correct extracted information.",
+      "components": [
+        "Receipt image",
+        "Merchant field",
+        "Date field",
+        "Total field",
+        "Tax field",
+        "Currency field",
+        "Category selector",
+        "Notes field",
+        "Save button"
+      ],
+      "navigation_to": [
+        "S005"
+      ]
+    },
+    {
+      "id": "S005",
+      "name": "Receipt History",
+      "purpose": "Display saved receipts.",
+      "components": [
+        "Search",
+        "Filter controls",
+        "Receipt list",
+        "Date grouping",
+        "Empty state"
+      ],
+      "navigation_to": [
+        "S006"
+      ]
+    },
+    {
+      "id": "S006",
+      "name": "Receipt Detail",
+      "purpose": "Display a saved receipt and its complete information.",
+      "components": [
+        "Receipt image",
+        "Merchant",
+        "Date",
+        "Total",
+        "Tax",
+        "Currency",
+        "Category",
+        "Notes",
+        "Edit button",
+        "Delete button",
+        "Export button"
+      ],
+      "navigation_to": [
+        "S004",
+        "S005"
+      ]
+    },
+    {
+      "id": "S007",
+      "name": "Statistics",
+      "purpose": "Show spending statistics.",
+      "components": [
+        "Total spending",
+        "Spending by category",
+        "Spending over time",
+        "Receipt count"
+      ],
+      "navigation_to": []
+    },
+    {
+      "id": "S008",
+      "name": "Settings",
+      "purpose": "Configure application behavior.",
+      "components": [
+        "Theme selector",
+        "Language selector",
+        "Currency preference",
+        "Privacy information",
+        "Export settings",
+        "About"
+      ],
+      "navigation_to": []
+    }
+  ],
+
+  "data_model": {
+    "database": "Room",
+    "entities": [
+      {
+        "name": "Receipt",
+        "fields": [
+          "id",
+          "merchant_name",
+          "transaction_date",
+          "total_amount",
+          "tax_amount",
+          "currency",
+          "category",
+          "notes",
+          "image_path",
+          "raw_ocr_text",
+          "created_at",
+          "updated_at"
+        ]
+      }
+    ],
+    "requirements": [
+      "Database operations must be performed off the main thread.",
+      "Use Room migrations for schema changes.",
+      "Receipt deletion must also remove its associated local image.",
+      "No receipt data may be uploaded to a remote server in V1."
+    ]
+  },
+
+  "permissions": [
+    {
+      "permission": "android.permission.CAMERA",
+      "purpose": "Capture receipt images."
+    },
+    {
+      "permission": "android.permission.READ_MEDIA_IMAGES",
+      "purpose": "Import receipt images when required by the Android version and selected image-picker implementation."
+    }
+  ],
+
+  "integrations": {
+    "huawei_services": [
+      "Huawei ML Kit",
+      "Huawei Petal Ads"
+    ],
+    "external_services": [],
+    "analytics": false,
+    "crash_reporting": false,
+    "ads": true
+  },
+
+  "monetization": {
+    "enabled": true,
+    "provider": "Huawei Petal Ads",
+    "banner": true,
+    "interstitial": true,
+    "rewarded": true,
+    "iap": false,
+    "ad_frequency_rules": "Ads must never interrupt camera capture, OCR processing, receipt review, or data entry. Banner ads may appear in appropriate non-critical screens. Interstitial ads must have conservative frequency limits and must never appear immediately after every scan. Rewarded ads may optionally unlock an export-related convenience feature. Ad configuration must be isolated so monetization can be changed without modifying core receipt-processing logic."
+  },
+
+  "localization": {
+    "default_language": "en",
+    "supported_languages": [
+      "en",
+      "es",
+      "pt",
+      "fr",
+      "de",
+      "it",
+      "tr",
+      "ar",
+      "zh"
+    ],
+    "auto_detect_device_language": true,
+    "fallback_language": "en",
+    "rtl_languages": [
+      "ar"
+    ],
+    "requirements": [
+      "All visible application strings must use Android string resources.",
+      "No hard-coded user-visible text.",
+      "Pluralization must use Android plural resources where applicable.",
+      "Date and number formatting must respect locale.",
+      "Currency formatting must respect the selected currency and locale.",
+      "Arabic layouts must support right-to-left presentation."
+    ]
+  },
+
+  "design": {
+    "theme": "Modern financial utility",
+    "style": "Clean, minimal, trustworthy, fast, productivity-focused",
+    "primary_color": "",
+    "secondary_color": "",
+    "supports_light_mode": true,
+    "supports_dark_mode": true,
+    "supports_system_theme": true,
+    "accessibility_required": true,
+    "requirements": [
+      "Material 3",
+      "Clear visual hierarchy",
+      "Large primary scan action",
+      "Responsive layouts",
+      "No unnecessary animations",
+      "Accessible contrast",
+      "Minimum comfortable touch target sizes",
+      "Support system font scaling"
+    ]
+  },
+
+  "privacy": {
+    "collects_personal_data": false,
+    "collects_sensitive_data": false,
+    "processes_potentially_sensitive_user_content_locally": true,
+    "stores_data_locally": true,
+    "uploads_user_content": false,
+    "requires_privacy_policy": true,
+    "privacy_policy_url": "",
+    "requirements": [
+      "Receipt images must remain on-device in V1.",
+      "OCR processing must occur locally whenever supported.",
+      "No receipt image or OCR content may be sent to a cloud AI service.",
+      "No user account is required.",
+      "No backend is required.",
+      "No financial information may be transmitted by the application.",
+      "The privacy policy must clearly explain that receipt images and expense information may contain personal or financial information and are processed/stored locally.",
+      "Advertising SDK data handling must be documented separately according to the applicable Petal Ads requirements.",
+      "Deleting a receipt must delete its associated local image and database record."
+    ]
+  },
+
+  "ai": {
+    "enabled": true,
+    "provider": "Huawei ML Kit",
+    "backend_required": false,
+    "features": [
+      "Document detection",
+      "Document perspective correction where supported",
+      "OCR",
+      "Text recognition",
+      "Rule-based receipt field extraction"
+    ],
+    "user_content_sent_to_ai": false,
+    "requirements": [
+      "V1 must not depend on a cloud LLM.",
+      "OCR must work offline where supported by the selected Huawei ML Kit capabilities.",
+      "Receipt extraction should combine OCR results with deterministic parsing rules.",
+      "The application must never claim AI accuracy that cannot be verified.",
+      "If a field cannot be confidently extracted, the field must remain editable and the uncertainty must be visible to the user."
+    ]
+  },
+
+  "receipt_extraction": {
+    "fields": [
+      {
+        "name": "merchant_name",
+        "required": false,
+        "editable": true
+      },
+      {
+        "name": "transaction_date",
+        "required": false,
+        "editable": true
+      },
+      {
+        "name": "total_amount",
+        "required": true,
+        "editable": true
+      },
+      {
+        "name": "tax_amount",
+        "required": false,
+        "editable": true
+      },
+      {
+        "name": "currency",
+        "required": true,
+        "editable": true
+      },
+      {
+        "name": "category",
+        "required": true,
+        "editable": true
+      }
+    ],
+    "default_categories": [
+      "Food",
+      "Groceries",
+      "Transport",
+      "Shopping",
+      "Bills",
+      "Health",
+      "Entertainment",
+      "Travel",
+      "Work",
+      "Other"
+    ],
+    "requirements": [
+      "Total amount must be distinguished from subtotals whenever possible.",
+      "Tax must never be assumed when it cannot be detected.",
+      "Currency should be inferred from the receipt when possible and otherwise use the user's configured default.",
+      "Category inference must be treated as a suggestion and must remain editable.",
+      "The user must always be able to correct extracted values."
+    ]
+  },
+
+  "offline_behavior": {
+    "requirements": [
+      "Scanning must not require an internet connection.",
+      "OCR must operate offline where supported.",
+      "Receipt storage must work offline.",
+      "Dashboard and history must work offline.",
+      "Search and filtering must work offline.",
+      "Statistics must work offline.",
+      "Export must work offline.",
+      "Only advertising and any future explicitly documented online functionality may require network access.",
+      "Loss of network connectivity must not cause loss of receipt data."
+    ]
+  },
+
+  "qa": {
+    "unit_tests_required": true,
+    "ui_tests_required": true,
+    "lint_required": true,
+    "release_build_required": true,
+    "apk_required": true,
+    "aab_required": true,
+    "test_permissions": true,
+    "test_localization": true,
+    "test_dark_mode": true,
+    "test_ads": true,
+    "test_offline_behavior": true,
+    "test_accessibility": true,
+    "additional_tests": [
+      "Test receipt database CRUD operations.",
+      "Test receipt image deletion.",
+      "Test navigation between all screens.",
+      "Test empty states.",
+      "Test invalid and incomplete OCR results.",
+      "Test manual correction of extracted values.",
+      "Test amount and currency formatting.",
+      "Test RTL layout.",
+      "Test large font accessibility.",
+      "Test process recreation and state restoration.",
+      "Test application behavior after device rotation/configuration change where applicable.",
+      "Test application startup without network connectivity.",
+      "Test application behavior when camera permission is denied.",
+      "Test application behavior when image access is denied.",
+      "Test corrupted or unsupported image input.",
+      "Test release build with minification enabled.",
+      "Test Petal Ads failure without breaking core application functionality."
+    ]
+  },
+
+  "release": {
+    "build_type": "release",
+    "minify_enabled": true,
+    "shrink_resources": true,
+    "signed_release_required": true,
+    "generate_apk": true,
+    "generate_aab": true,
+    "submit_to_appgallery": true,
+    "requirements": [
+      "Release builds must use a production signing key.",
+      "Signing credentials must never be committed to Git.",
+      "Signing credentials must never be included in source code.",
+      "Debug builds must never be submitted to AppGallery.",
+      "APK and AAB artifacts must be generated separately.",
+      "Version code must increase for every release.",
+      "Version name must follow semantic versioning conventions where practical."
+    ]
+  },
+
+  "appgallery": {
+    "default_language": "en",
+    "supported_languages": [
+      "en",
+      "es",
+      "pt",
+      "fr",
+      "de",
+      "it",
+      "tr",
+      "ar",
+      "zh"
+    ],
+    "distribution_regions": [],
+    "content_rating_required": true,
+    "free_app": true,
+    "appgallery_description": {
+      "short": {},
+      "full": {},
+      "new_features": {}
+    },
+    "keywords": {},
+    "screenshots_required": true,
+    "icon_required": true,
+    "requirements": [
+      "Use real application screenshots generated from the tested build.",
+      "Do not use fake UI screenshots.",
+      "Generate store metadata separately for each supported language.",
+      "Verify package name availability before final release.",
+      "Verify application signing configuration before upload.",
+      "Complete Huawei developer/account requirements before automated submission.",
+      "Complete required content rating and privacy declarations.",
+      "Store AppGallery identifiers and credentials outside source code."
+    ]
+  },
+
+  "assets": {
+    "icon": {
+      "required": true,
+      "description": "Professional ReceiptLens application icon suitable for AppGallery and Android launcher requirements."
+    },
+    "screenshots": {
+      "required": true,
+      "source": "Real screenshots from the tested application build",
+      "minimum_required": 4,
+      "recommended_screens": [
+        "Home dashboard",
+        "Receipt scanning",
+        "Receipt review",
+        "Expense history",
+        "Receipt detail",
+        "Statistics"
+      ]
+    },
+    "marketing_assets": {
+      "required": true,
+      "description": "Optional AppGallery promotional assets generated separately from functional application screenshots."
+    }
+  },
+
+  "security": {
+    "requirements": [
+      "Never hard-code API keys, advertising identifiers, signing passwords, or service credentials.",
+      "Do not commit keystores to the repository.",
+      "Do not commit local.properties or environment-specific secrets.",
+      "Use build-time configuration for secrets.",
+      "Validate imported images before processing.",
+      "Avoid unnecessary external storage access.",
+      "Use application-private storage for receipt images whenever possible.",
+      "Do not expose receipt image paths through publicly accessible storage."
+    ]
+  },
+
+  "performance": {
+    "requirements": [
+      "Camera preview must remain responsive.",
+      "OCR processing must not block the main UI thread.",
+      "Large receipt images should be resized/compressed appropriately before OCR when this does not materially reduce recognition quality.",
+      "Database operations must not run on the main thread.",
+      "Lazy lists must be used for potentially large receipt histories.",
+      "The application must avoid unnecessary memory retention of full-resolution receipt images."
+    ]
+  },
+
+  "error_handling": {
+    "requirements": [
+      "All camera failures must show a user-readable error.",
+      "OCR failures must allow manual receipt entry.",
+      "Unsupported image formats must be handled gracefully.",
+      "Database failures must not silently delete data.",
+      "Ad loading failures must not block the application.",
+      "Network failures must not break offline features.",
+      "Unexpected errors must show a recoverable state instead of a blank screen."
+    ]
+  },
+
+  "acceptance_criteria": [
+    "Application builds successfully.",
+    "Release APK is generated successfully.",
+    "Release AAB is generated successfully.",
+    "Application launches successfully on a supported Android device.",
+    "Camera permission is requested only when required.",
+    "Receipt images can be captured.",
+    "Receipt images can be imported.",
+    "Receipt/document detection works where supported.",
+    "OCR works using the configured Huawei ML Kit capabilities.",
+    "Extracted receipt fields are presented for user review.",
+    "Users can manually correct extracted information.",
+    "Receipts are stored locally.",
+    "Receipts remain available without internet connectivity.",
+    "Receipt history works correctly.",
+    "Search and filters work correctly.",
+    "Statistics calculate correctly.",
+    "Receipt deletion removes both database data and the associated local image.",
+    "All visible strings are localized.",
+    "Arabic RTL layout works correctly.",
+    "Light mode works.",
+    "Dark mode works.",
+    "System theme works.",
+    "Accessibility requirements are satisfied.",
+    "Petal Ads integration does not break core functionality.",
+    "Ad frequency rules are respected.",
+    "No receipt image or OCR content is uploaded to a cloud AI service.",
+    "No backend is required for V1.",
+    "No Firebase dependency is introduced.",
+    "No Google Play Services dependency is introduced.",
+    "No fake functionality remains.",
+    "No placeholder screens remain in the release build.",
+    "No critical crashes occur.",
+    "Release signing is configured securely.",
+    "No secrets are committed to the repository.",
+    "AppGallery metadata and required assets are prepared.",
+    "Real screenshots from the tested application are prepared for AppGallery submission.",
+    "Application complies with applicable Huawei AppGallery requirements."
+  ]
+}
