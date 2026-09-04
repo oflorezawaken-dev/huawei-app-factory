@@ -1,0 +1,6 @@
+{
+  "name": "ReceiptLens",
+  "description": "Privacy-first receipt scanner and expense organizer.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
