@@ -1,0 +1,54 @@
+{
+  "factory": {
+    "name": "Huawei App Factory",
+    "version": "0.1.0",
+    "environment": "development"
+  },
+
+  "target": {
+    "platform": "Huawei AppGallery",
+    "application_type": "Android"
+  },
+
+  "development": {
+    "language": "Kotlin",
+    "ui": "Jetpack Compose",
+    "architecture": "MVVM",
+    "min_sdk": 26
+  },
+
+  "localization": {
+    "default_language": "en",
+    "supported_languages": [
+      "en",
+      "es",
+      "pt",
+      "fr",
+      "de",
+      "it",
+      "tr",
+      "ar",
+      "zh"
+    ],
+    "auto_detect_device_language": true,
+    "fallback_language": "en"
+  },
+
+  "monetization": {
+    "ads_enabled": true,
+    "provider": "Huawei Petal Ads"
+  },
+
+  "release": {
+    "build_type": "release",
+    "generate_apk": true,
+    "generate_aab": true
+  },
+
+  "automation": {
+    "automatic_qa": true,
+    "automatic_assets": true,
+    "automatic_metadata": true,
+    "automatic_huawei_submission": true
+  }
+}
