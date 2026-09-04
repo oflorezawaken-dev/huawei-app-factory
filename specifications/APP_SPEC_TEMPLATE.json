@@ -1,0 +1,190 @@
+{
+  "spec_version": "1.0.0",
+
+  "app": {
+    "name": "",
+    "package_name": "",
+    "version_name": "1.0.0",
+    "version_code": 1,
+    "type": "app",
+    "category": "",
+    "description": "",
+    "target_audience": "",
+    "problem_solved": ""
+  },
+
+  "product_strategy": {
+    "market_opportunity": "",
+    "competitive_advantage": "",
+    "main_competitors": [],
+    "estimated_development_complexity": 0,
+    "estimated_market_potential": 0,
+    "monetization_strategy": ""
+  },
+
+  "technical": {
+    "platform": "Android",
+    "language": "Kotlin",
+    "ui": "Jetpack Compose",
+    "architecture": "MVVM",
+    "min_sdk": 26,
+    "target_sdk": "",
+    "compile_sdk": "",
+    "offline_first": true
+  },
+
+  "features": [
+    {
+      "id": "",
+      "name": "",
+      "description": "",
+      "priority": "P0",
+      "requires_internet": false,
+      "requires_permission": false,
+      "permission": ""
+    }
+  ],
+
+  "screens": [
+    {
+      "id": "",
+      "name": "",
+      "purpose": "",
+      "components": [],
+      "navigation_to": []
+    }
+  ],
+
+  "permissions": [],
+
+  "integrations": {
+    "huawei_services": [],
+    "external_services": [],
+    "analytics": false,
+    "crash_reporting": false,
+    "ads": true
+  },
+
+  "monetization": {
+    "enabled": true,
+    "provider": "Huawei Petal Ads",
+    "banner": false,
+    "interstitial": false,
+    "rewarded": false,
+    "iap": false,
+    "ad_frequency_rules": ""
+  },
+
+  "localization": {
+    "default_language": "en",
+    "supported_languages": [
+      "en",
+      "es",
+      "pt",
+      "fr",
+      "de",
+      "it",
+      "tr",
+      "ar",
+      "zh"
+    ],
+    "auto_detect_device_language": true,
+    "fallback_language": "en",
+    "rtl_languages": [
+      "ar"
+    ]
+  },
+
+  "design": {
+    "theme": "",
+    "style": "",
+    "primary_color": "",
+    "secondary_color": "",
+    "supports_light_mode": true,
+    "supports_dark_mode": true,
+    "supports_system_theme": true,
+    "accessibility_required": true
+  },
+
+  "privacy": {
+    "collects_personal_data": false,
+    "collects_sensitive_data": false,
+    "stores_data_locally": true,
+    "uploads_user_content": false,
+    "requires_privacy_policy": true,
+    "privacy_policy_url": ""
+  },
+
+  "ai": {
+    "enabled": false,
+    "provider": "",
+    "backend_required": false,
+    "features": [],
+    "user_content_sent_to_ai": false
+  },
+
+  "appgallery": {
+    "default_language": "en",
+    "supported_languages": [
+      "en",
+      "es",
+      "pt",
+      "fr",
+      "de",
+      "it",
+      "tr",
+      "ar",
+      "zh"
+    ],
+    "distribution_regions": [],
+    "content_rating_required": true,
+    "free_app": true,
+    "appgallery_description": {
+      "short": {},
+      "full": {},
+      "new_features": {}
+    },
+    "keywords": {},
+    "screenshots_required": true,
+    "icon_required": true
+  },
+
+  "qa": {
+    "unit_tests_required": true,
+    "ui_tests_required": true,
+    "lint_required": true,
+    "release_build_required": true,
+    "apk_required": true,
+    "aab_required": true,
+    "test_permissions": true,
+    "test_localization": true,
+    "test_dark_mode": true,
+    "test_ads": true,
+    "test_offline_behavior": true,
+    "test_accessibility": true
+  },
+
+  "release": {
+    "build_type": "release",
+    "minify_enabled": true,
+    "shrink_resources": true,
+    "signed_release_required": true,
+    "generate_apk": true,
+    "generate_aab": true,
+    "submit_to_appgallery": true
+  },
+
+  "acceptance_criteria": [
+    "Application builds successfully.",
+    "Release APK is generated successfully.",
+    "Release AAB is generated successfully.",
+    "All P0 features work.",
+    "No critical crashes occur.",
+    "All visible strings are localized.",
+    "Light and dark themes work.",
+    "Required permissions work correctly.",
+    "Ads work according to the monetization specification.",
+    "Application complies with Huawei AppGallery requirements.",
+    "No fake, placeholder or unfinished functionality remains."
+  ]
+}
