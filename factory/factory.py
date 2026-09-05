@@ -6,7 +6,9 @@ Thin wrapper so a human (or a scheduled task) runs one command per step instead 
 remembering gh/claude invocations. Standard library only.
 
   python factory/factory.py list
-  python factory/factory.py check <slug> [--strict]
+  python factory/factory.py check <slug> [--strict]           # Android quality gate
+  python factory/factory.py check-ios <slug> [--strict]       # iOS quality gate
+  python factory/factory.py asc <slug> [--what state|app|versions|builds]   # App Store Connect status
   python factory/factory.py build <slug>                      # gh: Factory Build
   python factory/factory.py store <slug> [--what all|listing|icon|screenshots|app-info] [--lang X] [--dry-run]
   python factory/factory.py publish <slug> [--aab] [--submit --notes "..."] [--run-id N]
@@ -79,7 +81,8 @@ def main(argv: list[str]) -> int:
     p.add_argument("--print", dest="print_only", action="store_true")
     a = p.parse_args(argv)
 
-    needs_slug = {"check", "build", "store", "publish", "spec", "generate", "fix", "listing", "privacy"}
+    needs_slug = {"check", "check-ios", "asc", "build", "store", "publish", "spec", "generate", "fix",
+                  "listing", "privacy"}
     if a.command in needs_slug and not a.slug:
         sys.exit(f"{a.command} needs an app slug (see: python factory/factory.py list)")
 
@@ -89,6 +92,13 @@ def main(argv: list[str]) -> int:
     if a.command == "check":
         cmd = [py, "factory/tools/check_app.py", a.slug] + (["--strict"] if a.strict else [])
         return run(cmd, a.print_only)
+    if a.command == "check-ios":
+        cmd = [py, "factory/tools/check_ios_app.py", a.slug] + (["--strict"] if a.strict else [])
+        return run(cmd, a.print_only)
+    if a.command == "asc":
+        # Reads only; needs ASC_* in the environment (never passed on the command line).
+        return run([py, "factory/tools/asc_client.py", a.what if a.what != "all" else "state", a.slug],
+                   a.print_only)
     if a.command == "build":
         return gh_dispatch("factory-build.yml", {"app": a.slug}, a.print_only)
     if a.command == "store":
