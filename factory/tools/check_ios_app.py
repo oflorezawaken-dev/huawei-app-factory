@@ -1,0 +1,379 @@
+#!/usr/bin/env python3
+"""
+App Factory - iOS quality gate. Checks an App Store app against the factory
+rules before it is allowed to build, upload, or submit.
+
+  python factory/tools/check_ios_app.py plant-cue-ios
+  python factory/tools/check_ios_app.py plant-cue-ios --strict   # known_gaps no longer excuse failures
+
+Exit codes: 0 all good (or only excused gaps), 1 failures.
+
+Rules (from factory/apps.json defaults.ios.rules plus store-readiness basics):
+  ads_sdk              GoogleMobileAds really declared as an SPM dependency
+  admob_app_id         GADApplicationIdentifier comes from the xcconfig, not a literal
+  att_and_skadnetwork  NSUserTrackingUsageDescription + SKAdNetworkItems + a real ATT call
+  privacy_manifest     PrivacyInfo.xcprivacy present and non-empty
+  admob_unit_ids       real AdMob unit IDs in the registry (Google's test IDs fail --strict)
+  iap_configured       remove-ads product ID present in the registry and referenced in Swift
+  no_stubs             no unimplemented placeholders left behind
+  forbidden_deps       no analytics/tracking SDKs
+  identity             bundle ID and versions in the project match the registry
+  usage_descriptions   every NS*UsageDescription has a real, specific reason string
+  tests                a unit-test target exists and has test files
+  icon                 1024x1024 PNG with no alpha channel in the asset catalog
+  screenshots          3-10 store screenshots at a size Apple accepts for a required set
+  listing              every registry language present, within Apple's character limits
+  privacy_page         privacy_path/index.html exists
+  support_page         support_path/index.html exists   (Apple requires a support URL)
+  spec                 spec file exists
+
+A failure listed in the app's "known_gaps" is reported as EXCUSED (not fatal)
+unless --strict is given, so the registry documents the gap honestly instead
+of the check being silently skipped.
+
+Standard library only: project.yml is read as text (same approach check_app.py
+takes with Gradle files) because the factory does not install PyYAML.
+"""
+
+from __future__ import annotations
+
+import json
+import os
+import plistlib
+import re
+import struct
+import sys
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from registry import ROOT, find, load, platform_of  # noqa: E402
+
+# Apple's own boilerplate; not a factory stub.
+ALLOWED_FATAL_ERRORS = ("init(coder:)", "has not been implemented")
+
+STUB_PATTERNS = [
+    (r'fatalError\(\s*"[^"]*unimplemented', "fatalError(\"unimplemented\")"),
+    (r'fatalError\(\s*"[^"]*not implemented', "fatalError(\"not implemented\")"),
+    (r"#if\s+false", "#if false"),
+    (r"//\s*(?:TODO|FIXME)\b", "TODO/FIXME comment"),
+    (r'Text\(\s*"(?:Placeholder|Coming soon|TBD)', "placeholder screen text"),
+]
+
+# Permission strings Apple rejects for being vague (guideline 5.1.1).
+GENERIC_USAGE_TEXT = [
+    r"^\s*$",
+    r"^(?:we\s+)?need(?:s|ed)?\s+access",
+    r"^this app (?:needs|requires|uses)\s+(?:access\s+)?(?:to\s+)?(?:your\s+)?\w+\.?$",
+    r"^required$",
+    r"^for (?:the )?app to work",
+    r"^\w+ access$",
+]
+MIN_USAGE_TEXT = 25
+
+
+def read(path: str) -> str:
+    with open(path, encoding="utf-8", errors="replace") as fh:
+        return fh.read()
+
+
+def walk_files(base: str, suffixes: tuple[str, ...], skip: tuple[str, ...] = ()) -> list[str]:
+    out = []
+    for dirpath, dirs, files in os.walk(base):
+        dirs[:] = [d for d in dirs if d not in ("build", ".build", "DerivedData", "Pods", ".git")]
+        norm = dirpath.replace("\\", "/")
+        if any(s in norm for s in skip):
+            continue
+        for f in files:
+            if f.endswith(suffixes):
+                out.append(os.path.join(dirpath, f))
+    return out
+
+
+def swift_files(app_path: str) -> list[str]:
+    base = os.path.join(ROOT, app_path)
+    return walk_files(base, (".swift",)) if os.path.isdir(base) else []
+
+
+def project_text(app_path: str) -> str:
+    """project.yml plus any xcconfig and Package.resolved, as one searchable blob."""
+    base = os.path.join(ROOT, app_path)
+    if not os.path.isdir(base):
+        return ""
+    paths = walk_files(base, ("project.yml", ".xcconfig", "Package.resolved", ".pbxproj"))
+    return "\n".join(read(p) for p in paths)
+
+
+def load_plist(path: str) -> dict | None:
+    try:
+        with open(path, "rb") as fh:
+            data = plistlib.load(fh)
+        return data if isinstance(data, dict) else None
+    except (OSError, plistlib.InvalidFileException, ValueError):
+        return None
+
+
+def find_info_plist(app_path: str) -> tuple[dict | None, str]:
+    """Parsed Info.plist plus the raw text of every plist-ish source.
+
+    XcodeGen can either point at a real Info.plist or synthesise one from
+    project.yml, so both are searched before a key is called missing.
+    """
+    base = os.path.join(ROOT, app_path)
+    if not os.path.isdir(base):
+        return None, ""
+    plists = [p for p in walk_files(base, ("Info.plist",))]
+    parsed = next((d for d in (load_plist(p) for p in plists) if d), None)
+    text = "\n".join(read(p) for p in plists) + "\n" + project_text(app_path)
+    return parsed, text
+
+
+def png_info(path: str) -> tuple[int, int, bool] | None:
+    """(width, height, has_alpha) for a PNG, or None if it is not a PNG."""
+    with open(path, "rb") as fh:
+        head = fh.read(26)
+        rest = fh.read()
+    if head[:8] != b"\x89PNG\r\n\x1a\n":
+        return None
+    w, h = struct.unpack(">II", head[16:24])
+    color_type = head[25]
+    # 4 = gray+alpha, 6 = RGB+alpha; a tRNS chunk adds transparency to 0/2/3.
+    return w, h, color_type in (4, 6) or b"tRNS" in rest
+
+
+def jpeg_size(path: str) -> tuple[int, int] | None:
+    with open(path, "rb") as fh:
+        data = fh.read()
+    if data[:2] != b"\xff\xd8":
+        return None
+    i = 2
+    while i + 9 < len(data):
+        if data[i] != 0xFF:
+            i += 1
+            continue
+        marker, length = data[i + 1], struct.unpack(">H", data[i + 2:i + 4])[0]
+        if marker in (0xC0, 0xC1, 0xC2, 0xC3, 0xC5, 0xC6, 0xC7, 0xC9, 0xCA, 0xCB, 0xCD, 0xCE, 0xCF):
+            h, w = struct.unpack(">HH", data[i + 5:i + 9])
+            return w, h
+        i += 2 + length
+    return None
+
+
+def image_size(path: str) -> tuple[int, int] | None:
+    if path.lower().endswith(".png"):
+        info = png_info(path)
+        return (info[0], info[1]) if info else None
+    if path.lower().endswith((".jpg", ".jpeg")):
+        return jpeg_size(path)
+    return None
+
+
+def main(argv: list[str]) -> int:
+    if not argv:
+        sys.exit(__doc__)
+    slug = argv[0]
+    strict = "--strict" in argv
+    app = find(slug)
+    if platform_of(app) != "ios":
+        sys.exit(f"check_ios_app: '{slug}' is a {platform_of(app)} app; use check_app.py instead")
+
+    reg = load()
+    ios = reg["defaults"]["ios"]
+    rules = ios["rules"]
+    languages = ios["languages"]
+    limits = ios["listing_limits"]
+    known_gaps = app.get("known_gaps") or {}
+
+    results: list[tuple[str, str, str]] = []
+
+    def report(rule: str, ok: bool, detail: str, gap_key: str | None = None) -> None:
+        if ok:
+            results.append((rule, "PASS", detail))
+        elif gap_key and gap_key in known_gaps and not strict:
+            results.append((rule, "EXCUSED", f"{detail} - known gap: {known_gaps[gap_key]}"))
+        else:
+            results.append((rule, "FAIL", detail))
+
+    app_path = app["path"]
+    proj = project_text(app_path)
+    swift = "\n".join(read(f) for f in swift_files(app_path))
+    info, info_text = find_info_plist(app_path)
+
+    # --- monetisation -------------------------------------------------------
+    if rules.get("admob_required"):
+        report("ads_sdk", "GoogleMobileAds" in proj,
+               f"GoogleMobileAds SPM dependency declared: {'GoogleMobileAds' in proj}", gap_key="admob")
+
+        # The ad app ID must be injected from the xcconfig so CI can swap test
+        # IDs for real ones without editing tracked source.
+        gad_literal = re.search(r"<key>GADApplicationIdentifier</key>\s*<string>\s*(ca-app-pub-[^<\s]+)", info_text)
+        gad_var = "GADApplicationIdentifier" in info_text and (
+            "$(ADMOB_APP_ID)" in info_text or "${ADMOB_APP_ID}" in info_text)
+        report("admob_app_id", gad_var and not gad_literal,
+               f"GADApplicationIdentifier from xcconfig: {gad_var}"
+               + (f"; hardcoded literal found: {gad_literal.group(1)}" if gad_literal else ""),
+               gap_key="admob")
+
+        admob = app.get("admob") or {}
+        ids = {k: str(admob.get(k) or "") for k in ("app_id", "banner_unit_id", "interstitial_unit_id")}
+        missing = [k for k, v in ids.items() if not v]
+        test_prefix = ios["admob_test_id_prefix"]
+        using_test = [k for k, v in ids.items() if v.startswith(test_prefix)]
+        report("admob_unit_ids", not missing and not using_test,
+               f"missing: {missing or 'none'}; Google test IDs: {using_test or 'none'}",
+               gap_key="admob_unit_ids")
+
+    if rules.get("att_required"):
+        has_att_string = "NSUserTrackingUsageDescription" in info_text
+        has_skad = "SKAdNetworkItems" in info_text
+        has_att_call = "ATTrackingManager.requestTrackingAuthorization" in swift
+        report("att_and_skadnetwork", has_att_string and has_skad and has_att_call,
+               f"NSUserTrackingUsageDescription: {has_att_string}, SKAdNetworkItems: {has_skad}, "
+               f"requestTrackingAuthorization call: {has_att_call}", gap_key="att")
+
+    if rules.get("remove_ads_iap_required"):
+        product_id = str((app.get("iap") or {}).get("remove_ads_product_id") or "")
+        referenced = bool(product_id) and (product_id in swift or "IAP_REMOVE_ADS_PRODUCT_ID" in proj)
+        report("iap_configured", bool(product_id) and referenced,
+               f"product_id={product_id or 'MISSING'}, referenced in project: {referenced}",
+               gap_key="iap")
+
+    # --- privacy ------------------------------------------------------------
+    if rules.get("privacy_manifest_required"):
+        base = os.path.join(ROOT, app_path)
+        manifests = walk_files(base, ("PrivacyInfo.xcprivacy",)) if os.path.isdir(base) else []
+        parsed = next((d for d in (load_plist(p) for p in manifests) if d), None)
+        report("privacy_manifest", bool(parsed) and bool(
+            parsed.get("NSPrivacyCollectedDataTypes") or parsed.get("NSPrivacyAccessedAPITypes")),
+            f"PrivacyInfo.xcprivacy files: {len(manifests)}"
+            + ("; declares data types / accessed APIs" if parsed else "; missing or empty"),
+            gap_key="privacy_manifest")
+
+    # --- honesty ------------------------------------------------------------
+    if rules.get("no_stubs"):
+        found = []
+        for pattern, label in STUB_PATTERNS:
+            for m in re.finditer(pattern, swift, re.IGNORECASE):
+                line = swift[max(0, m.start() - 120):m.end() + 120]
+                if any(a in line for a in ALLOWED_FATAL_ERRORS):
+                    continue
+                found.append(label)
+                break
+        report("no_stubs", not found, f"placeholders: {sorted(set(found)) or 'none'}", gap_key="no_stubs")
+
+    bad = [d for d in rules.get("forbidden_dependencies", []) if d in proj]
+    report("forbidden_deps", not bad, f"forbidden dependencies present: {bad or 'none'}")
+
+    # --- identity -----------------------------------------------------------
+    bundle_ids = set(re.findall(r"PRODUCT_BUNDLE_IDENTIFIER\s*[:=]\s*\"?([\w.\-]+)\"?", proj))
+    version = app.get("current_version") or {}
+    proj_marketing = set(re.findall(r"MARKETING_VERSION\s*[:=]\s*\"?([\w.]+)\"?", proj))
+    proj_build = set(re.findall(r"CURRENT_PROJECT_VERSION\s*[:=]\s*\"?(\d+)\"?", proj))
+    want_marketing, want_build = str(version.get("marketing_version") or ""), str(version.get("build") or "")
+    identity_ok = (
+        app["bundle_id"] in bundle_ids
+        and (not proj_marketing or want_marketing in proj_marketing)
+        and (not proj_build or want_build in proj_build)
+    )
+    report("identity", identity_ok,
+           f"bundle IDs in project: {sorted(bundle_ids) or 'MISSING'} registry={app['bundle_id']}; "
+           f"MARKETING_VERSION {sorted(proj_marketing) or 'unset'} vs {want_marketing or 'unset'}; "
+           f"CURRENT_PROJECT_VERSION {sorted(proj_build) or 'unset'} vs {want_build or 'unset'}")
+
+    # --- permission strings -------------------------------------------------
+    if info:
+        vague = []
+        for key, value in info.items():
+            if not key.startswith("NS") or not key.endswith("UsageDescription"):
+                continue
+            text = value if isinstance(value, str) else ""
+            if len(text.strip()) < MIN_USAGE_TEXT or any(
+                    re.match(p, text.strip(), re.IGNORECASE) for p in GENERIC_USAGE_TEXT):
+                vague.append(key)
+        report("usage_descriptions", not vague,
+               f"vague or missing reason strings: {vague or 'none'}", gap_key="usage_descriptions")
+    else:
+        report("usage_descriptions", False, "no parseable Info.plist found", gap_key="usage_descriptions")
+
+    # --- tests --------------------------------------------------------------
+    has_test_target = "bundle.unit-test" in proj
+    test_files = [f for f in swift_files(app_path) if "Tests/" in f.replace("\\", "/")]
+    report("tests", has_test_target and len(test_files) > 0,
+           f"unit-test target declared: {has_test_target}; test files: {len(test_files)}", gap_key="tests")
+
+    # --- store assets -------------------------------------------------------
+    store_dir = os.path.join(ROOT, app["store_dir"])
+    icons = walk_files(os.path.join(ROOT, app_path), ("1024.png", "icon-1024.png")) if os.path.isdir(
+        os.path.join(ROOT, app_path)) else []
+    icon_detail, icon_ok = "no 1024 icon found in the project", False
+    for icon in icons:
+        got = png_info(icon)
+        if not got:
+            continue
+        w, h, alpha = got
+        icon_ok = (w, h) == (1024, 1024) and not alpha
+        icon_detail = f"{os.path.relpath(icon, ROOT)} size=({w}, {h}) alpha={alpha}"
+        if icon_ok:
+            break
+    report("icon", icon_ok, icon_detail + (" - App Store icons must have no alpha channel" if not icon_ok else ""),
+           gap_key="icon")
+
+    # Screenshots follow the fastlane deliver layout (one folder per language);
+    # the device set is inferred from the pixel size, as Apple does on upload.
+    required_sets = {name: cfg for name, cfg in ios["screenshot_sets"].items() if cfg.get("required")}
+    default_folder = next((k for k, v in ios["screenshot_dir_to_asc_lang"].items() if v == languages[0]), "en")
+    shots_dir = os.path.join(store_dir, "screenshots", default_folder)
+    shots = sorted(f for f in os.listdir(shots_dir)) if os.path.isdir(shots_dir) else []
+    shots = [f for f in shots if f.lower().endswith((".png", ".jpg", ".jpeg"))]
+    lo, hi = ios["screenshot_count"]["min"], ios["screenshot_count"]["max"]
+    for set_name, cfg in required_sets.items():
+        accepted = {tuple(s) for s in cfg["sizes"]}
+        matching, wrong = [], []
+        for f in shots:
+            size = image_size(os.path.join(shots_dir, f))
+            (matching if size in accepted else wrong).append((f, size))
+        transparent = [f for f, _ in matching if f.lower().endswith(".png")
+                       and (png_info(os.path.join(shots_dir, f)) or (0, 0, False))[2]]
+        ok = lo <= len(matching) <= hi and not transparent
+        report("screenshots", ok,
+               f"{set_name}: {len(matching)} of {len(shots)} images match {sorted(accepted)} "
+               f"(need {lo}-{hi}); wrong size: {[f for f, _ in wrong] or 'none'}; "
+               f"with alpha: {transparent or 'none'}", gap_key="screenshots")
+
+    # --- listing ------------------------------------------------------------
+    listing_path = os.path.join(store_dir, "listing.json")
+    if os.path.isfile(listing_path):
+        entries = json.loads(read(listing_path)).get("languages", [])
+        have = {e.get("lang") for e in entries}
+        missing = [l for l in languages if l not in have]
+        over = []
+        for e in entries:
+            for field, limit in limits.items():
+                value = e.get(field)
+                if isinstance(value, str) and len(value) > limit:
+                    over.append(f"{e.get('lang')}.{field}={len(value)}>{limit}")
+        report("listing", not (missing or over),
+               f"missing languages: {missing or 'none'}; over limit: {over or 'none'}")
+    else:
+        report("listing", False, f"{os.path.relpath(listing_path, ROOT)} missing")
+
+    # --- pages and spec -----------------------------------------------------
+    privacy = os.path.join(ROOT, app["privacy_path"], "index.html")
+    report("privacy_page", os.path.isfile(privacy), os.path.relpath(privacy, ROOT))
+    support_path = app.get("support_path", "")
+    support = os.path.join(ROOT, support_path, "index.html") if support_path else ""
+    report("support_page", bool(support) and os.path.isfile(support),
+           os.path.relpath(support, ROOT) if support else "no support_path in the registry "
+           "(Apple requires a support URL)")
+    report("spec", os.path.isfile(os.path.join(ROOT, app["spec"])), app["spec"])
+
+    width = max(len(r[0]) for r in results)
+    failures = 0
+    for rule, status, detail in results:
+        print(f"[{status:7}] {rule.ljust(width)}  {detail}")
+        if status == "FAIL":
+            failures += 1
+    print(f"\n{slug}: {failures} failure(s)" + (" (strict)" if strict else ""))
+    return 1 if failures else 0
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]))
