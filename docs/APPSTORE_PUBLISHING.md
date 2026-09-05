@@ -119,7 +119,7 @@ rather than a generic error:
 
 ## 5. Limits already encoded in the gate
 
-Verified against Apple's current documentation on 2026-09-05. Re-check before
+Verified against Apple's current documentation on 2026-09-07. Re-check before
 trusting them in a year.
 
 | Thing | Value |
