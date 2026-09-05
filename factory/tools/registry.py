@@ -173,8 +173,12 @@ def changed_slugs(base: str, head: str) -> list[str] | None:
         if entries is None:
             return None
         affected.update(entries)
-    # Tooling changes affect every app, so they are deliberately not narrowed.
-    if any(f.startswith("factory/tools/") for f in changed_files):
+    # Tooling and workflow changes affect every app, so they are deliberately
+    # not narrowed to whichever app folders happen to also be in the diff. A
+    # push that only edits a build workflow would otherwise legitimately diff
+    # to zero app-owned paths and rebuild nothing, silently skipping the
+    # re-verification a workflow change usually calls for.
+    if any(f.startswith("factory/tools/") or f.startswith(".github/workflows/") for f in changed_files):
         return None
     return sorted(affected)
 
