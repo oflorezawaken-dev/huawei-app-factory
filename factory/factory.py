@@ -10,7 +10,8 @@ remembering gh/claude invocations. Standard library only.
   python factory/factory.py check-ios <slug> [--strict]       # iOS quality gate
   python factory/factory.py asc <slug> [--what state|app|versions|builds]   # App Store Connect status
   python factory/factory.py build <slug>                      # gh: Factory Build
-  python factory/factory.py store <slug> [--what all|listing|icon|screenshots|app-info] [--lang X] [--dry-run]
+  python factory/factory.py store <slug> [--what all|listing|icon|screenshots|app-info|privacy-tags] [--lang X] [--dry-run]
+  python factory/factory.py privacy-tags <slug> [--init]     # local: validate + write store/privacy-tags.md (console checklist)
   python factory/factory.py publish <slug> [--aab] [--submit --notes "..."] [--run-id N]
   python factory/factory.py research                          # claude: propose an app
   python factory/factory.py spec <slug> --proposal proposals/<file>.md
@@ -78,11 +79,12 @@ def main(argv: list[str]) -> int:
     p.add_argument("--notes", default="")
     p.add_argument("--run-id", default="")
     p.add_argument("--proposal", default="")
+    p.add_argument("--init", action="store_true")
     p.add_argument("--print", dest="print_only", action="store_true")
     a = p.parse_args(argv)
 
     needs_slug = {"check", "check-ios", "asc", "build", "store", "publish", "spec", "generate", "fix",
-                  "listing", "privacy"}
+                  "listing", "privacy", "privacy-tags"}
     if a.command in needs_slug and not a.slug:
         sys.exit(f"{a.command} needs an app slug (see: python factory/factory.py list)")
 
@@ -128,6 +130,12 @@ def main(argv: list[str]) -> int:
         return claude_step(["50-listing.md"], f"Slug: {a.slug}", a.print_only)
     if a.command == "privacy":
         return claude_step(["60-privacy.md"], f"Slug: {a.slug}", a.print_only)
+    if a.command == "privacy-tags":
+        if a.init:
+            rc = run([py, "factory/tools/privacy_tags.py", "init", a.slug], a.print_only)
+            if rc:
+                return rc
+        return run([py, "factory/tools/privacy_tags.py", "render", a.slug, "--write"], a.print_only)
     sys.exit(__doc__)
 
 

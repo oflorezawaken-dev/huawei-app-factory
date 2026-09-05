@@ -1,0 +1,73 @@
+{
+  "_doc": "AppGallery privacy tags for this app. Labels are the exact console names from https://developer.huawei.com/consumer/en/doc/app/privacy-label . Baseline generated from the manifest permissions plus the mandatory Petal Ads block; add the app-specific items the code really stores or processes (e.g. Transaction records for receipts). Validate with: python factory/tools/privacy_tags.py check <slug>",
+  "collect_personal_data": true,
+  "scenarios": {
+    "App functionality": {
+      "User information": [
+        "Image or video"
+      ],
+      "Transaction information": [
+        "Transaction records"
+      ]
+    },
+    "Advertising and marketing": {
+      "Identifiers": [
+        "OAID"
+      ],
+      "Location information": [
+        "Other approximate location information"
+      ],
+      "App information": [
+        "Basic app information",
+        "App usage information"
+      ],
+      "Device information": [
+        "OS information",
+        "Device status",
+        "Network type",
+        "Carrier",
+        "IP address",
+        "Acceleration sensor",
+        "Gyroscope",
+        "Other hardware and software parameters/System settings"
+      ]
+    },
+    "Disclosure to third parties": {
+      "Identifiers": [
+        "OAID"
+      ],
+      "App information": [
+        "App usage information"
+      ],
+      "Device information": [
+        "OS information",
+        "Network type",
+        "Carrier",
+        "IP address",
+        "Other hardware and software parameters/System settings"
+      ]
+    }
+  },
+  "not_applicable": {
+    "Product personalization": "No user profiling; ad personalisation belongs to the Petal Ads scenario.",
+    "Analytics": "No analytics or crash-reporting SDK.",
+    "Cross-border transfer": "Scenario means data sent outside the Chinese mainland; the app is not distributed in the Chinese mainland.",
+    "Others": ""
+  },
+  "item_notes": {
+    "Acceleration sensor": "Petal Ads SDK: motion data used for ad-fraud detection.",
+    "App usage information": "Ad events (impressions, clicks) reported by the Petal Ads SDK.",
+    "Basic app information": "Package name and version sent by the Petal Ads SDK with ad requests.",
+    "Carrier": "Petal Ads SDK: carrier information.",
+    "Device status": "Petal Ads SDK: battery and storage status.",
+    "Gyroscope": "Petal Ads SDK: motion data used for ad-fraud detection.",
+    "IP address": "Petal Ads SDK: network address of each ad request.",
+    "Image or video": "Receipt photos taken with the camera or picked from the gallery; stored in app-private storage on the device only.",
+    "Network type": "Petal Ads SDK: Wi-Fi or mobile network type.",
+    "OAID": "Read by the Huawei Petal Ads SDK for ad delivery and measurement.",
+    "OS information": "Petal Ads SDK: Android/EMUI version for ad delivery.",
+    "Other approximate location information": "Petal Ads derives city/country from the IP address.",
+    "Other hardware and software parameters/System settings": "Petal Ads SDK: device brand/model, screen resolution, language, region.",
+    "Transaction records": "Receipt content the user captures (merchant, total, date, category), stored in the on-device database only."
+  }
+}

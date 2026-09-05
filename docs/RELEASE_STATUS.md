@@ -186,4 +186,14 @@ PlantCue is ready for review submission. The factory end-to-end test is complete
 approval → spec → generated app → PR → merge → signed build → store metadata → upload, with the
 human touching only the four gates (approve, merge, console setup, submit).
 
+### ReceiptLens 1.0.0: REJECTED by Huawei review (2026-09-07)
+
+| Item | Value |
+|---|---|
+| Report | "Informe de revisión de lanzamiento" generated 2026-09-07 10:00:05; 1 error, category *Privacidad del usuario* |
+| Finding | The app collects personal information but the privacy tag configuration in AppGallery Connect does not say so |
+| Root cause | Console field **Collect personal data** was left at *No*. Petal Ads (OAID, IP, device/app info) and camera photos mean the truthful answer is *Yes*. The spec template defaulted `collects_personal_data` to false, and no factory step covered the privacy tags. |
+| Fix | New `factory/tools/privacy_tags.py` + `store/privacy-tags.json/.md` per app, gate rule `privacy_tags`, `factory-store what=privacy-tags`, publish refuses to submit until `privacy_tags_configured` is dated in the registry. Details in `docs/APPGALLERY_PUBLISHING.md`. |
+| Next | Owner ticks the tags from `apps/receipt-lens/store/privacy-tags.md`, records the date, then the factory uploads and submits **1.1.0** (real Petal Ads, versionCode 2) instead of resubmitting 1.0.0. PlantCue is still in review with the same wrong *No*; its checklist is ready in case Huawei returns the same finding. |
+
 PlantCue 1.0.0 submitted for Huawei review by the owner on 2026-09-07 (after removing Russia/Belarus from distribution countries: AGC blocks ad-monetised apps there because settlement in the developer's currency is not supported).

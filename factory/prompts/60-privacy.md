@@ -21,6 +21,11 @@ Must cover, truthfully for THIS app:
   and a contact email (use the one in the existing policy unless told otherwise).
 - "Last updated" date = today.
 
+Keep `apps/<slug>/store/privacy-tags.json` consistent with the page: every data item the
+policy says the app or the ad SDK collects must appear there under the right scenario,
+and nothing the policy denies may appear. Run `python factory/tools/privacy_tags.py check
+<slug>` and `render <slug> --write` after editing.
+
 Then set the URL: `<defaults.privacy_base_url>/<slug>/privacy/`. Commit as
 `docs(<slug>): privacy policy`. The Factory Store Setup workflow pushes the URL to
 AppGallery Connect (`what: app-info`).

@@ -32,7 +32,17 @@ first; it is the registry of apps and the source of factory-wide rules.
    `gradle :app:assembleDebug` inside the app folder and read the output. Fix real
    errors; never delete a test to make CI green unless the test itself is wrong and you
    explain why in the commit message.
-9. **Small, explained commits.** One concern per commit. Never force-push. Never commit
+9. **Privacy tags are part of every app.** AppGallery requires a personal-data
+   declaration ("Privacy tags" under Version information) and rejects releases whose
+   tags contradict the app; Petal Ads alone means every factory app collects personal
+   data (OAID, IP, device and app info). Each app keeps `store/privacy-tags.json` using
+   the exact labels from https://developer.huawei.com/consumer/en/doc/app/privacy-label ;
+   `python factory/tools/privacy_tags.py init <slug>` writes the baseline (manifest
+   permissions + Petal Ads block), you add what the code really stores or processes
+   (photos, transaction records, health data...), `check` validates it, `render --write`
+   produces the console checklist `store/privacy-tags.md`. Manifest, privacy policy and
+   privacy tags must agree. There is no API for this step: a human ticks the boxes.
+10. **Small, explained commits.** One concern per commit. Never force-push. Never commit
    secrets, build output, or `.gradle/`.
 
 ## Where things live
@@ -44,6 +54,7 @@ first; it is the registry of apps and the source of factory-wide rules.
 | App code | `apps/<slug>/` |
 | Store assets | `apps/<slug>/store/{icon/icon-512.png, screenshots/<lang>/*.png, listing.json}` |
 | Privacy policy page | `docs/<slug>/privacy/index.html` (ReceiptLens uses `docs/privacy/`) |
+| Privacy tags (AppGallery data declaration) | `apps/<slug>/store/privacy-tags.json` + rendered `privacy-tags.md`; tool `factory/tools/privacy_tags.py` |
 | AGC tools | `factory/tools/agc_*.py` |
 | Quality gate | `factory/tools/check_app.py` |
 | Workflows | `.github/workflows/factory-*.yml` |

@@ -26,6 +26,7 @@ Nothing is submitted for review unless `submit_for_review` is set to `true`.
 | Developer account registration and identity verification | developer.huawei.com | Account-level, once. |
 | Create the app | AppGallery Connect > My apps > New | The Publishing API cannot create apps. Package name must be `com.huaweiappfactory.receiptlens`. |
 | Content rating questionnaire | App > Distribute > Version information | Cannot be completed via API. |
+| **Privacy tags** (personal-data declaration) | App > Distribute > Version information > Privacy tags | No API. Tick exactly the boxes in `apps/<slug>/store/privacy-tags.md`, then write the date in `factory/apps.json` → `privacy_tags_configured`. ReceiptLens 1.0 was rejected on 2026-09-07 for leaving this at "No". |
 | Privacy policy URL, app category, countries, pricing | App information | Can be set via API later, but must exist before the first submission. |
 | Screenshots and icon | App information | Uploadable via API (fileType 0/2); for V1 do it in the console with real captures. |
 | Enable App Signing (AAB only) | App > Develop > App Signing | Required before uploading an AAB. APK does not need it. |
@@ -102,6 +103,35 @@ Re-verify against the official reference before relying on new fields.
 |---|---|---|
 | `No AppGallery app found for package ...` | New app: AGC assigns the package name from the first uploaded package. | Use the App ID (`RECEIPT_LENS_AGC_APP_ID`). |
 | `204144694 [cfs] get siteId failed ... distContryList is empty` | The app has no distribution countries/regions yet, so Huawei cannot pick a storage site for the upload. | In the console: the app → Distribute → Version information → **Countries/Regions** → select and save. Can later be automated with `PUT /publish/v2/app-info` field `publishCountry`. |
+
+## Privacy tags: the rejection of 2026-09-07 and the fix
+
+Huawei's review report for ReceiptLens 1.0.0 ("Privacidad del usuario, número 1"): *the app
+collects personal information but this was not indicated in the privacy tag configuration*.
+The console had **Collect personal data = No**. That is false for every factory app: the Petal
+Ads SDK reads the OAID and sends IP, device, network and app information with each ad request,
+and the camera-based apps store photos. The reviewer also reads the public privacy policy, which
+already disclosed Petal Ads.
+
+What changed in the factory:
+
+- `factory/tools/privacy_tags.py` holds the official taxonomy (7 scenarios, 12 categories, 91
+  items) and the Petal Ads block; `init` derives a baseline from the manifest permissions,
+  `check` validates, `render --write` produces `store/privacy-tags.md`, the click-by-click list.
+- The quality gate has a `privacy_tags` rule; the spec template defaults
+  `collects_personal_data` to true and asks for the app's own data items.
+- `factory-store.yml` (`what: privacy-tags`) prints the checklist in the run summary;
+  `factory-publish.yml` refuses `submit_for_review` while `privacy_tags_configured` is empty
+  in the registry, which makes the console step an explicit human gate.
+
+Standard block for every app (scenario **Advertising and marketing**): OAID; Other approximate
+location information; Basic app information; App usage information; OS information; Device
+status; Network type; Carrier; IP address; Acceleration sensor; Gyroscope; Other hardware and
+software parameters/System settings. Scenario **Disclosure to third parties** (advertisers
+receive OAID, device/network info and ad events): OAID; App usage information; OS information;
+Network type; Carrier; IP address; Other hardware and software parameters/System settings.
+Under **App functionality** each app adds what it handles itself (ReceiptLens: Image or video,
+Transaction records; PlantCue: Image or video).
 
 ## Next automation candidates
 

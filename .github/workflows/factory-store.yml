@@ -4,6 +4,8 @@ name: Factory Store Setup
 # listing text (all languages), icon, screenshots, and app-info fields such
 # as the privacy policy URL. Each part can be run alone. Manual trigger,
 # `appgallery` environment.
+# `privacy-tags` has no API: it validates store/privacy-tags.json and prints the
+# console checklist in the run summary for the human to copy.
 
 on:
   workflow_dispatch:
@@ -17,7 +19,7 @@ on:
         required: true
         default: 'all'
         type: choice
-        options: [all, listing, icon, screenshots, app-info]
+        options: [all, listing, icon, screenshots, app-info, privacy-tags]
       lang:
         description: 'Listing: AGC code (en-US) or empty = all. Screenshots: folder under store/screenshots (en).'
         required: false
@@ -102,6 +104,18 @@ jobs:
           fi
           [[ "$DRY" == "true" ]] && args+=(--dry-run)
           python3 factory/tools/agc_update_app_info.py "${args[@]}"
+
+      - name: Privacy tags checklist (manual console step, no API)
+        if: inputs.what == 'all' || inputs.what == 'privacy-tags'
+        run: |
+          set -euo pipefail
+          python3 factory/tools/privacy_tags.py check "$APP_SLUG"
+          {
+            echo "> Copy this into AppGallery Connect. Then write today's date in factory/apps.json -> privacy_tags_configured."
+            echo "> Registry currently says: ${PRIVACY_TAGS_CONFIGURED:-NOT YET CONFIGURED}"
+            echo
+            python3 factory/tools/privacy_tags.py render "$APP_SLUG"
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Summary
         if: always()

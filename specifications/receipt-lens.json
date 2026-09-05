@@ -1,6 +1,5 @@
 {
   "spec_version": "1.0.0",
-
   "app": {
     "name": "ReceiptLens",
     "package_name": "com.huaweiappfactory.receiptlens",
@@ -12,7 +11,6 @@
     "target_audience": "Consumers and small business users who want to organize expenses from receipts.",
     "problem_solved": "Manually entering receipt information is slow and error-prone. ReceiptLens automates receipt capture, text recognition, expense extraction, and local organization."
   },
-
   "product_strategy": {
     "market_opportunity": "Receipt and expense management is a proven mobile utility category with recurring demand from consumers and small businesses.",
     "competitive_advantage": "Fast receipt capture, on-device processing, simple expense organization, multilingual support, privacy-first design, and Huawei ecosystem compatibility.",
@@ -27,7 +25,6 @@
     "estimated_market_potential": 8,
     "monetization_strategy": "Free application supported by Huawei Petal Ads. Ads must not interfere with the primary receipt scanning workflow."
   },
-
   "technical": {
     "platform": "Android",
     "language": "Kotlin",
@@ -42,7 +39,6 @@
     "async": "Kotlin Coroutines",
     "reactive_data": "Kotlin Flow"
   },
-
   "features": [
     {
       "id": "F001",
@@ -207,7 +203,6 @@
       "permission": ""
     }
   ],
-
   "screens": [
     {
       "id": "S001",
@@ -342,7 +337,6 @@
       "navigation_to": []
     }
   ],
-
   "data_model": {
     "database": "Room",
     "entities": [
@@ -371,7 +365,6 @@
       "No receipt data may be uploaded to a remote server in V1."
     ]
   },
-
   "permissions": [
     {
       "permission": "android.permission.CAMERA",
@@ -382,7 +375,6 @@
       "purpose": "Import receipt images when required by the Android version and selected image-picker implementation."
     }
   ],
-
   "integrations": {
     "huawei_services": [
       "Huawei ML Kit",
@@ -393,7 +385,6 @@
     "crash_reporting": false,
     "ads": true
   },
-
   "monetization": {
     "enabled": true,
     "provider": "Huawei Petal Ads",
@@ -403,7 +394,6 @@
     "iap": false,
     "ad_frequency_rules": "Ads must never interrupt camera capture, OCR processing, receipt review, or data entry. Banner ads may appear in appropriate non-critical screens. Interstitial ads must have conservative frequency limits and must never appear immediately after every scan. Rewarded ads may optionally unlock an export-related convenience feature. Ad configuration must be isolated so monetization can be changed without modifying core receipt-processing logic."
   },
-
   "localization": {
     "default_language": "en",
     "supported_languages": [
@@ -431,7 +421,6 @@
       "Arabic layouts must support right-to-left presentation."
     ]
   },
-
   "design": {
     "theme": "Modern financial utility",
     "style": "Clean, minimal, trustworthy, fast, productivity-focused",
@@ -452,9 +441,8 @@
       "Support system font scaling"
     ]
   },
-
   "privacy": {
-    "collects_personal_data": false,
+    "collects_personal_data": true,
     "collects_sensitive_data": false,
     "processes_potentially_sensitive_user_content_locally": true,
     "stores_data_locally": true,
@@ -471,9 +459,19 @@
       "The privacy policy must clearly explain that receipt images and expense information may contain personal or financial information and are processed/stored locally.",
       "Advertising SDK data handling must be documented separately according to the applicable Petal Ads requirements.",
       "Deleting a receipt must delete its associated local image and database record."
-    ]
+    ],
+    "_collects_personal_data_note": "Set to true on 2026-09-07: the Huawei Petal Ads SDK collects OAID, IP, device and app information, so AppGallery's privacy tags must say Yes. The app's own data stays on the device.",
+    "appgallery_privacy_tags": {
+      "App functionality": {
+        "User information": [
+          "Image or video"
+        ],
+        "Transaction information": [
+          "Transaction records"
+        ]
+      }
+    }
   },
-
   "ai": {
     "enabled": true,
     "provider": "Huawei ML Kit",
@@ -494,7 +492,6 @@
       "If a field cannot be confidently extracted, the field must remain editable and the uncertainty must be visible to the user."
     ]
   },
-
   "receipt_extraction": {
     "fields": [
       {
@@ -548,7 +545,6 @@
       "The user must always be able to correct extracted values."
     ]
   },
-
   "offline_behavior": {
     "requirements": [
       "Scanning must not require an internet connection.",
@@ -562,7 +558,6 @@
       "Loss of network connectivity must not cause loss of receipt data."
     ]
   },
-
   "qa": {
     "unit_tests_required": true,
     "ui_tests_required": true,
@@ -596,7 +591,6 @@
       "Test Petal Ads failure without breaking core application functionality."
     ]
   },
-
   "release": {
     "build_type": "release",
     "minify_enabled": true,
@@ -615,7 +609,6 @@
       "Version name must follow semantic versioning conventions where practical."
     ]
   },
-
   "appgallery": {
     "default_language": "en",
     "supported_languages": [
@@ -651,7 +644,6 @@
       "Store AppGallery identifiers and credentials outside source code."
     ]
   },
-
   "assets": {
     "icon": {
       "required": true,
@@ -675,7 +667,6 @@
       "description": "Optional AppGallery promotional assets generated separately from functional application screenshots."
     }
   },
-
   "security": {
     "requirements": [
       "Never hard-code API keys, advertising identifiers, signing passwords, or service credentials.",
@@ -688,7 +679,6 @@
       "Do not expose receipt image paths through publicly accessible storage."
     ]
   },
-
   "performance": {
     "requirements": [
       "Camera preview must remain responsive.",
@@ -699,7 +689,6 @@
       "The application must avoid unnecessary memory retention of full-resolution receipt images."
     ]
   },
-
   "error_handling": {
     "requirements": [
       "All camera failures must show a user-readable error.",
@@ -711,7 +700,6 @@
       "Unexpected errors must show a recoverable state instead of a blank screen."
     ]
   },
-
   "acceptance_criteria": [
     "Application builds successfully.",
     "Release APK is generated successfully.",

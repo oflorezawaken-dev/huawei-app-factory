@@ -67,6 +67,7 @@ def env_android(app: dict, defaults: dict, slug: str, slug_upper: str) -> dict:
     return {
         "APP_PACKAGE": app["package"],
         "AGC_APP_ID": str(app.get("agc_app_id") or ""),
+        "PRIVACY_TAGS_CONFIGURED": str(app.get("privacy_tags_configured") or ""),
         "PETAL_BANNER_AD_ID": str((app.get("ads") or {}).get("banner_ad_id") or ""),
         "PETAL_INTERSTITIAL_AD_ID": str((app.get("ads") or {}).get("interstitial_ad_id") or ""),
         "FACTORY_JAVA_VERSION": defaults["java_version"],
