@@ -94,12 +94,53 @@ def swift_files(app_path: str) -> list[str]:
 
 
 def project_text(app_path: str) -> str:
-    """project.yml plus any xcconfig and Package.resolved, as one searchable blob."""
+    """project.yml plus any xcconfig and Package.resolved, as one searchable blob.
+
+    Deliberately excludes .pbxproj: it is XcodeGen's generated output, not
+    committed source, and in a fresh CI checkout it does not exist yet (xcodegen
+    generate runs during the build step). Scanning it also pulls in bundle IDs
+    XcodeGen auto-assigns to test/UI-test targets, which are not the app's own
+    identity and would contaminate this search.
+    """
     base = os.path.join(ROOT, app_path)
     if not os.path.isdir(base):
         return ""
-    paths = walk_files(base, ("project.yml", ".xcconfig", "Package.resolved", ".pbxproj"))
+    paths = walk_files(base, ("project.yml", ".xcconfig", "Package.resolved"))
     return "\n".join(read(p) for p in paths)
+
+
+def parse_xcconfig_assignments(text: str) -> dict[str, str]:
+    """KEY = VALUE lines from xcconfig text, last assignment wins (xcconfig semantics)."""
+    out: dict[str, str] = {}
+    for line in text.splitlines():
+        line = line.split("//", 1)[0].strip()
+        m = re.match(r"^([\w]+)\s*=\s*(.+)$", line)
+        if m:
+            out[m.group(1)] = m.group(2).strip()
+    return out
+
+
+def resolve_setting(raw: str, assignments: dict[str, str], depth: int = 0) -> str | None:
+    """Resolve an Xcode build setting through $(VAR) / $(VAR:default=X) indirection.
+
+    The factory's own convention (see AdMob.xcconfig) is CI overriding a value
+    through one level of $(FOO_OVERRIDE:default=...) indirection so a real ID
+    from the registry can replace a safe default without editing tracked
+    source. The identity check has to follow that chain to see the real value,
+    the same way admob_app_id already does for GADApplicationIdentifier.
+    """
+    if depth > 8:
+        return None
+    raw = raw.strip().strip('"')
+    m = re.fullmatch(r"\$\((\w+)(?::default=(.*))?\)", raw)
+    if not m:
+        return raw or None
+    var, default = m.group(1), m.group(2)
+    if var in assignments:
+        resolved = resolve_setting(assignments[var], assignments, depth + 1)
+        if resolved is not None:
+            return resolved
+    return default
 
 
 def load_plist(path: str) -> dict | None:
@@ -263,10 +304,25 @@ def main(argv: list[str]) -> int:
     report("forbidden_deps", not bad, f"forbidden dependencies present: {bad or 'none'}")
 
     # --- identity -----------------------------------------------------------
-    bundle_ids = set(re.findall(r"PRODUCT_BUNDLE_IDENTIFIER\s*[:=]\s*\"?([\w.\-]+)\"?", proj))
+    # Values are read as raw text (a literal, or an Xcode $(VAR:default=X)
+    # reference) and then resolved through the xcconfig assignments, since the
+    # factory's own convention is CI overriding one level of indirection to
+    # inject the real value without touching tracked source.
+    assignments = parse_xcconfig_assignments(proj)
+
+    def resolved_settings(key: str) -> set[str]:
+        raw_values = re.findall(key + r"\s*[:=]\s*(\"[^\"]*\"|\$\([^)]*\)|\S+)", proj)
+        out = set()
+        for raw in raw_values:
+            resolved = resolve_setting(raw, assignments)
+            if resolved:
+                out.add(resolved)
+        return out
+
     version = app.get("current_version") or {}
-    proj_marketing = set(re.findall(r"MARKETING_VERSION\s*[:=]\s*\"?([\w.]+)\"?", proj))
-    proj_build = set(re.findall(r"CURRENT_PROJECT_VERSION\s*[:=]\s*\"?(\d+)\"?", proj))
+    bundle_ids = resolved_settings("PRODUCT_BUNDLE_IDENTIFIER")
+    proj_marketing = resolved_settings("MARKETING_VERSION")
+    proj_build = resolved_settings("CURRENT_PROJECT_VERSION")
     want_marketing, want_build = str(version.get("marketing_version") or ""), str(version.get("build") or "")
     identity_ok = (
         app["bundle_id"] in bundle_ids
@@ -274,7 +330,7 @@ def main(argv: list[str]) -> int:
         and (not proj_build or want_build in proj_build)
     )
     report("identity", identity_ok,
-           f"bundle IDs in project: {sorted(bundle_ids) or 'MISSING'} registry={app['bundle_id']}; "
+           f"bundle IDs resolved: {sorted(bundle_ids) or 'MISSING'} registry={app['bundle_id']}; "
            f"MARKETING_VERSION {sorted(proj_marketing) or 'unset'} vs {want_marketing or 'unset'}; "
            f"CURRENT_PROJECT_VERSION {sorted(proj_build) or 'unset'} vs {want_build or 'unset'}")
 
