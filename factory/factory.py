@@ -13,7 +13,7 @@ remembering gh/claude invocations. Standard library only.
   python factory/factory.py store <slug> [--what all|listing|icon|screenshots|app-info|privacy-tags] [--lang X] [--dry-run]
   python factory/factory.py privacy-tags <slug> [--init]     # local: validate + write store/privacy-tags.md (console checklist)
   python factory/factory.py publish <slug> [--aab] [--submit --notes "..."] [--run-id N]
-  python factory/factory.py research                          # claude: propose an app
+  python factory/factory.py research [--ios]                  # claude: propose an app (App Store lane with --ios)
   python factory/factory.py spec <slug> --proposal proposals/<file>.md
   python factory/factory.py generate <slug>                   # claude: build the app from its spec
   python factory/factory.py fix <slug> --run-id N             # claude: fix a failing build
@@ -80,6 +80,7 @@ def main(argv: list[str]) -> int:
     p.add_argument("--run-id", default="")
     p.add_argument("--proposal", default="")
     p.add_argument("--init", action="store_true")
+    p.add_argument("--ios", action="store_true")
     p.add_argument("--print", dest="print_only", action="store_true")
     a = p.parse_args(argv)
 
@@ -115,7 +116,10 @@ def main(argv: list[str]) -> int:
             "submit_for_review": "true" if a.submit else "false",
             "release_notes": a.notes}, a.print_only)
     if a.command == "research":
-        return claude_step(["10-research.md"], "", a.print_only)
+        # The iOS lane researches the App Store market on its own terms; it
+        # never ports the AppGallery apps (owner's decision, 2026-09-07).
+        prompt = "10-research-ios.md" if a.ios else "10-research.md"
+        return claude_step([prompt], "", a.print_only)
     if a.command == "spec":
         if not a.proposal:
             sys.exit("spec needs --proposal proposals/<file>.md")
