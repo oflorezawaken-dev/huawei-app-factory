@@ -75,7 +75,7 @@ enum CSVParser {
 
         func nextChar() -> Character? {
             if let pending {
-                self.pendingReset()
+                pendingReset()
                 return pending
             }
             return iterator.next()

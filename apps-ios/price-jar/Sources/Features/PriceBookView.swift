@@ -131,7 +131,6 @@ struct PriceBookView: View {
                     BarcodeScannerView()
                 }
             }
-        }
     }
 
     private var categoryChips: some View {
