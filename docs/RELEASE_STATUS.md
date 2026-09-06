@@ -81,3 +81,19 @@ checked didn't always pass one — this account/app requires `lang` on every
 `app-file-info` call, icon included. The workflow now resolves and sends it for both.
 
 Content rating was completed manually by the user in the console (date not recorded here).
+
+## Privacy policy made public and linked in AppGallery Connect (2026-09-06)
+
+| Item | Result |
+|---|---|
+| Repo visibility | Changed to public by the repo owner (required for GitHub Pages on the Free plan). |
+| GitHub Pages | Enabled from `main` / `/docs`, build status `built`. |
+| Live URL | https://oflorezawaken-dev.github.io/huawei-app-factory/privacy/ (HTTP 200, no auth) |
+| AppGallery Connect | `privacyPolicy` field set via run 34054605709 (`agc_update_app_info.py`) |
+
+The Claude Artifact version (`docs/privacy/artifact.html`, published at
+https://claude.ai/code/artifact/d0654ce5-4a54-4e8e-a208-95e0eec411b6) is no longer the
+canonical URL; the GitHub Pages page above is what's registered with Huawei. Both can
+stay published, but if the policy text changes, update `docs/privacy/index.html`
+(the one Pages actually serves) — `artifact.html` is a styled duplicate, not the source
+of truth.
