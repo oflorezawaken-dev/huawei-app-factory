@@ -97,3 +97,16 @@ canonical URL; the GitHub Pages page above is what's registered with Huawei. Bot
 stay published, but if the policy text changes, update `docs/privacy/index.html`
 (the one Pages actually serves) — `artifact.html` is a styled duplicate, not the source
 of truth.
+
+## Factory templatized (2026-09-06)
+
+| Item | Result |
+|---|---|
+| Registry | `factory/apps.json` (receipt-lens: App ID 118896647, status in_review, 4 known_gaps) |
+| Quality gate | `factory/tools/check_app.py` — receipt-lens: 7 PASS, 3 EXCUSED (petal_ads, internet_perm, no_stubs), 0 FAIL; `--strict` fails as intended |
+| Generic build | `factory-build.yml` run 34056069465: plan, verify, release all green; artifacts `receipt-lens-release-apk`, `receipt-lens-release-aab`, `receipt-lens-debug-apk` |
+| Generic store | `factory-store.yml` dry-run 34056102861: listing (9 langs), icon, screenshots, app-info all resolved from the registry |
+| Removed | the five `receipt-lens-*.yml` workflows (commit 4e1d916) |
+| Brain | `factory/prompts/*.md` + `factory/factory.py` (`research`, `spec`, `generate`, `fix`, `listing`, `privacy`, `build`, `store`, `publish`) |
+
+Next: ReceiptLens 1.1 with the real Petal Ads SDK (closes the three excused gaps), then app #2.
