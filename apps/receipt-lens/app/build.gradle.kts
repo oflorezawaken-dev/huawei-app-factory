@@ -4,6 +4,17 @@ plugins {
   alias(libs.plugins.google.devtools.ksp)
 }
 
+val releaseKeystorePath = System.getenv("RELEASE_KEYSTORE_PATH")
+val releaseKeystorePassword = System.getenv("RELEASE_KEYSTORE_PASSWORD")
+val releaseKeyAlias = System.getenv("RELEASE_KEY_ALIAS")
+val releaseKeyPassword = System.getenv("RELEASE_KEY_PASSWORD")
+val hasReleaseSigning = listOf(
+  releaseKeystorePath,
+  releaseKeystorePassword,
+  releaseKeyAlias,
+  releaseKeyPassword
+).all { !it.isNullOrBlank() }
+
 android {
   namespace = "com.huaweiappfactory.receiptlens"
   compileSdk { version = release(36) { minorApiLevel = 1 } }
@@ -18,11 +29,25 @@ android {
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
   }
 
+  signingConfigs {
+    if (hasReleaseSigning) {
+      create("release") {
+        storeFile = file(requireNotNull(releaseKeystorePath))
+        storePassword = requireNotNull(releaseKeystorePassword)
+        keyAlias = requireNotNull(releaseKeyAlias)
+        keyPassword = requireNotNull(releaseKeyPassword)
+      }
+    }
+  }
+
   buildTypes {
     release {
       isCrunchPngs = false
       isMinifyEnabled = false
       proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+      if (hasReleaseSigning) {
+        signingConfig = signingConfigs.getByName("release")
+      }
     }
   }
   compileOptions {
