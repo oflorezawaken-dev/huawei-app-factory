@@ -1,0 +1,104 @@
+name: ReceiptLens Upload Store Assets
+
+# Uploads the app icon and/or screenshots to AppGallery Connect via the
+# Publishing API. Manual trigger only, runs in the `appgallery` environment
+# so it has access to the real AGC credentials.
+
+on:
+  workflow_dispatch:
+    inputs:
+      asset:
+        description: 'What to upload'
+        required: true
+        default: 'both'
+        type: choice
+        options: [both, icon, screenshots]
+      lang:
+        description: 'Language for screenshots (matches a folder under store/screenshots/)'
+        required: true
+        default: 'en'
+      dry_run:
+        description: 'Print what would be sent without calling AppGallery Connect'
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+jobs:
+  upload-assets:
+    runs-on: ubuntu-latest
+    environment: appgallery
+    env:
+      APP_ID: ${{ vars.RECEIPT_LENS_AGC_APP_ID }}
+      STORE_DIR: apps/receipt-lens/store
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Upload icon
+        if: inputs.asset == 'both' || inputs.asset == 'icon'
+        env:
+          AGC_CLIENT_ID: ${{ secrets.AGC_CLIENT_ID }}
+          AGC_CLIENT_SECRET: ${{ secrets.AGC_CLIENT_SECRET }}
+          DRY_RUN: ${{ inputs.dry_run }}
+        run: |
+          set -euo pipefail
+          if [[ -z "$APP_ID" ]]; then
+            echo "::error::Repository variable RECEIPT_LENS_AGC_APP_ID is not set."
+            exit 1
+          fi
+          args=(--app-id "$APP_ID" --file-type icon --file "$STORE_DIR/icon/icon-512.png")
+          [[ "$DRY_RUN" == "true" ]] && args+=(--dry-run)
+          python3 factory/tools/agc_upload_assets.py "${args[@]}"
+
+      - name: Upload screenshots
+        if: inputs.asset == 'both' || inputs.asset == 'screenshots'
+        env:
+          AGC_CLIENT_ID: ${{ secrets.AGC_CLIENT_ID }}
+          AGC_CLIENT_SECRET: ${{ secrets.AGC_CLIENT_SECRET }}
+          DRY_RUN: ${{ inputs.dry_run }}
+          SCREEN_LANG: ${{ inputs.lang }}
+        run: |
+          set -euo pipefail
+          if [[ -z "$APP_ID" ]]; then
+            echo "::error::Repository variable RECEIPT_LENS_AGC_APP_ID is not set."
+            exit 1
+          fi
+          dir="$STORE_DIR/screenshots/$SCREEN_LANG"
+          if [[ ! -d "$dir" ]]; then
+            echo "::error::No screenshots directory at $dir"
+            exit 1
+          fi
+          # AppGallery Connect language code differs from our folder name for English.
+          case "$SCREEN_LANG" in
+            en) agc_lang="en-US" ;;
+            es) agc_lang="es-ES" ;;
+            pt) agc_lang="pt-PT" ;;
+            fr) agc_lang="fr-FR" ;;
+            de) agc_lang="de-DE" ;;
+            it) agc_lang="it-IT" ;;
+            tr) agc_lang="tr-TR" ;;
+            ar) agc_lang="ar" ;;
+            zh) agc_lang="zh-CN" ;;
+            *) agc_lang="$SCREEN_LANG" ;;
+          esac
+          args=(--app-id "$APP_ID" --file-type screenshot --lang "$agc_lang")
+          for f in "$dir"/*.png; do
+            args+=(--file "$f")
+          done
+          [[ "$DRY_RUN" == "true" ]] && args+=(--dry-run)
+          python3 factory/tools/agc_upload_assets.py "${args[@]}"
+
+      - name: Summary
+        if: always()
+        run: |
+          {
+            echo "## AppGallery asset upload"
+            echo ""
+            echo "- Asset: ${{ inputs.asset }}"
+            echo "- Language: ${{ inputs.lang }}"
+            echo "- Dry run: ${{ inputs.dry_run }}"
+          } >> "$GITHUB_STEP_SUMMARY"
