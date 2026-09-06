@@ -96,6 +96,13 @@ Huawei's documentation site renders client-side; the flow above was cross-checke
 two maintained open-source clients (fastlane `huawei_appgallery_connect`, Python `appgallery`).
 Re-verify against the official reference before relying on new fields.
 
+## Errors seen and their fix
+
+| API error | Cause | Fix |
+|---|---|---|
+| `No AppGallery app found for package ...` | New app: AGC assigns the package name from the first uploaded package. | Use the App ID (`RECEIPT_LENS_AGC_APP_ID`). |
+| `204144694 [cfs] get siteId failed ... distContryList is empty` | The app has no distribution countries/regions yet, so Huawei cannot pick a storage site for the upload. | In the console: the app → Distribute → Version information → **Countries/Regions** → select and save. Can later be automated with `PUT /publish/v2/app-info` field `publishCountry`. |
+
 ## Next automation candidates
 
 - `PUT /publish/v2/app-language-info` to push the 9 localized store descriptions from `specifications/`.
