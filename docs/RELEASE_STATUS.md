@@ -24,3 +24,16 @@ Secrets used by the `release` job (names only): `RELEASE_KEYSTORE_BASE64`, `RELE
 - `isMinifyEnabled = false` in release.
 - Huawei ML Kit OCR and Petal Ads SDKs are **not** integrated; the code degrades to manual entry / no ads.
 - Unused network dependencies (Retrofit, OkHttp, Moshi) remain in `app/build.gradle.kts`.
+
+## First upload to AppGallery Connect (2026-09-06)
+
+| Item | Value |
+|---|---|
+| Workflow run | https://github.com/oflorezawaken-dev/huawei-app-factory/actions/runs/34051561303 |
+| Mode | upload only (`submit_for_review=false`) |
+| Source release run | 34048749169 (`app-release.apk`, sha256 `742b20bb…39ac8e`) |
+| AGC App ID | `118896647` (repository variable `RECEIPT_LENS_AGC_APP_ID`) |
+| Result | Package uploaded to OBS and registered via `app-file-info` (1 pkgVersion) |
+
+Prerequisites that had to be completed in the console first: create the app, set distribution countries.
+Not yet done: privacy policy URL, content rating, icon/screenshots, review submission.
