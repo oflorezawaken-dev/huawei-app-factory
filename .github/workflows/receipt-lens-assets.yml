@@ -38,41 +38,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Upload icon
-        if: inputs.asset == 'both' || inputs.asset == 'icon'
+      - name: Resolve AppGallery Connect language code
+        id: lang
         env:
-          AGC_CLIENT_ID: ${{ secrets.AGC_CLIENT_ID }}
-          AGC_CLIENT_SECRET: ${{ secrets.AGC_CLIENT_SECRET }}
-          DRY_RUN: ${{ inputs.dry_run }}
-        run: |
-          set -euo pipefail
-          if [[ -z "$APP_ID" ]]; then
-            echo "::error::Repository variable RECEIPT_LENS_AGC_APP_ID is not set."
-            exit 1
-          fi
-          args=(--app-id "$APP_ID" --file-type icon --file "$STORE_DIR/icon/icon-512.png")
-          [[ "$DRY_RUN" == "true" ]] && args+=(--dry-run)
-          python3 factory/tools/agc_upload_assets.py "${args[@]}"
-
-      - name: Upload screenshots
-        if: inputs.asset == 'both' || inputs.asset == 'screenshots'
-        env:
-          AGC_CLIENT_ID: ${{ secrets.AGC_CLIENT_ID }}
-          AGC_CLIENT_SECRET: ${{ secrets.AGC_CLIENT_SECRET }}
-          DRY_RUN: ${{ inputs.dry_run }}
           SCREEN_LANG: ${{ inputs.lang }}
         run: |
           set -euo pipefail
-          if [[ -z "$APP_ID" ]]; then
-            echo "::error::Repository variable RECEIPT_LENS_AGC_APP_ID is not set."
-            exit 1
-          fi
-          dir="$STORE_DIR/screenshots/$SCREEN_LANG"
-          if [[ ! -d "$dir" ]]; then
-            echo "::error::No screenshots directory at $dir"
-            exit 1
-          fi
-          # AppGallery Connect language code differs from our folder name for English.
+          # AppGallery Connect's accepted language codes differ from our folder names.
           case "$SCREEN_LANG" in
             en) agc_lang="en-US" ;;
             es) agc_lang="es-ES" ;;
@@ -85,7 +57,46 @@ jobs:
             zh) agc_lang="zh-CN" ;;
             *) agc_lang="$SCREEN_LANG" ;;
           esac
-          args=(--app-id "$APP_ID" --file-type screenshot --lang "$agc_lang")
+          echo "agc_lang=$agc_lang" >> "$GITHUB_OUTPUT"
+
+      - name: Upload icon
+        if: inputs.asset == 'both' || inputs.asset == 'icon'
+        env:
+          AGC_CLIENT_ID: ${{ secrets.AGC_CLIENT_ID }}
+          AGC_CLIENT_SECRET: ${{ secrets.AGC_CLIENT_SECRET }}
+          DRY_RUN: ${{ inputs.dry_run }}
+          AGC_LANG: ${{ steps.lang.outputs.agc_lang }}
+        run: |
+          set -euo pipefail
+          if [[ -z "$APP_ID" ]]; then
+            echo "::error::Repository variable RECEIPT_LENS_AGC_APP_ID is not set."
+            exit 1
+          fi
+          # AppGallery Connect's app-file-info rejects icon uploads without a lang too.
+          args=(--app-id "$APP_ID" --file-type icon --lang "$AGC_LANG" --file "$STORE_DIR/icon/icon-512.png")
+          [[ "$DRY_RUN" == "true" ]] && args+=(--dry-run)
+          python3 factory/tools/agc_upload_assets.py "${args[@]}"
+
+      - name: Upload screenshots
+        if: inputs.asset == 'both' || inputs.asset == 'screenshots'
+        env:
+          AGC_CLIENT_ID: ${{ secrets.AGC_CLIENT_ID }}
+          AGC_CLIENT_SECRET: ${{ secrets.AGC_CLIENT_SECRET }}
+          DRY_RUN: ${{ inputs.dry_run }}
+          SCREEN_LANG: ${{ inputs.lang }}
+          AGC_LANG: ${{ steps.lang.outputs.agc_lang }}
+        run: |
+          set -euo pipefail
+          if [[ -z "$APP_ID" ]]; then
+            echo "::error::Repository variable RECEIPT_LENS_AGC_APP_ID is not set."
+            exit 1
+          fi
+          dir="$STORE_DIR/screenshots/$SCREEN_LANG"
+          if [[ ! -d "$dir" ]]; then
+            echo "::error::No screenshots directory at $dir"
+            exit 1
+          fi
+          args=(--app-id "$APP_ID" --file-type screenshot --lang "$AGC_LANG")
           for f in "$dir"/*.png; do
             args+=(--file "$f")
           done
