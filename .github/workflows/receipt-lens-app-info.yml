@@ -1,0 +1,50 @@
+name: ReceiptLens Update App Info
+
+# Updates top-level AppGallery Connect app-info fields (privacy policy URL,
+# pricing, etc). Manual trigger only, runs in the `appgallery` environment.
+
+on:
+  workflow_dispatch:
+    inputs:
+      fields:
+        description: 'Comma-separated KEY=VALUE pairs, e.g. privacyPolicy=https://example.com/privacy'
+        required: true
+      dry_run:
+        description: 'Print what would be sent without calling AppGallery Connect'
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+jobs:
+  update-app-info:
+    runs-on: ubuntu-latest
+    environment: appgallery
+    env:
+      APP_ID: ${{ vars.RECEIPT_LENS_AGC_APP_ID }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Update app info
+        env:
+          AGC_CLIENT_ID: ${{ secrets.AGC_CLIENT_ID }}
+          AGC_CLIENT_SECRET: ${{ secrets.AGC_CLIENT_SECRET }}
+          FIELDS: ${{ inputs.fields }}
+          DRY_RUN: ${{ inputs.dry_run }}
+        run: |
+          set -euo pipefail
+          if [[ -z "$APP_ID" ]]; then
+            echo "::error::Repository variable RECEIPT_LENS_AGC_APP_ID is not set."
+            exit 1
+          fi
+          args=(--app-id "$APP_ID")
+          IFS=',' read -ra PAIRS <<< "$FIELDS"
+          for pair in "${PAIRS[@]}"; do
+            args+=(--set "$pair")
+          done
+          [[ "$DRY_RUN" == "true" ]] && args+=(--dry-run)
+          python3 factory/tools/agc_update_app_info.py "${args[@]}"
