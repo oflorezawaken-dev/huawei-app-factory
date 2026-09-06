@@ -51,6 +51,9 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.huaweiappfactory.receiptlens.R
+import com.huaweiappfactory.receiptlens.ads.AdPlacement
+import com.huaweiappfactory.receiptlens.ads.PetalBanner
+import androidx.compose.foundation.layout.fillMaxWidth
 import com.huaweiappfactory.receiptlens.domain.model.ReceiptCategory
 import com.huaweiappfactory.receiptlens.ui.components.EmptyStateView
 import com.huaweiappfactory.receiptlens.ui.components.ReceiptCard
@@ -255,13 +258,14 @@ fun HistoryScreen(
                                 Text(stringResource(R.string.home_scan_receipt))
                             }
                         },
-                        modifier = Modifier.fillMaxSize()
+                        modifier = Modifier.fillMaxWidth().weight(1f)
                     )
                 }
             } else {
                 LazyColumn(
                     modifier = Modifier
-                        .fillMaxSize()
+                        .fillMaxWidth()
+                        .weight(1f)
                         .testTag("history_receipts_list"),
                     contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
@@ -274,6 +278,7 @@ fun HistoryScreen(
                     }
                 }
             }
+            PetalBanner(placement = AdPlacement.HISTORY_BOTTOM_BANNER)
         }
     }
 }

@@ -130,15 +130,15 @@
     <string name="settings_theme_light">Light Theme</string>
     <string name="settings_theme_dark">Dark Theme</string>
     <string name="settings_privacy_title">Privacy &amp; Security</string>
-    <string name="settings_privacy_desc">ReceiptLens is 100% offline and privacy-first. All receipt images, OCR extraction, and expense records are stored strictly in application-private storage on your device. No cloud storage, no account registration, and no tracking.</string>
+    <string name="settings_privacy_desc">Your receipt images, extracted text, and expense records stay in application-private storage on your device. No cloud storage, no account, no tracking by us. Ads use the network; nothing about your receipts is ever uploaded.</string>
     <string name="settings_export_all">Export All Receipts (CSV)</string>
     <string name="settings_export_desc">Export complete receipt records in CSV format for spreadsheets or backup.</string>
     <string name="settings_export_success">CSV file prepared successfully</string>
     <string name="settings_about_title">About ReceiptLens</string>
-    <string name="settings_about_version">Version 1.0.0 (Huawei AppGallery Edition)</string>
+    <string name="settings_about_version">Version 1.1.0 (Huawei AppGallery Edition)</string>
     <string name="settings_about_desc">Native privacy-first receipt organizer designed for Huawei devices and AppGallery.</string>
     <string name="settings_petal_ads_title">Huawei Petal Ads</string>
-    <string name="settings_petal_ads_desc">Architecture configured. Monitored cleanly behind non-intrusive service abstractions with zero impact on core offline receipt operations.</string>
+    <string name="settings_petal_ads_desc">ReceiptLens is free and supported by Huawei Petal Ads. Ads appear only on the History, Statistics, and Settings screens, never while you capture, review, or enter a receipt.</string>
 
     <!-- Common & Errors -->
     <string name="ok">OK</string>

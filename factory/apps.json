@@ -3,17 +3,38 @@
   "defaults": {
     "java_version": "17",
     "gradle_version": "9.3.1",
-    "languages": ["en-US", "es-ES", "pt-PT", "fr-FR", "de-DE", "it-IT", "tr-TR", "ar", "zh-CN"],
+    "languages": [
+      "en-US",
+      "es-ES",
+      "pt-PT",
+      "fr-FR",
+      "de-DE",
+      "it-IT",
+      "tr-TR",
+      "ar",
+      "zh-CN"
+    ],
     "screenshot_dir_to_agc_lang": {
-      "en": "en-US", "es": "es-ES", "pt": "pt-PT", "fr": "fr-FR", "de": "de-DE",
-      "it": "it-IT", "tr": "tr-TR", "ar": "ar", "zh": "zh-CN"
+      "en": "en-US",
+      "es": "es-ES",
+      "pt": "pt-PT",
+      "fr": "fr-FR",
+      "de": "de-DE",
+      "it": "it-IT",
+      "tr": "tr-TR",
+      "ar": "ar",
+      "zh": "zh-CN"
     },
     "privacy_base_url": "https://oflorezawaken-dev.github.io/huawei-app-factory",
     "rules": {
       "petal_ads_required": true,
       "offline_first_core": true,
       "no_reflection_sdk_stubs": true,
-      "forbidden_dependencies": ["com.google.firebase", "com.google.android.gms", "com.google.ai"]
+      "forbidden_dependencies": [
+        "com.google.firebase",
+        "com.google.android.gms",
+        "com.google.ai"
+      ]
     }
   },
   "apps": [
@@ -27,12 +48,22 @@
       "store_dir": "apps/receipt-lens/store",
       "privacy_path": "docs/privacy",
       "status": "in_review",
-      "current_version": { "versionCode": 1, "versionName": "1.0.0", "submitted": "2026-09-06" },
+      "current_version": {
+        "versionCode": 2,
+        "versionName": "1.1.0",
+        "status": "in_progress",
+        "note": "1.0.0 (versionCode 1) submitted for review 2026-09-06"
+      },
       "known_gaps": {
-        "petal_ads": "1.0.0 ships a disabled reflection stub, no real SDK. Must be fixed in 1.1 before the factory rule is satisfied.",
         "ml_kit_ocr": "No Huawei ML Kit dependency; OCR always falls back to manual entry and the notice text is developer-facing.",
         "history_filter": "Receipt History shows a false empty state until 'All Categories' is tapped.",
-        "backup_rules": "allowBackup=true with template backup rules; receipt data can be swept into OS backups."
+        "backup_rules": "allowBackup=true with template backup rules; receipt data can be swept into OS backups.",
+        "ad_unit_ids": "Real Petal Ads unit IDs not yet pasted into factory/apps.json (ads section); builds use Huawei test units until then."
+      },
+      "ads": {
+        "banner_ad_id": "",
+        "interstitial_ad_id": "",
+        "_note": "Paste the Petal Ads unit IDs from the Petal Ads console. Empty = builds fall back to Huawei TEST ad units; factory-publish refuses to upload while empty."
       }
     }
   ]

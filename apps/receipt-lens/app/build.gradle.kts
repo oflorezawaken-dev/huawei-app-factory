@@ -15,6 +15,22 @@ val hasReleaseSigning = listOf(
   releaseKeyPassword
 ).all { !it.isNullOrBlank() }
 
+// Huawei Petal Ads unit IDs come from the environment (CI exports them from
+// factory/apps.json) or gradle.properties; never hard-coded. When absent we fall
+// back to Huawei's documented TEST ad units so debug builds show test ads.
+fun adId(envName: String, testId: String): Pair<String, Boolean> {
+  val fromEnv = System.getenv(envName)
+  val fromProps = project.findProperty(envName) as String?
+  val real = listOf(fromEnv, fromProps).firstOrNull { !it.isNullOrBlank() }
+  return if (real != null) real to false else testId to true
+}
+val (petalBannerId, bannerIsTest) = adId("PETAL_BANNER_AD_ID", "testw6vs28auh3")
+val (petalInterstitialId, interstitialIsTest) = adId("PETAL_INTERSTITIAL_AD_ID", "teste9ih9j0rc3")
+val petalUsingTestIds = bannerIsTest || interstitialIsTest
+if (petalUsingTestIds && hasReleaseSigning) {
+  logger.warn("WARNING: signed release is being built with Huawei TEST ad unit IDs. Set PETAL_BANNER_AD_ID / PETAL_INTERSTITIAL_AD_ID before publishing.")
+}
+
 android {
   namespace = "com.huaweiappfactory.receiptlens"
   compileSdk { version = release(36) { minorApiLevel = 1 } }
@@ -23,8 +39,12 @@ android {
     applicationId = "com.huaweiappfactory.receiptlens"
     minSdk = 26
     targetSdk = 36
-    versionCode = 1
-    versionName = "1.0.0"
+    versionCode = 2
+    versionName = "1.1.0"
+
+    buildConfigField("String", "PETAL_BANNER_AD_ID", "\"$petalBannerId\"")
+    buildConfigField("String", "PETAL_INTERSTITIAL_AD_ID", "\"$petalInterstitialId\"")
+    buildConfigField("boolean", "PETAL_ADS_USING_TEST_IDS", "$petalUsingTestIds")
 
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
   }
@@ -85,6 +105,7 @@ dependencies {
   implementation(libs.androidx.navigation.compose)
   implementation(libs.androidx.room.ktx)
   implementation(libs.androidx.room.runtime)
+  implementation(libs.huawei.ads.lite)
   implementation(libs.coil.compose)
   implementation(libs.converter.moshi)
   implementation(libs.kotlinx.coroutines.android)

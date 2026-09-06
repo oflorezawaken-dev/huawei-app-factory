@@ -51,6 +51,13 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.huaweiappfactory.receiptlens.R
+import com.huaweiappfactory.receiptlens.ads.AdPlacement
+import com.huaweiappfactory.receiptlens.ads.InterstitialTrigger
+import com.huaweiappfactory.receiptlens.ads.LocalAdManager
+import com.huaweiappfactory.receiptlens.ads.PetalBanner
+import com.huaweiappfactory.receiptlens.ads.findActivity
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.platform.LocalContext
 import com.huaweiappfactory.receiptlens.data.model.CategorySpending
 import com.huaweiappfactory.receiptlens.data.model.MonthlySpending
 import com.huaweiappfactory.receiptlens.ui.components.EmptyStateView
@@ -65,6 +72,15 @@ fun StatisticsScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val spending = uiState.currentCurrencySpending
+
+    // Natural pause: the user is browsing summaries, not entering data.
+    val adManager = LocalAdManager.current
+    val activity = LocalContext.current.findActivity()
+    LaunchedEffect(Unit) {
+        if (adManager != null && activity != null) {
+            adManager.maybeShowInterstitial(activity, InterstitialTrigger.OPEN_STATISTICS)
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -299,6 +315,10 @@ fun StatisticsScreen(
                             currency = spending.currency
                         )
                     }
+                }
+
+                item {
+                    PetalBanner(placement = AdPlacement.STATISTICS_BANNER)
                 }
 
                 item {

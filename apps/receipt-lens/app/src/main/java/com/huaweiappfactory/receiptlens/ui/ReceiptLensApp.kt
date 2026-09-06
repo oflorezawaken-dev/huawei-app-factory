@@ -13,6 +13,7 @@ import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
@@ -30,6 +31,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.huaweiappfactory.receiptlens.ReceiptLensApplication
+import com.huaweiappfactory.receiptlens.ads.LocalAdManager
 import com.huaweiappfactory.receiptlens.ui.navigation.BOTTOM_NAV_ITEMS
 import com.huaweiappfactory.receiptlens.ui.navigation.Screen
 import com.huaweiappfactory.receiptlens.ui.screens.DetailScreen
@@ -56,6 +58,7 @@ fun ReceiptLensApp() {
     val themeMode by userPreferencesRepository.themeMode.collectAsState(initial = "SYSTEM")
 
     ReceiptLensTheme(themePreference = themeMode) {
+      CompositionLocalProvider(LocalAdManager provides container.adManager) {
         val navController = rememberNavController()
         val navBackStackEntry by navController.currentBackStackEntryAsState()
         val currentRoute = navBackStackEntry?.destination?.route
@@ -299,5 +302,6 @@ fun ReceiptLensApp() {
                 }
             }
         }
+      }
     }
 }

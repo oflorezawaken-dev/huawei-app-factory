@@ -14,6 +14,7 @@ Rules (from factory/apps.json defaults.rules plus store-readiness basics):
   forbidden_deps   no Firebase / GMS / Google AI dependencies
   identity         applicationId in Gradle matches the registry package
   internet_perm    INTERNET permission declared when ads are required
+  ad_unit_ids      real Petal Ads unit IDs present in the registry (else builds use test units)
   store_icon       store/icon/icon-512.png exists and is 512x512
   store_shots      at least 3 PNG screenshots for the default language
   store_listing    listing.json covers every registry language
@@ -107,6 +108,10 @@ def main(argv: list[str]) -> int:
                f"Huawei Maven repo: {has_repo}, Petal Ads dependency: {has_dep}", gap_key="petal_ads")
         report("internet_perm", "android.permission.INTERNET" in manifest,
                "INTERNET permission declared (required by the ads SDK)", gap_key="petal_ads")
+
+        ads_cfg = app.get("ads") or {}
+        have_ids = bool(ads_cfg.get("banner_ad_id")) and bool(ads_cfg.get("interstitial_ad_id"))
+        report("ad_unit_ids", have_ids, "real Petal Ads unit IDs present in factory/apps.json", gap_key="ad_unit_ids")
 
     # no_stubs
     if rules.get("no_reflection_sdk_stubs"):

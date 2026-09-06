@@ -54,6 +54,13 @@ jobs:
             exit 1
           fi
 
+      - name: Refuse to publish a build with test ad units
+        run: |
+          if [[ -z "$PETAL_BANNER_AD_ID" || -z "$PETAL_INTERSTITIAL_AD_ID" ]]; then
+            echo "::error::factory/apps.json has no Petal Ads unit IDs for $APP_SLUG; the signed build would carry Huawei TEST ad units. Paste the IDs from the Petal Ads console first."
+            exit 1
+          fi
+
       - name: Resolve release run
         id: run
         env:

@@ -2,89 +2,141 @@ package com.huaweiappfactory.receiptlens.ads
 
 import android.app.Activity
 import android.content.Context
-import android.view.View
-import android.view.ViewGroup
+import android.os.SystemClock
+import android.util.Log
+import com.huawei.hms.ads.AdListener
+import com.huawei.hms.ads.AdParam
+import com.huawei.hms.ads.HwAds
+import com.huawei.hms.ads.InterstitialAd
+import com.huaweiappfactory.receiptlens.BuildConfig
+
+/**
+ * Where a banner may appear. Never on Scan, Review or Detail: those are the
+ * capture / OCR / data-entry surfaces the spec protects from ads.
+ */
+enum class AdPlacement { HISTORY_BOTTOM_BANNER, STATISTICS_BANNER, SETTINGS_FOOTER }
+
+/** Natural pauses where an interstitial may be considered. */
+enum class InterstitialTrigger { OPEN_STATISTICS, OPEN_HISTORY }
 
 interface AdManager {
+    /** Initialises the ads SDK. Safe to call more than once. */
     fun initialize(context: Context)
+
+    /** True once the SDK is initialised. Banners/interstitials are no-ops otherwise. */
     fun isAvailable(): Boolean
-    fun createBannerView(context: Context, placement: AdPlacement): View?
-    fun showInterstitial(activity: Activity, onDismissed: () -> Unit)
-    fun showRewarded(activity: Activity, onRewarded: () -> Unit, onDismissed: () -> Unit)
+
+    /** Ad unit ID for banners (real in signed releases, Huawei test ID otherwise). */
+    val bannerAdId: String
+
+    /** Loads an interstitial in the background so it is ready for a later trigger. */
+    fun preloadInterstitial(context: Context)
+
+    /**
+     * Shows an interstitial if one is loaded AND the frequency policy allows it.
+     * Returns true when an ad was shown. Never blocks the caller.
+     */
+    fun maybeShowInterstitial(activity: Activity, trigger: InterstitialTrigger): Boolean
 }
 
 /**
- * Cleanly isolated Petal Ads Manager.
- * Complies with strict guidelines:
- * - Ads are never shown during camera scanning
- * - Ads are never shown during OCR extraction
- * - Ads are never shown during active receipt editing to prevent data loss
- * - Completely isolated: If Petal Ads SDK is not configured, the app works 100% offline without errors.
+ * Real Huawei Petal Ads integration (SDK: com.huawei.hms:ads-lite).
+ *
+ * Frequency policy, deliberately conservative:
+ *  - no interstitial during the first [WARMUP_MS] after app start
+ *  - at least [MIN_INTERVAL_MS] between interstitials
+ *  - at most one interstitial per [TRIGGERS_PER_AD] triggers
+ * Every failure is swallowed and logged: ads must never break receipt work.
  */
-class PetalAdsManager(
-    private val context: Context
-) : AdManager {
+class PetalAdsManager(context: Context) : AdManager {
 
-    private var initialized = false
+    private val appContext = context.applicationContext
+    private val startedAt = SystemClock.elapsedRealtime()
+
+    @Volatile private var initialized = false
+    @Volatile private var interstitial: InterstitialAd? = null
+    @Volatile private var interstitialLoaded = false
+    @Volatile private var lastInterstitialAt = 0L
+    private var triggerCount = 0
+
+    override val bannerAdId: String = BuildConfig.PETAL_BANNER_AD_ID
 
     override fun initialize(context: Context) {
-        if (!PetalAdConfig.IS_PETAL_ADS_ENABLED) return
-
+        if (initialized) return
         try {
-            // Dynamic check for Huawei HwAds SDK class
-            val hwAdsClass = Class.forName("com.huawei.hms.ads.HwAds")
-            val initMethod = hwAdsClass.getMethod("init", Context::class.java)
-            initMethod.invoke(null, context.applicationContext)
+            HwAds.init(context.applicationContext)
             initialized = true
-        } catch (_: Exception) {
+            Log.i(TAG, "Petal Ads initialised (test ids: ${BuildConfig.PETAL_ADS_USING_TEST_IDS})")
+            preloadInterstitial(context)
+        } catch (t: Throwable) {
+            Log.w(TAG, "Petal Ads init failed; ads disabled for this session", t)
             initialized = false
         }
     }
 
-    override fun isAvailable(): Boolean {
-        return initialized && PetalAdConfig.IS_PETAL_ADS_ENABLED
-    }
+    override fun isAvailable(): Boolean = initialized
 
-    override fun createBannerView(context: Context, placement: AdPlacement): View? {
-        if (!isAvailable()) return null
-
+    override fun preloadInterstitial(context: Context) {
+        if (!initialized || interstitialLoaded || interstitial != null) return
         try {
-            // Reflection instantiate Huawei BannerView
-            val bannerViewClass = Class.forName("com.huawei.hms.ads.banner.BannerView")
-            val constructor = bannerViewClass.getConstructor(Context::class.java)
-            val bannerView = constructor.newInstance(context) as View
-
-            val setAdIdMethod = bannerViewClass.getMethod("setAdId", String::class.java)
-            setAdIdMethod.invoke(bannerView, PetalAdConfig.TEST_BANNER_AD_ID)
-
-            val adParamClass = Class.forName("com.huawei.hms.ads.AdParam\$Builder")
-            val builder = adParamClass.getConstructor().newInstance()
-            val buildMethod = adParamClass.getMethod("build")
-            val adParam = buildMethod.invoke(builder)
-
-            val loadAdMethod = bannerViewClass.getMethod("loadAd", Class.forName("com.huawei.hms.ads.AdParam"))
-            loadAdMethod.invoke(bannerView, adParam)
-
-            return bannerView
-        } catch (_: Exception) {
-            return null
+            val ad = InterstitialAd(context.applicationContext).apply {
+                adId = BuildConfig.PETAL_INTERSTITIAL_AD_ID
+                adListener = object : AdListener() {
+                    override fun onAdLoaded() { interstitialLoaded = true }
+                    override fun onAdFailed(errorCode: Int) {
+                        Log.d(TAG, "Interstitial failed to load: $errorCode")
+                        interstitialLoaded = false
+                        interstitial = null
+                    }
+                    override fun onAdClosed() {
+                        interstitialLoaded = false
+                        interstitial = null
+                        // Get the next one ready for a later natural pause.
+                        preloadInterstitial(appContext)
+                    }
+                }
+            }
+            interstitial = ad
+            ad.loadAd(AdParam.Builder().build())
+        } catch (t: Throwable) {
+            Log.w(TAG, "Interstitial preload failed", t)
+            interstitial = null
+            interstitialLoaded = false
         }
     }
 
-    override fun showInterstitial(activity: Activity, onDismissed: () -> Unit) {
-        // Protected execution: do not display if not configured
-        if (!isAvailable()) {
-            onDismissed()
-            return
+    override fun maybeShowInterstitial(activity: Activity, trigger: InterstitialTrigger): Boolean {
+        if (!initialized) return false
+        val now = SystemClock.elapsedRealtime()
+        triggerCount++
+        val warm = now - startedAt >= WARMUP_MS
+        val spaced = now - lastInterstitialAt >= MIN_INTERVAL_MS
+        val due = triggerCount % TRIGGERS_PER_AD == 0
+        if (!(warm && spaced && due)) {
+            if (interstitial == null) preloadInterstitial(activity)
+            return false
         }
-        onDismissed()
+        val ad = interstitial
+        if (ad == null || !interstitialLoaded) {
+            preloadInterstitial(activity)
+            return false
+        }
+        return try {
+            ad.show(activity)
+            lastInterstitialAt = now
+            true
+        } catch (t: Throwable) {
+            Log.w(TAG, "Interstitial show failed", t)
+            interstitial = null
+            interstitialLoaded = false
+            false
+        }
     }
 
-    override fun showRewarded(activity: Activity, onRewarded: () -> Unit, onDismissed: () -> Unit) {
-        if (!isAvailable()) {
-            onDismissed()
-            return
-        }
-        onDismissed()
+    private companion object {
+        const val TAG = "PetalAds"
+        const val WARMUP_MS = 60_000L
+        const val MIN_INTERVAL_MS = 3 * 60_000L
+        const val TRIGGERS_PER_AD = 4
     }
 }

@@ -110,3 +110,19 @@ of truth.
 | Brain | `factory/prompts/*.md` + `factory/factory.py` (`research`, `spec`, `generate`, `fix`, `listing`, `privacy`, `build`, `store`, `publish`) |
 
 Next: ReceiptLens 1.1 with the real Petal Ads SDK (closes the three excused gaps), then app #2.
+
+## ReceiptLens 1.1.0 (versionCode 2) — real Petal Ads (2026-09-06)
+
+| Item | Result |
+|---|---|
+| SDK | `com.huawei.hms:ads-lite:13.4.90.302` from `https://developer.huawei.com/repo/` (added to `settings.gradle.kts`) |
+| Code | `ads/PetalAdsManager.kt` rewritten on the real SDK (`HwAds.init`, `InterstitialAd` with 60 s warm-up, 3 min spacing, 1 per 4 triggers); `ads/PetalBanner.kt` Compose banner (`BannerView`, smart size, 60 s refresh) + `LocalAdManager` |
+| Placements | Banners: History bottom, Statistics end, Settings footer. Interstitial trigger: opening Statistics. Never on Scan / Review / Detail. |
+| Manifest | `INTERNET`, `ACCESS_NETWORK_STATE` |
+| Ad unit IDs | `BuildConfig.PETAL_BANNER_AD_ID` / `PETAL_INTERSTITIAL_AD_ID` from env `PETAL_*_AD_ID` (CI exports them from `factory/apps.json` → `ads`). Empty → Huawei TEST units `testw6vs28auh3` / `teste9ih9j0rc3` and `BuildConfig.PETAL_ADS_USING_TEST_IDS=true`. `factory-publish.yml` refuses to upload while the registry IDs are empty. |
+| Copy | Settings privacy + Petal Ads texts and version string updated in 9 locales (apostrophes escaped for AAPT); privacy policy page and `store/listing.json` now disclose ads; 1.1 release notes in 9 languages |
+| Local verification | `gradle :app:testDebugUnitTest :app:assembleDebug` green (5/5 tests), debug APK 24.3 MB (was 21.5 MB) with SDK classes present |
+| Gate | `check_app.py receipt-lens`: petal_ads PASS, internet_perm PASS; excused: `ad_unit_ids` (until IDs are pasted), `ml_kit_ocr` |
+| Removed | `ads/PetalAdConfig.kt` (reflection stub) |
+
+Pending for release: paste the real banner + interstitial ad unit IDs into `factory/apps.json` → `apps[receipt-lens].ads`, then Factory Build → Factory Publish (upload) → submit 1.1 once 1.0 review concludes.

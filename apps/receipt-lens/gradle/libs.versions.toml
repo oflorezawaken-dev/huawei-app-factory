@@ -32,6 +32,7 @@ okhttp = "4.10.0"
 moshiKotlin = "1.15.2"
 moshiKotlinCodegen = "1.15.2"
 datastorePreferences = "1.1.7"
+huaweiAdsLite = "13.4.90.302"
 
 
 [libraries]
@@ -74,6 +75,7 @@ okhttp = { group = "com.squareup.okhttp3", name = "okhttp", version.ref = "okhtt
 moshi-kotlin = { group = "com.squareup.moshi", name = "moshi-kotlin", version.ref = "moshiKotlin" }
 moshi-kotlin-codegen = { group = "com.squareup.moshi", name = "moshi-kotlin-codegen", version.ref = "moshiKotlinCodegen" }
 androidx-datastore-preferences = { group = "androidx.datastore", name = "datastore-preferences", version.ref = "datastorePreferences" }
+huawei-ads-lite = { group = "com.huawei.hms", name = "ads-lite", version.ref = "huaweiAdsLite" }
 
 
 [plugins]

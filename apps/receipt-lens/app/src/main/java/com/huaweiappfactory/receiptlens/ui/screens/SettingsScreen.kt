@@ -54,6 +54,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.huaweiappfactory.receiptlens.R
+import com.huaweiappfactory.receiptlens.ads.AdPlacement
+import com.huaweiappfactory.receiptlens.ads.PetalBanner
 import com.huaweiappfactory.receiptlens.domain.model.CurrencyInfo
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -392,6 +394,10 @@ fun SettingsScreen(
                         )
                     }
                 }
+            }
+
+            item {
+                PetalBanner(placement = AdPlacement.SETTINGS_FOOTER)
             }
 
             item {
