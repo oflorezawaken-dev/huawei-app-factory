@@ -7,7 +7,7 @@ import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.ui.graphics.vector.ImageVector
-import com.example.R
+import com.huaweiappfactory.receiptlens.R
 
 sealed class Screen(val route: String) {
     object Home : Screen("home")

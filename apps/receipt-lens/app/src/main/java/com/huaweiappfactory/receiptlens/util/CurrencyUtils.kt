@@ -101,7 +101,9 @@ object CurrencyUtils {
      * Detects currency code from raw OCR text using regex heuristics.
      */
     fun detectCurrency(text: String, defaultCurrency: String = "USD"): String {
-        val upper = text.uppercase()
+        // OCR receipts are multi-line; normalize line breaks so the existing
+        // whole-text regex heuristics can see currency codes on any line.
+        val upper = text.uppercase().replace('\n', ' ').replace('\r', ' ')
 
         return when {
             text.contains("€") || upper.matches(".*\\b(EUR|EURO|EUROS)\\b.*".toRegex()) -> "EUR"

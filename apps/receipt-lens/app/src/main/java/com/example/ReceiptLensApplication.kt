@@ -1,4 +1,4 @@
-package com.example
+package com.huaweiappfactory.receiptlens
 
 import android.app.Application
 import com.huaweiappfactory.receiptlens.di.AppContainer

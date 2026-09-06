@@ -29,7 +29,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import com.example.ReceiptLensApplication
+import com.huaweiappfactory.receiptlens.ReceiptLensApplication
 import com.huaweiappfactory.receiptlens.ui.navigation.BOTTOM_NAV_ITEMS
 import com.huaweiappfactory.receiptlens.ui.navigation.Screen
 import com.huaweiappfactory.receiptlens.ui.screens.DetailScreen

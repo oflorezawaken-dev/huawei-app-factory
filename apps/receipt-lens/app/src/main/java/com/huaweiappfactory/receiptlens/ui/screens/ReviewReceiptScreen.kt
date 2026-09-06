@@ -65,7 +65,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
-import com.example.R
+import com.huaweiappfactory.receiptlens.R
 import com.huaweiappfactory.receiptlens.domain.model.CurrencyInfo
 import com.huaweiappfactory.receiptlens.domain.model.ReceiptCategory
 import com.huaweiappfactory.receiptlens.ui.components.ReceiptDatePickerDialog

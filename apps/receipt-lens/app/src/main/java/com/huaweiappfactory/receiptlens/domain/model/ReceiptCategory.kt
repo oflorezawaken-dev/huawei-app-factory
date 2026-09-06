@@ -14,7 +14,7 @@ import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material.icons.filled.Store
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import com.example.R
+import com.huaweiappfactory.receiptlens.R
 
 enum class ReceiptCategory(
     val id: String,

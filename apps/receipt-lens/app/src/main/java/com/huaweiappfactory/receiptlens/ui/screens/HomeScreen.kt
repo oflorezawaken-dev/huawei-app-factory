@@ -55,7 +55,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.R
+import com.huaweiappfactory.receiptlens.R
 import com.huaweiappfactory.receiptlens.ui.components.EmptyStateView
 import com.huaweiappfactory.receiptlens.ui.components.ReceiptCard
 import com.huaweiappfactory.receiptlens.util.CurrencyUtils

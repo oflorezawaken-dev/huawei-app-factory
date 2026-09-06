@@ -1,4 +1,4 @@
-package com.example
+package com.huaweiappfactory.receiptlens
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity

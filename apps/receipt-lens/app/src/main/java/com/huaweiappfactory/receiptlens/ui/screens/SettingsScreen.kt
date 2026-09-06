@@ -53,7 +53,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.example.R
+import com.huaweiappfactory.receiptlens.R
 import com.huaweiappfactory.receiptlens.domain.model.CurrencyInfo
 
 @OptIn(ExperimentalMaterial3Api::class)

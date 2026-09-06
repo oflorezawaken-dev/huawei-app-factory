@@ -42,7 +42,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.example.R
+import com.huaweiappfactory.receiptlens.R
 import com.huaweiappfactory.receiptlens.data.local.ReceiptEntity
 import com.huaweiappfactory.receiptlens.domain.model.ReceiptCategory
 import com.huaweiappfactory.receiptlens.util.CurrencyUtils

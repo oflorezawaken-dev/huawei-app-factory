@@ -50,7 +50,7 @@ import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.example.R
+import com.huaweiappfactory.receiptlens.R
 import com.huaweiappfactory.receiptlens.data.model.CategorySpending
 import com.huaweiappfactory.receiptlens.data.model.MonthlySpending
 import com.huaweiappfactory.receiptlens.ui.components.EmptyStateView
