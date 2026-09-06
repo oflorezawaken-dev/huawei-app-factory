@@ -1,0 +1,114 @@
+name: Factory Store Setup
+
+# Pushes store metadata for any registered app to AppGallery Connect:
+# listing text (all languages), icon, screenshots, and app-info fields such
+# as the privacy policy URL. Each part can be run alone. Manual trigger,
+# `appgallery` environment.
+
+on:
+  workflow_dispatch:
+    inputs:
+      app:
+        description: 'App slug from factory/apps.json'
+        required: true
+        default: 'receipt-lens'
+      what:
+        description: 'What to push'
+        required: true
+        default: 'all'
+        type: choice
+        options: [all, listing, icon, screenshots, app-info]
+      lang:
+        description: 'Listing: AGC code (en-US) or empty = all. Screenshots: folder under store/screenshots (en).'
+        required: false
+        default: ''
+      app_info_fields:
+        description: 'app-info: comma-separated KEY=VALUE (empty = privacyPolicy from registry privacy_path)'
+        required: false
+        default: ''
+      dry_run:
+        description: 'Print what would be sent without calling AppGallery Connect'
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+jobs:
+  store:
+    runs-on: ubuntu-latest
+    environment: appgallery
+    env:
+      AGC_CLIENT_ID: ${{ secrets.AGC_CLIENT_ID }}
+      AGC_CLIENT_SECRET: ${{ secrets.AGC_CLIENT_SECRET }}
+      DRY: ${{ inputs.dry_run }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Load app from registry
+        run: |
+          python3 factory/tools/registry.py env "${{ inputs.app }}" >> "$GITHUB_ENV"
+          if [[ -z "$(python3 factory/tools/registry.py get "${{ inputs.app }}" agc_app_id)" ]]; then
+            echo "::error::factory/apps.json has no agc_app_id for ${{ inputs.app }}."
+            exit 1
+          fi
+          echo "PRIVACY_URL=$(python3 -c "import json;print(json.load(open('factory/apps.json'))['defaults']['privacy_base_url'])")/$(python3 factory/tools/registry.py get "${{ inputs.app }}" privacy_path | sed 's#^docs/##')/" >> "$GITHUB_ENV"
+
+      - name: Listing text
+        if: inputs.what == 'all' || inputs.what == 'listing'
+        run: |
+          set -euo pipefail
+          args=(--app-id "$AGC_APP_ID" --listing "$APP_STORE_DIR/listing.json")
+          if [[ -n "${{ inputs.lang }}" ]]; then args+=(--lang "${{ inputs.lang }}"); else args+=(--all); fi
+          [[ "$DRY" == "true" ]] && args+=(--dry-run)
+          python3 factory/tools/agc_update_listing.py "${args[@]}"
+
+      - name: Icon
+        if: inputs.what == 'all' || inputs.what == 'icon'
+        run: |
+          set -euo pipefail
+          # AGC requires a lang even for the icon; use the default language.
+          lang="$(python3 -c "import json;print(json.load(open('factory/apps.json'))['defaults']['languages'][0])")"
+          args=(--app-id "$AGC_APP_ID" --file-type icon --lang "$lang" --file "$APP_STORE_DIR/icon/icon-512.png")
+          [[ "$DRY" == "true" ]] && args+=(--dry-run)
+          python3 factory/tools/agc_upload_assets.py "${args[@]}"
+
+      - name: Screenshots
+        if: inputs.what == 'all' || inputs.what == 'screenshots'
+        run: |
+          set -euo pipefail
+          folder="${{ inputs.lang }}"; [[ -n "$folder" ]] || folder="en"
+          dir="$APP_STORE_DIR/screenshots/$folder"
+          [[ -d "$dir" ]] || { echo "::error::No screenshots at $dir"; exit 1; }
+          agc_lang="$(python3 factory/tools/registry.py agc-lang "$folder")"
+          args=(--app-id "$AGC_APP_ID" --file-type screenshot --lang "$agc_lang")
+          for f in "$dir"/*.png; do args+=(--file "$f"); done
+          [[ "$DRY" == "true" ]] && args+=(--dry-run)
+          python3 factory/tools/agc_upload_assets.py "${args[@]}"
+
+      - name: App info
+        if: inputs.what == 'all' || inputs.what == 'app-info'
+        env:
+          FIELDS: ${{ inputs.app_info_fields }}
+        run: |
+          set -euo pipefail
+          args=(--app-id "$AGC_APP_ID")
+          if [[ -n "$FIELDS" ]]; then
+            IFS=',' read -ra PAIRS <<< "$FIELDS"
+            for pair in "${PAIRS[@]}"; do args+=(--set "$pair"); done
+          else
+            args+=(--set "privacyPolicy=$PRIVACY_URL")
+          fi
+          [[ "$DRY" == "true" ]] && args+=(--dry-run)
+          python3 factory/tools/agc_update_app_info.py "${args[@]}"
+
+      - name: Summary
+        if: always()
+        run: |
+          {
+            echo "## Store setup: $APP_NAME ($APP_SLUG)"
+            echo "- What: ${{ inputs.what }}"
+            echo "- Lang: ${{ inputs.lang || 'default/all' }}"
+            echo "- Dry run: ${{ inputs.dry_run }}"
+          } >> "$GITHUB_STEP_SUMMARY"
