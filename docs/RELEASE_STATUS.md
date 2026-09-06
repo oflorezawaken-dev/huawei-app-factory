@@ -140,3 +140,15 @@ Pending for release: paste the real banner + interstitial ad unit IDs into `fact
   emulator has none, so loads end with error code 2 (network/service unavailable). Interstitial and
   banners degrade silently as designed. Ad rendering itself must be checked on a Huawei device (or an
   HMS-enabled image) — the factory has no such device in CI yet.
+
+### 1.1 signed build with real Petal Ads unit IDs (2026-09-06)
+
+| Item | Result |
+|---|---|
+| Registry | `factory/apps.json` → `ads.banner_ad_id` / `ads.interstitial_ad_id` set from the Petal Ads console; `ad_unit_ids` gap closed |
+| Gate | 10 PASS, 1 EXCUSED (`ml_kit_ocr`) |
+| CI | Factory Build run 34058191625 green (plan / verify / release); **0** "TEST ad unit IDs" warnings in the release log |
+| Artifacts | `receipt-lens-release-apk` 15.5 MB, `receipt-lens-release-aab` 15.6 MB, `receipt-lens-debug-apk` 22.7 MB |
+
+1.1.0 (versionCode 2) is ready to upload with `factory-publish.yml` (`app=receipt-lens`, upload only).
+Submission is deliberately held until Huawei's verdict on 1.0.0 to avoid two versions in the queue.
