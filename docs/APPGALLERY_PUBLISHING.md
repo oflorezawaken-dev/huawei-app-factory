@@ -1,0 +1,96 @@
+# Publishing to Huawei AppGallery
+
+This document describes the publishing stage of the factory: how a signed
+release produced by CI reaches AppGallery Connect, what is automated, and what
+Huawei requires a human to do.
+
+## What is automated
+
+Workflow: `.github/workflows/receipt-lens-publish.yml` (manual trigger only).
+Tool: `factory/tools/agc_publish.py` (standard library Python, reusable for any app).
+
+The workflow:
+
+1. Picks a successful `ReceiptLens Build` run on `main` (latest, or the run ID you give it).
+2. Downloads the signed `receipt-lens-release-apk` or `-aab` artifact.
+3. Verifies the APK signature with `apksigner`.
+4. Obtains a Publishing API token, resolves the app ID from the package name,
+   uploads the package, registers it on the app, and, only if you ask, submits it for review.
+
+Nothing is submitted for review unless `submit_for_review` is set to `true`.
+
+## What Huawei does not allow via API (one-time, per app)
+
+| Manual step | Where | Notes |
+|---|---|---|
+| Developer account registration and identity verification | developer.huawei.com | Account-level, once. |
+| Create the app | AppGallery Connect > My apps > New | The Publishing API cannot create apps. Package name must be `com.huaweiappfactory.receiptlens`. |
+| Content rating questionnaire | App > Distribute > Version information | Cannot be completed via API. |
+| Privacy policy URL, app category, countries, pricing | App information | Can be set via API later, but must exist before the first submission. |
+| Screenshots and icon | App information | Uploadable via API (fileType 0/2); for V1 do it in the console with real captures. |
+| Enable App Signing (AAB only) | App > Develop > App Signing | Required before uploading an AAB. APK does not need it. |
+| Create an API client | Users and permissions > API client > Connect API | Role must allow release management (e.g. Administrator or App Administrator). Project field: **N/A**. |
+
+## Secrets to configure in GitHub
+
+Repository or `appgallery` environment secrets. Names only, never commit values:
+
+```text
+AGC_CLIENT_ID
+AGC_CLIENT_SECRET
+```
+
+Recommended: create the `appgallery` environment in repository settings and add
+yourself as a **required reviewer**. Every publish run will then pause until you
+approve it, which is the human gate for anything that reaches the store.
+
+## How to run
+
+GitHub > Actions > "ReceiptLens Publish to AppGallery" > Run workflow:
+
+| Input | Meaning |
+|---|---|
+| `release_run_id` | Empty = latest successful release build on `main`. |
+| `package_type` | `apk` (default) or `aab` (requires App Signing enabled in AGC). |
+| `submit_for_review` | `false` = upload only, you finish in the console. `true` = submit immediately. |
+| `release_notes` | 10-300 characters, mandatory when submitting. |
+
+Recommended first run: `package_type=apk`, `submit_for_review=false`. Check that the
+package appears under the app's version information in the console, then complete
+the remaining console fields and submit from there. Automate submission only once
+one release has passed review.
+
+## Running the tool locally
+
+```bash
+export AGC_CLIENT_ID=TU_CLIENT_ID_AQUI
+export AGC_CLIENT_SECRET=TU_CLIENT_SECRET_AQUI
+python factory/tools/agc_publish.py --package-name com.huaweiappfactory.receiptlens --file app-release.apk --dry-run
+```
+
+Drop `--dry-run` to perform the upload. Add `--submit --release-notes "..."` to submit.
+
+## API reference used
+
+Endpoints (AppGallery Connect Publishing API v2, base `https://connect-api.cloud.huawei.com/api`):
+
+| Step | Call |
+|---|---|
+| Token | `POST /oauth2/v1/token` `{grant_type: client_credentials, client_id, client_secret}` (valid 48 h) |
+| App ID | `GET /publish/v2/appid-list?packageName=` |
+| Upload URL | `GET /publish/v2/upload-url/for-obs?appId=&fileName=&contentLength=&suffix=` → `urlInfo{url, method, headers, objectId}` |
+| Upload | `PUT urlInfo.url` with `urlInfo.headers`, raw body |
+| Register | `PUT /publish/v2/app-file-info?appId=` `{fileType: 5, files: [{fileName, fileDestUrl: objectId, size}]}` |
+| AAB status | `GET /publish/v2/aab/complile/status?appId=&pkgIds=` (`aabCompileStatus` 1 = compiling, 2 = done) |
+| Submit | `POST /publish/v2/app-submit?appId=&remark=` |
+
+All non-token calls carry headers `client_id` and `Authorization: Bearer <token>`.
+Huawei's documentation site renders client-side; the flow above was cross-checked against
+two maintained open-source clients (fastlane `huawei_appgallery_connect`, Python `appgallery`).
+Re-verify against the official reference before relying on new fields.
+
+## Next automation candidates
+
+- `PUT /publish/v2/app-language-info` to push the 9 localized store descriptions from `specifications/`.
+- Icon and screenshot upload (fileType 0 and 2) from emulator captures.
+- Trigger publish automatically from a Git tag once the human gate is the environment approval.
