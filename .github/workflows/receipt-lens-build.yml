@@ -1,0 +1,47 @@
+name: ReceiptLens Build
+
+on:
+  push:
+    paths:
+      - 'apps/receipt-lens/**'
+      - '.github/workflows/receipt-lens-build.yml'
+  pull_request:
+    paths:
+      - 'apps/receipt-lens/**'
+      - '.github/workflows/receipt-lens-build.yml'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/receipt-lens
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '9.3.1'
+
+      - name: Run unit tests
+        run: gradle :app:testDebugUnitTest
+
+      - name: Build debug APK
+        run: gradle :app:assembleDebug
+
+      - name: Upload debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: receipt-lens-debug-apk
+          path: apps/receipt-lens/app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
