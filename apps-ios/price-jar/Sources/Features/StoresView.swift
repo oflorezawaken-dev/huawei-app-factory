@@ -56,7 +56,7 @@ struct StoresView: View {
             }
         }
         .confirmationDialog(
-            Text("stores.deleteConfirm.title \(storePendingDeletion?.recordedEntryCount ?? 0)"),
+            Text("stores.deleteConfirm.title \(storePendingDeletion?.priceEntries.count ?? 0)"),
             isPresented: Binding(get: { storePendingDeletion != nil }, set: { if !$0 { storePendingDeletion = nil } }),
             titleVisibility: .visible
         ) {

@@ -122,7 +122,7 @@ struct ItemEditView: View {
                 photoData = data
             }
             .confirmationDialog(
-                Text("edit.deleteConfirm.title \(item?.recordedEntries.count ?? 0)"),
+                Text("edit.deleteConfirm.title \(item?.priceEntries.count ?? 0)"),
                 isPresented: $showDeleteConfirmation, titleVisibility: .visible
             ) {
                 Button("edit.delete", role: .destructive, action: deleteItem)

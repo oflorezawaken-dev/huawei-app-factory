@@ -18,8 +18,12 @@ struct VerdictView: View {
         (try? UnitNormalization.unitPrice(price: pending.price, packageSize: pending.packageSize, unit: pending.unit)) ?? 0
     }
 
+    // All entries, including sample rows -- a sample item's Price Book row
+    // already shows a price via `bestEntry` (also unfiltered), so the
+    // verdict must not claim "not enough data" for the same item. Sample
+    // exclusion is a Stats/CSV rule (F011), not a screen-visibility rule.
     private var history: [VerdictHistoryPoint] {
-        item.recordedEntries
+        item.priceEntries
             .filter { $0.countsTowardTypical(includeSaleAndLoyalty: settings.includeSaleAndLoyaltyInTypical) }
             .map { VerdictHistoryPoint(unitPrice: $0.unitPrice, storeName: $0.store?.name ?? "", date: $0.date) }
     }
@@ -124,6 +128,7 @@ struct VerdictView: View {
 
         let wasFirstEntry = !settings.hasSavedFirstPriceEntry
         settings.hasSavedFirstPriceEntry = true
+        dismiss()
         if wasFirstEntry, !settings.hasRequestedTracking {
             settings.hasRequestedTracking = true
             Task {

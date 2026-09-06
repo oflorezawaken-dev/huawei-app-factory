@@ -13,7 +13,11 @@ struct ItemHistoryView: View {
     @State private var showRecordPrice = false
     @State private var entryPendingDeletion: PriceEntry?
 
-    private var entries: [PriceEntry] { item.recordedEntries }
+    // All entries, including sample rows: a sample item's Price Book row
+    // shows a price via `bestEntry` (also unfiltered), so History must not
+    // show an empty state for the same item. Sample exclusion is a Stats/CSV
+    // rule (F011), not a screen-visibility rule.
+    private var entries: [PriceEntry] { item.priceEntries.sorted { $0.date > $1.date } }
 
     private var bestEntry: PriceEntry? {
         entries.min { $0.unitPrice < $1.unitPrice }
@@ -170,6 +174,11 @@ private struct EntryRow: View {
                 Text(entry.store?.name ?? "")
                 Text(entry.date, style: .date).font(.caption).foregroundStyle(.secondary)
                 HStack(spacing: 6) {
+                    if entry.isSample {
+                        Text("common.sampleBadge").font(.caption2).padding(.horizontal, 6).padding(.vertical, 2)
+                            .background(Color.accentColor.opacity(0.2)).clipShape(Capsule())
+                            .accessibilityIdentifier("badge.sample")
+                    }
                     if entry.isSale {
                         Text("badge.sale").font(.caption2).padding(.horizontal, 6).padding(.vertical, 2)
                             .background(Color.orange.opacity(0.2)).clipShape(Capsule())
