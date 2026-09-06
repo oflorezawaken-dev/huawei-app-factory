@@ -126,3 +126,16 @@ Next: ReceiptLens 1.1 with the real Petal Ads SDK (closes the three excused gaps
 | Removed | `ads/PetalAdConfig.kt` (reflection stub) |
 
 Pending for release: paste the real banner + interstitial ad unit IDs into `factory/apps.json` → `apps[receipt-lens].ads`, then Factory Build → Factory Publish (upload) → submit 1.1 once 1.0 review concludes.
+
+### 1.1 device verification (emulator, 2026-09-06)
+
+- Installed the 1.1.0 debug APK on the `pixel_api35` emulator (after uninstalling the release-signed
+  1.0 — `adb install -r` over a differently-signed build fails silently in a pipe).
+- Settings shows the new privacy/ads copy and "Version 1.1.0". Layouts on History / Statistics /
+  Settings render normally with no empty ad box.
+- Logcat: `PetalAds: Petal Ads initialised (test ids: true)`; the SDK (`HiAdSDK.*`) creates and
+  destroys `PPSBannerView` correctly and tries to bind the PPS service in `com.huawei.hwid`.
+- Ads do not fill here because **Petal Ads needs HMS Core on the device**; the Google-image
+  emulator has none, so loads end with error code 2 (network/service unavailable). Interstitial and
+  banners degrade silently as designed. Ad rendering itself must be checked on a Huawei device (or an
+  HMS-enabled image) — the factory has no such device in CI yet.
