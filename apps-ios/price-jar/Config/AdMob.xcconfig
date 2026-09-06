@@ -1,0 +1,11 @@
+// Ad identifiers arrive from the environment (CI exports them from the
+// registry). The defaults are Google's public test IDs, so a developer build
+// never serves a real ad by accident -- and factory-ios-publish refuses to
+// submit while these are still in place.
+ADMOB_APP_ID = $(ADMOB_APP_ID_OVERRIDE:default=ca-app-pub-3940256099942544~1458002511)
+ADMOB_BANNER_UNIT_ID = $(ADMOB_BANNER_UNIT_ID_OVERRIDE:default=ca-app-pub-3940256099942544/2934735716)
+ADMOB_INTERSTITIAL_UNIT_ID = $(ADMOB_INTERSTITIAL_UNIT_ID_OVERRIDE:default=ca-app-pub-3940256099942544/4411468910)
+IAP_REMOVE_ADS_PRODUCT_ID = $(IAP_REMOVE_ADS_PRODUCT_ID_OVERRIDE:default=com.proapps.pricejar.removeads)
+APP_BUNDLE_ID = $(APP_BUNDLE_ID_OVERRIDE:default=com.proapps.pricejar)
+MARKETING_VERSION = $(MARKETING_VERSION_OVERRIDE:default=1.0.0)
+CURRENT_PROJECT_VERSION = $(CURRENT_PROJECT_VERSION_OVERRIDE:default=1)

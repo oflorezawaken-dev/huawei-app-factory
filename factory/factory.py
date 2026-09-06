@@ -86,11 +86,16 @@ def claude_step(prompt_files: list[str], extra: str, print_only: bool, model: st
     cmd = ["claude", "-p", prompt, "--allowedTools", "Bash,Read,Edit,Write,Glob,Grep,WebSearch,WebFetch"]
     if model:
         cmd += ["--model", model]
+    # A factory step legitimately runs for tens of minutes (generate builds a whole
+    # app, compiles it and drives a simulator). Headless `claude -p` otherwise
+    # terminates its own background work after 600s, which silently truncates the
+    # step: the first generate run lost 35 files of finished work that way.
+    env = dict(os.environ, CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS="0")
     if print_only:
         print("$ claude -p <prompt: " + ", ".join(["00-factory-rules.md"] + prompt_files)
               + f"> ({len(prompt)} chars)" + (f" --model {model}" if model else ""))
         return 0
-    return subprocess.call(cmd, cwd=ROOT)
+    return subprocess.call(cmd, cwd=ROOT, env=env)
 
 
 def main(argv: list[str]) -> int:
@@ -109,6 +114,7 @@ def main(argv: list[str]) -> int:
     p.add_argument("--init", action="store_true")
     p.add_argument("--ios", action="store_true")
     p.add_argument("--model", default="", help="override the step's default model (see STEP_MODEL)")
+    p.add_argument("--note", default="", help="extra context appended to the prompt (e.g. resuming a partial run)")
     p.add_argument("--print", dest="print_only", action="store_true")
     a = p.parse_args(argv)
 
@@ -163,7 +169,8 @@ def main(argv: list[str]) -> int:
         # The iOS generator drives SwiftUI/XcodeGen from apps-ios/_template and
         # carries the build traps found while verifying that template.
         prompt = "30-generate-ios.md" if a.ios else "30-generate.md"
-        return claude_step([prompt], f"Slug: {a.slug}", a.print_only, model_for("generate", a.model))
+        extra = f"Slug: {a.slug}" + (f"\n\n{a.note}" if a.note else "")
+        return claude_step([prompt], extra, a.print_only, model_for("generate", a.model))
     if a.command == "fix":
         if not a.run_id:
             sys.exit("fix needs --run-id")
