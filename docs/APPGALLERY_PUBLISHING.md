@@ -54,6 +54,13 @@ GitHub > Actions > "ReceiptLens Publish to AppGallery" > Run workflow:
 | `package_type` | `apk` (default) or `aab` (requires App Signing enabled in AGC). |
 | `submit_for_review` | `false` = upload only, you finish in the console. `true` = submit immediately. |
 | `release_notes` | 10-300 characters, mandatory when submitting. |
+| `app_id` | AppGallery Connect App ID. Overrides the repository variable `RECEIPT_LENS_AGC_APP_ID`. |
+
+**App ID vs package name.** AppGallery Connect assigns an app's package name from the
+first package uploaded to it, so `appid-list?packageName=` returns nothing for a
+brand-new app. Set the repository variable `RECEIPT_LENS_AGC_APP_ID` (Settings →
+Secrets and variables → Actions → Variables) to the App ID shown in the console under
+My apps → the app → App information. The App ID is an identifier, not a secret.
 
 Recommended first run: `package_type=apk`, `submit_for_review=false`. Check that the
 package appears under the app's version information in the console, then complete

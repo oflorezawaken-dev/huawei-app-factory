@@ -27,6 +27,10 @@ on:
         description: 'Release notes shown to the reviewer (10-300 chars, required when submitting)'
         required: false
         default: ''
+      app_id:
+        description: 'AppGallery Connect App ID (overrides the RECEIPT_LENS_AGC_APP_ID repository variable). Required for the first upload, before the package name exists in AGC.'
+        required: false
+        default: ''
 
 permissions:
   actions: read
@@ -119,13 +123,20 @@ jobs:
           AGC_CLIENT_SECRET: ${{ secrets.AGC_CLIENT_SECRET }}
           SUBMIT: ${{ inputs.submit_for_review }}
           NOTES: ${{ inputs.release_notes }}
+          APP_ID: ${{ inputs.app_id != '' && inputs.app_id || vars.RECEIPT_LENS_AGC_APP_ID }}
         run: |
           set -euo pipefail
           if [[ -z "$AGC_CLIENT_ID" || -z "$AGC_CLIENT_SECRET" ]]; then
             echo "::error::AGC_CLIENT_ID / AGC_CLIENT_SECRET secrets are not configured."
             exit 1
           fi
-          args=(--package-name "$PACKAGE_NAME" --file "$PACKAGE_FILE")
+          # AGC assigns the package name on the first uploaded package, so the
+          # package-name lookup only works after that. Prefer the explicit App ID.
+          if [[ -n "$APP_ID" ]]; then
+            args=(--app-id "$APP_ID" --file "$PACKAGE_FILE")
+          else
+            args=(--package-name "$PACKAGE_NAME" --file "$PACKAGE_FILE")
+          fi
           if [[ "$SUBMIT" == "true" ]]; then
             args+=(--submit --release-notes "$NOTES")
           fi
