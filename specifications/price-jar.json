@@ -1,0 +1,633 @@
+{
+  "spec_version": "1.0.0",
+  "app": {
+    "name": "PriceJar",
+    "bundle_id": "com.proapps.pricejar",
+    "sku": "price-jar",
+    "marketing_version": "1.0.0",
+    "build": 1,
+    "category_primary": "Shopping",
+    "category_secondary": "Productivity",
+    "description": "PriceJar is a personal grocery price book. You record what a product actually cost, at which store, in which package size; PriceJar normalises every price to a comparable unit (per kg, per litre, per item) and tells you whether the price in front of you is the best you have ever paid, typical, or above your usual. It turns a shopping list into an estimated total and compares that basket across your own stores. Everything lives on the iPhone in SwiftData: no account, no price feeds, no country coverage limits, any currency, metric or imperial. Free with an AdMob banner on the browsing screens and a one-time purchase to remove ads; no ad ever appears while you are entering a price or shopping.",
+    "target_audience": "Household shoppers who split their groceries across 2-6 stores and already try to track prices in a spreadsheet, a Notes file or their head. Skews toward discount-store shoppers, large families, expats comparing local chains, and anyone who wants evidence that their basket got more expensive.",
+    "problem_solved": "In a shop you cannot tell whether a price is good, because the comparison is your own past prices at different stores in different package sizes, and nobody remembers those. Spreadsheets hold the data but are unusable one-handed in an aisle; comparison apps depend on someone else's price feed for a country they may not cover. PriceJar keeps your own price history on the phone and answers 'is this a good price?' in one screen, offline."
+  },
+  "product_strategy": {
+    "market_opportunity": "The price-book method is mainstream money-saving advice in 2026 (food-at-home CPI 2.7% above July 2025; 41% of shoppers use discount grocers more than a year ago; shoppers spread spend across more retailers), but the App Store has no healthy price-book app. The four existing entrants have 11-19 ratings between them, and the category's how-to literature actively tells readers to use a spreadsheet because the apps are not trusted. Spreadsheet users are the cheapest users to convert: they have already accepted the data entry.",
+    "competitive_advantage": "Unit normalisation across metric and imperial done correctly (the feature the closest competitor simply lacks), a verdict screen that answers 'good price?' in the aisle, trip mode that fills the price book as a by-product of shopping, and per-store basket comparison. Fully offline with no account and no price feed, so it works in any country and any currency. Ad placement is a product decision, not an afterthought: banners only on browsing screens, one interstitial after a trip is saved, and a hard suppression of every ad while shopping - the exact failure that sank the incumbents in their reviews. One-time Remove Ads purchase instead of the competitor's subscription, and it gates no feature.",
+    "main_competitors": [
+      "Price Book - Track Grocery Price (Zinitt) - 2.9 stars, 19 ratings, last updated 2023-01-09, ads interrupt the core entry loop",
+      "Smart Grocery Price Book (BORICUAPPS) - 2.7 stars, 12 ratings, no unit-price tracking, ad bar covers the menu bar, 6-store cap",
+      "PricePad - Track Prices & Save - 4.1 stars, 11 ratings, free with ads and no remove-ads option",
+      "Assay - Grocery Price Book - released 2026-01-21, 1 rating, subscription $1.99/mo or $9.99/yr for a local notebook",
+      "Network comparison apps (Flipp, Basket, Grocery Dealz, Groceries Tracker) - account-bound, coverage-limited, flyer prices rather than shelf prices"
+    ],
+    "estimated_development_complexity": 5,
+    "estimated_market_potential": 5,
+    "monetization_strategy": "Free app funded by Google AdMob: an adaptive anchored banner on the four browsing screens and exactly one interstitial placement, on the trip summary after a trip is saved. A one-time non-consumable Remove Ads purchase (target tier ~$3.99) removes all advertising forever and unlocks nothing, so no feature sits behind a paywall. The purchase is an easy decision because the app is opened several times per shopping trip on a screen where the row being compared sits directly above the banner."
+  },
+  "technical": {
+    "platform": "iOS",
+    "language": "Swift",
+    "ui": "SwiftUI",
+    "architecture": "MVVM with @Observable",
+    "persistence": "SwiftData",
+    "min_ios": "17.0",
+    "devices": [
+      "iPhone"
+    ],
+    "project_generator": "XcodeGen",
+    "offline_first": true
+  },
+  "features": [
+    {
+      "id": "F001",
+      "name": "Price book library",
+      "description": "The list of tracked items. An item has a name, optional brand, category, default package size and unit, optional barcode and optional photo chosen with PhotosPicker (no photo-library permission required). Each row shows the item name, its best recorded unit price and the store that had it. Search by name or brand and filter by category. Add, edit and delete items; deleting an item deletes its price entries after a confirmation that names how many entries will be lost.",
+      "priority": "P0",
+      "requires_internet": false,
+      "requires_permission": false,
+      "permission": ""
+    },
+    {
+      "id": "F002",
+      "name": "Stores",
+      "description": "A user-defined list of stores, each with a name and an optional note (branch, address text, loyalty programme). Unlimited stores - the incumbent's hard cap of six is one of its review complaints. No location, no map, no chain database, no network lookup. A store cannot be deleted while price entries reference it without an explicit confirmation that offers to reassign or delete those entries.",
+      "priority": "P0",
+      "requires_internet": false,
+      "requires_permission": false,
+      "permission": ""
+    },
+    {
+      "id": "F003",
+      "name": "Price entry in ten seconds",
+      "description": "The core loop. A price entry records item, store, price, package size, unit, date, and two flags: sale price and loyalty-card price. Store, size and unit are pre-filled from the item's last entry, the date defaults to today, and the price field takes focus with a decimal keypad on open. The locale's decimal separator is accepted, and so is the other one. Sale and loyalty entries are stored and shown but excluded from the 'typical price' baseline by default, with a settings toggle to include them.",
+      "priority": "P0",
+      "requires_internet": false,
+      "requires_permission": false,
+      "permission": ""
+    },
+    {
+      "id": "F004",
+      "name": "Unit normalisation engine",
+      "description": "Every price entry is reduced to a comparable unit so that different package sizes can be compared. Pure Swift, no I/O, exhaustively unit-tested; this is the part that must never be wrong. Supported units and the exact conversion table: mass - 1 kg = 1000 g, 1 lb = 453.59237 g, 1 oz = 28.349523125 g; volume - 1 L = 1000 mL, 1 US gal = 3.785411784 L, 1 US fl oz = 29.5735295625 mL, 1 imperial fl oz = 28.4130625 mL; count - item/each/pack of N (unit price = price / N). Base units are gram, millilitre and item; display units are per kg, per 100 g, per lb, per L, per 100 mL, per fl oz and per item, chosen per item with a global default per measurement system. Arithmetic uses Decimal, never Double or Float. Unit prices are computed to four decimal places and rounded for display to the currency's minor unit. Mass and volume never convert into each other, and an entry whose unit does not match the item's display dimension is rejected at entry time with a message that says why.",
+      "priority": "P0",
+      "requires_internet": false,
+      "requires_permission": false,
+      "permission": ""
+    },
+    {
+      "id": "F005",
+      "name": "Good price? verdict",
+      "description": "Enter a price, or scan an item, and get one of three verdicts against your own history for that item: BEST (at or within 0.5% of the lowest unit price you have ever recorded), TYPICAL (at or below the median unit price times 1.10), or ABOVE YOUR USUAL (higher than that). The sheet also shows the best unit price, the store that had it and its date, the median, and the difference in both percent and money for the package in hand. With fewer than three recorded entries for the item the sheet says so plainly and shows the comparison it can make instead of inventing a verdict. Saving the entry is one tap from the verdict sheet.",
+      "priority": "P0",
+      "requires_internet": false,
+      "requires_permission": false,
+      "permission": ""
+    },
+    {
+      "id": "F006",
+      "name": "Item history",
+      "description": "Every recorded price for one item, newest first, each row showing store, package size, paid price, unit price and the sale/loyalty flags. A Swift Charts line chart of unit price over time. Summary figures: best unit price and where, median unit price, current typical price, and the change against six months ago when there is data that old. Entries can be edited or deleted from here.",
+      "priority": "P0",
+      "requires_internet": false,
+      "requires_permission": false,
+      "permission": ""
+    },
+    {
+      "id": "F007",
+      "name": "Barcode recall",
+      "description": "An AVFoundation scanner (AVCaptureMetadataOutput, EAN-8, EAN-13, UPC-E, Code128) that recognises your own items. A known barcode jumps straight to that item's history with the verdict sheet one tap away; an unknown barcode offers 'add a new item' with the code already attached. PriceJar does not look products up online and says so in-app and in the listing: it recalls the items you named yourself. The scanner is the only camera use, and every scanner action has a manual equivalent (search by name, pick from the list) if the camera is denied or unavailable.",
+      "priority": "P0",
+      "requires_internet": false,
+      "requires_permission": true,
+      "permission": "NSCameraUsageDescription"
+    },
+    {
+      "id": "F008",
+      "name": "Shopping list and Trip mode",
+      "description": "Build a list of items and quantities and see an estimated total from your own recorded prices, plus a per-store comparison of the same basket ('Aldi about 41.30, Mercadona about 46.10, based on 14 of 17 items you have prices for'). Coverage is always stated, never hidden. Starting a trip picks a store and enters Shopping Mode: large tap targets, ticking an item off offers to record the price actually paid in one field, and the price book fills itself as a by-product of shopping. All advertising is suppressed for the whole duration of a trip. Saving the trip stores the store, date, item count and total, and opens the trip summary.",
+      "priority": "P0",
+      "requires_internet": false,
+      "requires_permission": false,
+      "permission": ""
+    },
+    {
+      "id": "F009",
+      "name": "Stats",
+      "description": "Basket cost by month across saved trips, total saved against your typical prices (sum over recorded entries of typical unit price minus paid unit price times quantity, positive contributions and negative both shown), the items whose unit price rose most over the last six months, and which store has been cheapest for your basket. Every figure is derived from the user's own entries; no benchmarks, no external data, no predictions.",
+      "priority": "P1",
+      "requires_internet": false,
+      "requires_permission": false,
+      "permission": ""
+    },
+    {
+      "id": "F010",
+      "name": "CSV export",
+      "description": "Export items, stores and price entries as RFC 4180 CSV through the system share sheet. UTF-8 with a BOM so spreadsheets open it correctly, ISO 8601 dates, a period as the decimal separator regardless of locale, and one row per price entry with the item, brand, category, store, date, package size, unit, paid price, unit price, currency and the sale/loyalty flags. Spreadsheet users must be able to leave with their data; import is deliberately out of scope for V1.",
+      "priority": "P1",
+      "requires_internet": false,
+      "requires_permission": false,
+      "permission": ""
+    },
+    {
+      "id": "F011",
+      "name": "Sample data on first run",
+      "description": "First launch offers twelve example items in one clearly labelled demo store, with a few months of plausible price history, so the app is a populated tool within ten seconds instead of five empty tabs. The offer can be declined. Sample rows are flagged in the model, badged in the UI as 'Sample', excluded from Stats and from CSV export, and removed by a single 'Remove sample data' action in Settings that never touches user-entered rows.",
+      "priority": "P0",
+      "requires_internet": false,
+      "requires_permission": false,
+      "permission": ""
+    },
+    {
+      "id": "F012",
+      "name": "Remove Ads purchase",
+      "description": "A StoreKit 2 non-consumable, com.proapps.pricejar.removeads, that permanently removes the banner and the interstitial. Purchase state is read from Transaction.currentEntitlements at launch and observed through Transaction.updates, so it survives reinstall without an account. A Restore Purchases button is present in Settings and on the purchase sheet. The purchase unlocks no feature and hides no content; failure and cancellation are reported plainly and never leave the UI in a bought-but-not-applied state.",
+      "priority": "P0",
+      "requires_internet": false,
+      "requires_permission": false,
+      "permission": ""
+    },
+    {
+      "id": "F013",
+      "name": "Advertising",
+      "description": "Google AdMob through the GoogleMobileAds Swift package. One adaptive anchored banner, inset above the tab bar inside the safe area so it can never cover navigation, on the Price Book, Stores, Item history and Stats screens only. One interstitial placement, on the trip summary after a trip has been saved, capped at once per session, never within four minutes of another ad and never on a cold start. Both disappear when Remove Ads is owned. Unit IDs and the AdMob app ID come from Config/AdMob.xcconfig, whose values CI overrides from the registry at build time; GADApplicationIdentifier in Info.plist is $(ADMOB_APP_ID) and no ID is ever a literal in tracked source.",
+      "priority": "P0",
+      "requires_internet": true,
+      "requires_permission": false,
+      "permission": ""
+    },
+    {
+      "id": "F014",
+      "name": "Settings",
+      "description": "Currency symbol and code (chosen by the user, defaulting from the device locale; no conversion between currencies), measurement system and default display units, whether sale and loyalty prices count toward the typical baseline, Remove Ads and Restore Purchases, CSV export, remove sample data, delete all data with a typed confirmation, a plain-language statement of what leaves the device and what does not, links to the privacy policy and support pages, an ads explanation, and the version and build.",
+      "priority": "P0",
+      "requires_internet": false,
+      "requires_permission": false,
+      "permission": ""
+    },
+    {
+      "id": "F015",
+      "name": "Accessibility and localisation",
+      "description": "Light and dark appearance, Dynamic Type up to the accessibility sizes, VoiceOver labels and hints on every control including chart summaries, a minimum 44x44 point tap target on every interactive element in Shopping Mode, and an accessibility identifier on every control from the first commit because the screenshot UI test addresses controls by identifier and never by coordinates. Nine languages in a Localizable.xcstrings string catalogue, with a mirrored right-to-left layout for Arabic and locale-correct number, currency and date formatting.",
+      "priority": "P0",
+      "requires_internet": false,
+      "requires_permission": false,
+      "permission": ""
+    }
+  ],
+  "screens": [
+    {
+      "id": "S001",
+      "name": "Price Book",
+      "purpose": "The home tab: every tracked item with its best unit price, searchable and filterable.",
+      "components": [
+        "Search field",
+        "Category filter chips",
+        "Item rows with name, brand, best unit price and best store",
+        "Sort control (name, best price, recently updated)",
+        "Empty state offering sample data or a first item",
+        "Add item button",
+        "Scan barcode toolbar button",
+        "AdMob adaptive anchored banner above the tab bar",
+        "Tab bar"
+      ],
+      "navigation_to": [
+        "S002",
+        "S004",
+        "S012"
+      ]
+    },
+    {
+      "id": "S002",
+      "name": "Item History",
+      "purpose": "Everything known about one item's prices, and the chart that shows the trend.",
+      "components": [
+        "Item header with photo, brand, category and preferred display unit",
+        "Best price, median price and change vs six months ago",
+        "Swift Charts line chart of unit price over time",
+        "Price entry rows with store, size, paid price, unit price and sale/loyalty badges",
+        "Record a price button",
+        "Edit item button",
+        "AdMob adaptive anchored banner",
+        "Empty state when the item has no entries yet"
+      ],
+      "navigation_to": [
+        "S003",
+        "S012"
+      ]
+    },
+    {
+      "id": "S003",
+      "name": "Record Price",
+      "purpose": "The ten-second entry form; the screen the whole app is judged on.",
+      "components": [
+        "Price field with decimal keypad, focused on open",
+        "Store picker pre-filled with the last store used",
+        "Package size field and unit picker pre-filled from the item",
+        "Date picker defaulting to today",
+        "Sale price toggle",
+        "Loyalty-card price toggle",
+        "Live unit-price readout",
+        "Save button",
+        "No advertising of any kind"
+      ],
+      "navigation_to": [
+        "S005"
+      ]
+    },
+    {
+      "id": "S004",
+      "name": "Barcode Scanner",
+      "purpose": "Recall an item you already named by scanning its barcode.",
+      "components": [
+        "AVFoundation camera preview with a scan region",
+        "Torch toggle",
+        "Manual search fallback button",
+        "Camera-denied state explaining what still works and offering Settings",
+        "Unknown-code sheet offering to create an item with the code attached",
+        "No advertising of any kind"
+      ],
+      "navigation_to": [
+        "S002",
+        "S005",
+        "S012"
+      ]
+    },
+    {
+      "id": "S005",
+      "name": "Good Price?",
+      "purpose": "Answer the aisle question: best, typical or above your usual.",
+      "components": [
+        "Verdict badge (Best / Typical / Above your usual)",
+        "Unit price of the price being judged",
+        "Best price with store and date",
+        "Median price and difference in percent and money",
+        "Not-enough-data state shown when fewer than three entries exist",
+        "Save this price button",
+        "No advertising of any kind"
+      ],
+      "navigation_to": [
+        "S002"
+      ]
+    },
+    {
+      "id": "S006",
+      "name": "Stores",
+      "purpose": "Manage the user's own list of stores.",
+      "components": [
+        "Store rows with name, note and number of recorded prices",
+        "Add store button",
+        "Edit and delete with a reassign-or-delete confirmation",
+        "AdMob adaptive anchored banner",
+        "Empty state"
+      ],
+      "navigation_to": [
+        "S001"
+      ]
+    },
+    {
+      "id": "S007",
+      "name": "Shopping List",
+      "purpose": "Plan a basket, see its estimated cost and which store is cheapest for it.",
+      "components": [
+        "List rows with item, quantity and estimated line cost",
+        "Add from price book, or add a free-text item",
+        "Estimated total with coverage text ('based on 14 of 17 items you have prices for')",
+        "Per-store basket comparison rows",
+        "Start trip button with store picker",
+        "Empty state",
+        "Tab bar"
+      ],
+      "navigation_to": [
+        "S008"
+      ]
+    },
+    {
+      "id": "S008",
+      "name": "Trip Mode",
+      "purpose": "Shop one-handed and record what you actually paid as you go.",
+      "components": [
+        "Store and running total header",
+        "Large tap-target item rows with tick-off",
+        "Inline price field offered on tick-off",
+        "Running comparison against the estimate",
+        "Add an unplanned item",
+        "End trip button",
+        "All advertising suppressed for the duration of the trip"
+      ],
+      "navigation_to": [
+        "S009"
+      ]
+    },
+    {
+      "id": "S009",
+      "name": "Trip Summary",
+      "purpose": "Close the loop after a trip is saved and show what the trip did to the price book.",
+      "components": [
+        "Store, date, item count and total paid",
+        "Estimate vs actual",
+        "New best prices found on this trip",
+        "Prices recorded on this trip",
+        "Done button",
+        "AdMob interstitial, once per session, after the trip is saved and never before this screen appears"
+      ],
+      "navigation_to": [
+        "S007",
+        "S010"
+      ]
+    },
+    {
+      "id": "S010",
+      "name": "Stats",
+      "purpose": "Show the evidence: what the basket costs over time and where the money goes.",
+      "components": [
+        "Basket cost by month chart",
+        "Total saved against typical prices",
+        "Biggest risers over six months",
+        "Cheapest store for your basket",
+        "Not-enough-data states per card",
+        "AdMob adaptive anchored banner",
+        "Tab bar"
+      ],
+      "navigation_to": [
+        "S002"
+      ]
+    },
+    {
+      "id": "S011",
+      "name": "Settings",
+      "purpose": "Currency, units, purchase, data and the honest explanation of what the app does with data.",
+      "components": [
+        "Currency symbol and code picker",
+        "Measurement system and default display unit pickers",
+        "Include sale and loyalty prices in the typical baseline toggle",
+        "Remove Ads purchase row with price and owned state",
+        "Restore Purchases",
+        "Export CSV",
+        "Remove sample data",
+        "Delete all data with typed confirmation",
+        "What stays on this iPhone explanation",
+        "Why you see ads explanation",
+        "Privacy policy and support links",
+        "Version and build",
+        "No advertising of any kind"
+      ],
+      "navigation_to": [
+        "S001"
+      ]
+    },
+    {
+      "id": "S012",
+      "name": "Add or Edit Item",
+      "purpose": "Create the item a price will hang off, including a scanned barcode.",
+      "components": [
+        "Name field",
+        "Brand field",
+        "Category picker",
+        "Default package size and unit",
+        "Preferred display unit picker",
+        "Barcode field, filled automatically after an unknown scan",
+        "Photo picker (PhotosPicker, no permission prompt)",
+        "Save and Delete buttons",
+        "No advertising of any kind"
+      ],
+      "navigation_to": [
+        "S002"
+      ]
+    },
+    {
+      "id": "S013",
+      "name": "First Run",
+      "purpose": "Explain the app in three lines and offer the sample price book.",
+      "components": [
+        "Three-line explanation of what a price book is",
+        "Honest note that PriceJar recalls your own items and does not look barcodes up online",
+        "Load sample data button",
+        "Start empty button",
+        "Currency and measurement system confirmation prefilled from the device locale",
+        "No advertising and no tracking prompt of any kind"
+      ],
+      "navigation_to": [
+        "S001"
+      ]
+    }
+  ],
+  "permissions": [
+    {
+      "key": "NSCameraUsageDescription",
+      "usage_description": "PriceJar uses the camera to scan a product barcode so it can pull up the prices you already recorded for that product. Photos are not taken or saved.",
+      "requested_when": "The first time the user opens the barcode scanner from the Price Book toolbar or the Record Price form. Never at launch and never during onboarding.",
+      "works_if_denied": "Everything except scanning. The scanner screen explains the denial, offers a link to Settings, and falls back to searching the price book by name or picking the item from the list; items can still be created with a barcode typed in by hand."
+    },
+    {
+      "key": "NSUserTrackingUsageDescription",
+      "usage_description": "Allow tracking so the ads that keep PriceJar free can be more relevant. Your items, prices, stores and shopping lists stay on this iPhone either way.",
+      "requested_when": "After the user saves their first price entry, once the app has demonstrably done something, and never on a cold start, during first run, or while a shopping trip is active.",
+      "works_if_denied": "The whole app. Nothing is gated on the answer; ads simply become non-personalised, which lowers revenue and changes nothing the user sees except relevance."
+    }
+  ],
+  "integrations": {
+    "swift_packages": [
+      "GoogleMobileAds"
+    ],
+    "apple_frameworks": [
+      "SwiftUI",
+      "SwiftData",
+      "Charts",
+      "AVFoundation",
+      "PhotosUI",
+      "StoreKit",
+      "AppTrackingTransparency",
+      "AdSupport",
+      "UniformTypeIdentifiers",
+      "Foundation"
+    ],
+    "analytics": false,
+    "crash_reporting": false,
+    "ads": true
+  },
+  "monetization": {
+    "enabled": true,
+    "provider": "Google AdMob",
+    "banner": true,
+    "interstitial": true,
+    "rewarded": false,
+    "remove_ads_iap": true,
+    "iap_product_id": "com.proapps.pricejar.removeads",
+    "banner_screens": [
+      "S001 Price Book",
+      "S002 Item History",
+      "S006 Stores",
+      "S010 Stats"
+    ],
+    "interstitial_moments": [
+      "S009 Trip Summary, shown after a shopping trip has been saved and the summary is on screen; at most one per app session, never within four minutes of any other ad, never on a cold start, and never before the user has completed something"
+    ],
+    "ads_never_on": [
+      "S003 Record Price - the entry form, in any state",
+      "S004 Barcode Scanner",
+      "S005 Good Price? verdict sheet",
+      "S008 Trip Mode and every screen reached while a trip is active - Shopping Mode suppresses all advertising, because the user is standing in a shop, one-handed, possibly with no signal",
+      "S012 Add or Edit Item",
+      "S013 First Run and onboarding",
+      "S011 Settings",
+      "The Remove Ads purchase and restore flow",
+      "Cold start, before any screen has been drawn",
+      "Anywhere at all once the Remove Ads purchase is owned"
+    ],
+    "att_requested_when": "Immediately after the first price entry is saved, on returning from the verdict sheet, so the user has already seen what the app does before being asked. Never at launch, never during first run, never while a trip is active, and never more than once."
+  },
+  "localization": {
+    "default_language": "en-US",
+    "supported_languages": [
+      "en-US",
+      "es-ES",
+      "pt-PT",
+      "fr-FR",
+      "de-DE",
+      "it",
+      "tr",
+      "ar-SA",
+      "zh-Hans"
+    ],
+    "string_catalog": "Localizable.xcstrings",
+    "rtl_languages": [
+      "ar-SA"
+    ]
+  },
+  "design": {
+    "theme": "Deep green and amber - a pantry shelf, not a finance dashboard",
+    "style": "Plain SwiftUI with system materials, generous numerals, and prices set in a monospaced-digit font so columns line up. Verdicts are the only place colour carries meaning, and each one carries a shape and a word as well so colour is never the sole cue.",
+    "primary_color": "#1B5E3F",
+    "secondary_color": "#E5A13B",
+    "supports_light_mode": true,
+    "supports_dark_mode": true,
+    "supports_dynamic_type": true,
+    "accessibility_required": true
+  },
+  "privacy": {
+    "collects_personal_data": true,
+    "collects_sensitive_data": false,
+    "stores_data_locally": true,
+    "uploads_user_content": false,
+    "requires_privacy_policy": true,
+    "privacy_policy_url": "https://oflorezawaken-dev.github.io/huawei-app-factory/price-jar/privacy/",
+    "support_url": "https://oflorezawaken-dev.github.io/huawei-app-factory/price-jar/support/",
+    "privacy_manifest": {
+      "collected_data_types": [
+        {
+          "NSPrivacyCollectedDataType": "NSPrivacyCollectedDataTypeDeviceID",
+          "NSPrivacyCollectedDataTypeLinked": false,
+          "NSPrivacyCollectedDataTypeTracking": true,
+          "NSPrivacyCollectedDataTypePurposes": [
+            "NSPrivacyCollectedDataTypePurposeThirdPartyAdvertising"
+          ],
+          "why": "The AdMob SDK reads the advertising identifier when ATT is granted, and a vendor identifier otherwise."
+        },
+        {
+          "NSPrivacyCollectedDataType": "NSPrivacyCollectedDataTypeAdvertisingData",
+          "NSPrivacyCollectedDataTypeLinked": false,
+          "NSPrivacyCollectedDataTypeTracking": true,
+          "NSPrivacyCollectedDataTypePurposes": [
+            "NSPrivacyCollectedDataTypePurposeThirdPartyAdvertising"
+          ],
+          "why": "Ad impressions, clicks and the placement they occurred in are reported to AdMob."
+        },
+        {
+          "NSPrivacyCollectedDataType": "NSPrivacyCollectedDataTypeProductInteraction",
+          "NSPrivacyCollectedDataTypeLinked": false,
+          "NSPrivacyCollectedDataTypeTracking": true,
+          "NSPrivacyCollectedDataTypePurposes": [
+            "NSPrivacyCollectedDataTypePurposeThirdPartyAdvertising"
+          ],
+          "why": "AdMob records interaction with the ad units it serves. PriceJar itself sends no product-interaction data anywhere."
+        }
+      ],
+      "accessed_api_types": [
+        {
+          "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryUserDefaults",
+          "NSPrivacyAccessedAPITypeReasons": [
+            "CA92.1"
+          ],
+          "why": "Settings, the first-run flag, the ad frequency cap timestamps and the cached Remove Ads entitlement are stored in this app's own UserDefaults and read back by the same app."
+        },
+        {
+          "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryFileTimestamp",
+          "NSPrivacyAccessedAPITypeReasons": [
+            "C617.1"
+          ],
+          "why": "The CSV export writes a file to the app container and displays its creation timestamp to the user in the share sheet."
+        }
+      ],
+      "tracking": true,
+      "tracking_domains": [
+        "googleads.g.doubleclick.net",
+        "pagead2.googlesyndication.com"
+      ],
+      "note": "Only the AdMob SDK reaches the network. Items, prices, stores, lists, trips and photos live in the app's SwiftData store and are never uploaded. The final tracking domain list must match what the shipped GoogleMobileAds version declares in its own privacy manifest; verify against the SDK bundle at build time rather than copying this list blindly."
+    },
+    "app_privacy_answers": {
+      "data_used_to_track_you": [
+        "Identifiers > Device ID - YES. Tick 'Used to Track You'. Reason: the AdMob SDK reads the IDFA when ATT is granted and uses it for cross-app advertising.",
+        "Usage Data > Advertising Data - YES. Tick 'Used to Track You'. Reason: ad impressions and clicks are reported to Google and used to select future ads.",
+        "Usage Data > Product Interaction - YES. Tick 'Used to Track You'. Reason: AdMob records interaction with its own ad units."
+      ],
+      "data_linked_to_you": [
+        "Nothing. Leave every 'Linked to You' box unticked. PriceJar has no account, no sign-in, no email capture and no server, so no data point can be tied to an identity."
+      ],
+      "data_not_linked_to_you": [
+        "Identifiers > Device ID - tick, purpose 'Third-Party Advertising'.",
+        "Usage Data > Advertising Data - tick, purpose 'Third-Party Advertising'.",
+        "Usage Data > Product Interaction - tick, purpose 'Third-Party Advertising'.",
+        "Do NOT tick Contact Info, Health & Fitness, Financial Info, Location, Sensitive Info, Contacts, User Content, Search History, Browsing History, Purchases, Diagnostics or Other Data. Prices the user records are not Financial Info in Apple's sense - they never leave the device and are not payment or transaction data collected by the developer.",
+        "Purchases: not collected. The Remove Ads purchase is processed by Apple; the app receives only an entitlement and stores no purchase data.",
+        "Photos: not collected. Item photos are picked with PhotosPicker, stored in the app's own container and never uploaded."
+      ],
+      "console_checklist": [
+        "1. App Store Connect > App Privacy > Get Started (or Edit).",
+        "2. Answer 'Do you or your third-party partners collect data from this app?' with YES - the AdMob SDK does, even if PriceJar itself does not.",
+        "3. Under Identifiers, tick 'Device ID'. Purpose: Third-Party Advertising. Linked to the user: NO. Used for tracking: YES.",
+        "4. Under Usage Data, tick 'Advertising Data' and 'Product Interaction'. Purpose for both: Third-Party Advertising. Linked to the user: NO. Used for tracking: YES.",
+        "5. Tick nothing else. Do not tick Financial Info for the recorded grocery prices.",
+        "6. Confirm the Privacy Policy URL is https://oflorezawaken-dev.github.io/huawei-app-factory/price-jar/privacy/ and the Support URL is https://oflorezawaken-dev.github.io/huawei-app-factory/price-jar/support/.",
+        "7. Publish the answers, then re-read them against PrivacyInfo.xcprivacy and the privacy policy page. All three must say the same thing; a contradiction is a rejection.",
+        "8. Re-check this questionnaire before every release that adds an SDK, a permission or a data-writing feature."
+      ]
+    }
+  },
+  "qa": {
+    "unit_tests_required": true,
+    "screenshot_ui_test_required": true,
+    "release_build_required": true,
+    "ipa_required": true,
+    "test_permissions": true,
+    "test_localization": true,
+    "test_dark_mode": true,
+    "test_ads": true,
+    "test_offline_behavior": true,
+    "test_accessibility": true,
+    "acceptance_criteria": [
+      "Recording a price for an item already in the price book takes at most 4 taps plus typing the number, counted from the Price Book screen, and the UI test asserts the tap count.",
+      "Unit normalisation is exact: unit tests cover at least 40 cases across g, kg, oz, lb, mL, L, US fl oz, imperial fl oz, US gallon and count, and every result matches the table in F004 to within 0.0001 of the base unit. All arithmetic uses Decimal; a test fails the build if Double or Float appears in the normalisation module.",
+      "Mass and volume never interconvert: attempting to compare a 500 g entry with a 500 mL entry for the same item is rejected at entry time with a message naming the mismatch, covered by a unit test.",
+      "Price entry accepts both ',' and '.' as the decimal separator and produces the same Decimal in en-US, de-DE, fr-FR, tr and ar-SA locales, covered by unit tests for all five.",
+      "The verdict is deterministic: BEST when the unit price is at or within 0.5% of the lowest recorded, TYPICAL when at or below median x 1.10, ABOVE YOUR USUAL above that, and 'not enough data' with fewer than 3 entries. Unit tests cover each boundary at the exact threshold and one step either side.",
+      "No advertising object exists on the Record Price form, the barcode scanner, the verdict sheet, Add or Edit Item, First Run, Settings, the purchase flow, or any screen while a trip is active. A UI test walks all eight and asserts the ad container is absent, not merely hidden.",
+      "The interstitial appears at most once per app session, never within 240 seconds of any other ad, and only after a trip has been saved; unit tests drive the frequency capper with a fake clock across the 239 s and 241 s boundaries.",
+      "The ATT prompt is requested exactly once, only after the first price entry is saved, and never during first run; a UI test asserts no prompt appears in the first 60 seconds of a fresh install that saves nothing.",
+      "Purchasing Remove Ads hides the banner within 1 second without a relaunch, and the app relaunches ad-free; a StoreKit test-configuration test covers purchase, relaunch and Restore Purchases.",
+      "In airplane mode every feature except ad loading works with no error surfaced to the user: adding items and prices, scanning, the verdict, history, charts, the basket comparison, a full trip and CSV export. A UI test runs that whole sequence offline.",
+      "First run loads exactly 12 sample items in 1 demo store when accepted, all badged 'Sample'; 'Remove sample data' deletes exactly those rows in one tap and a test asserts user-entered rows survive it.",
+      "Scanning a barcode already attached to an item opens that item's history in under 2 seconds on an iPhone 12; an unknown code opens Add Item with the code prefilled.",
+      "The basket comparison always states its coverage in the form 'based on N of M items you have prices for', and N is never overstated; a unit test covers a basket where some items have no recorded price.",
+      "CSV export round-trips: a unit test writes the export for a 3-store, 20-item, 120-entry fixture, parses it back with an RFC 4180 parser and gets identical values, with commas, quotes and non-ASCII item names in the fixture.",
+      "Every interactive control has an accessibility identifier and a VoiceOver label; a UI test enumerates the controls on all 13 screens and fails on any control missing either.",
+      "At the accessibility XXL Dynamic Type size, the five tab root screens show no truncated or clipped text and no overlapping controls, verified by screenshot tests in light and dark appearance.",
+      "The string catalogue has a translation for 100% of keys in all 9 languages, no string is hardcoded in a view, and the Arabic layout mirrors; a test fails on any missing or untranslated key.",
+      "Cold start reaches an interactive Price Book in under 2 seconds on an iPhone SE (2nd generation) with 200 items and 2000 price entries, and scrolling that library stays at 60 fps.",
+      "Line coverage of the unit-normalisation and verdict modules is at least 90%, and the whole unit-test suite runs in under 60 seconds.",
+      "No AdMob unit ID, app ID or IAP product ID appears as a literal in tracked Swift source; all come from Config/AdMob.xcconfig, and a check fails the build if a 'ca-app-pub-' literal is found outside that file."
+    ]
+  }
+}
