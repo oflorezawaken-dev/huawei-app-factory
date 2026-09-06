@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+.env
+*.jks
+*.keystore
+*.p12
+agconnect-services.json
