@@ -16,10 +16,10 @@ remembering gh/claude invocations. Standard library only.
   python factory/factory.py publish <slug> [--aab] [--submit --notes "..."] [--run-id N]
   python factory/factory.py research [--ios]                  # claude: propose an app (App Store lane with --ios)
   python factory/factory.py spec <slug> --proposal proposals/<file>.md [--ios]
-  python factory/factory.py generate <slug>                   # claude: build the app from its spec
-  python factory/factory.py fix <slug> --run-id N             # claude: fix a failing build
-  python factory/factory.py listing <slug>                    # claude: 9-language store text
-  python factory/factory.py privacy <slug>                    # claude: privacy policy page
+  python factory/factory.py generate <slug> [--ios]           # claude: build the app from its spec
+  python factory/factory.py fix <slug> --run-id N [--ios]     # claude: fix a failing build
+  python factory/factory.py listing <slug> [--ios]            # claude: 9-language store text
+  python factory/factory.py privacy <slug> [--ios]            # claude: privacy (+support) pages
 
 Add --print to see the underlying command without running it.
 The `claude` steps use Claude Code headless (`claude -p`) under your own subscription;
@@ -160,15 +160,18 @@ def main(argv: list[str]) -> int:
         prompt = "20-spec-ios.md" if a.ios else "20-spec.md"
         return claude_step([prompt], f"Slug: {a.slug}\nProposal file: {a.proposal}", a.print_only, model_for("spec", a.model))
     if a.command == "generate":
-        return claude_step(["30-generate.md"], f"Slug: {a.slug}", a.print_only, model_for("generate", a.model))
+        # The iOS generator drives SwiftUI/XcodeGen from apps-ios/_template and
+        # carries the build traps found while verifying that template.
+        prompt = "30-generate-ios.md" if a.ios else "30-generate.md"
+        return claude_step([prompt], f"Slug: {a.slug}", a.print_only, model_for("generate", a.model))
     if a.command == "fix":
         if not a.run_id:
             sys.exit("fix needs --run-id")
-        return claude_step(["40-fix-build.md"], f"Slug: {a.slug}\nFailing run: {a.run_id}", a.print_only, model_for("fix", a.model))
+        return claude_step([("40-fix-build-ios.md" if a.ios else "40-fix-build.md")], f"Slug: {a.slug}\nFailing run: {a.run_id}", a.print_only, model_for("fix", a.model))
     if a.command == "listing":
-        return claude_step(["50-listing.md"], f"Slug: {a.slug}", a.print_only, model_for("listing", a.model))
+        return claude_step([("50-listing-ios.md" if a.ios else "50-listing.md")], f"Slug: {a.slug}", a.print_only, model_for("listing", a.model))
     if a.command == "privacy":
-        return claude_step(["60-privacy.md"], f"Slug: {a.slug}", a.print_only, model_for("privacy", a.model))
+        return claude_step([("60-privacy-ios.md" if a.ios else "60-privacy.md")], f"Slug: {a.slug}", a.print_only, model_for("privacy", a.model))
     if a.command == "privacy-tags":
         if a.init:
             rc = run([py, "factory/tools/privacy_tags.py", "init", a.slug], a.print_only)
