@@ -108,3 +108,10 @@ Re-verify against the official reference before relying on new fields.
 - `PUT /publish/v2/app-language-info` to push the 9 localized store descriptions from `specifications/`.
 - Icon and screenshot upload (fileType 0 and 2) from emulator captures.
 - Trigger publish automatically from a Git tag once the human gate is the environment approval.
+
+## Superseded workflows (2026-09-06)
+
+The `receipt-lens-*.yml` workflows referenced above were replaced by the generic
+`factory-build.yml`, `factory-store.yml` and `factory-publish.yml`, which take an `app`
+input and read `factory/apps.json`. The API flow, errors, and fixes documented here are
+unchanged; only the entry points moved. See `factory/README.md`.
