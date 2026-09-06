@@ -66,3 +66,18 @@ Not yet done: privacy policy URL, content rating, icon/screenshots, review submi
   standard OS-level device/account backup, which is broader than the in-app claim
   "100% Offline & Private" and the privacy policy's implication of local-only storage. Either add
   explicit excludes for the receipts/database, or soften the in-app and store copy.
+
+## App icon and screenshots uploaded to AppGallery Connect (2026-09-06)
+
+| Item | Result |
+|---|---|
+| Icon | Registered via run 34054098481 (initial, failed — missing lang) then 34054214365 (success) |
+| Screenshots (en-US) | 5 files registered in one call, run 34054214365 |
+| Tool | `factory/tools/agc_upload_assets.py`, `.github/workflows/receipt-lens-assets.yml` |
+
+Note: AppGallery Connect's `app-file-info` endpoint rejected the icon upload with
+`lang is necessary` even though the fileType-0 (icon) reference implementation we
+checked didn't always pass one — this account/app requires `lang` on every
+`app-file-info` call, icon included. The workflow now resolves and sends it for both.
+
+Content rating was completed manually by the user in the console (date not recorded here).
