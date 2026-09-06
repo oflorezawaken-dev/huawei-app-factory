@@ -1,0 +1,247 @@
+<title>ReceiptLens Privacy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Sans+3:ital,wght@0,400;0,500;0,600;0,700;1,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+  :root {
+    --bg: #fdfbff;
+    --surface: #ffffff;
+    --surface-alt: #f0f3fa;
+    --text: #1a1c1e;
+    --text-muted: #565f71;
+    --border: #dbe2f0;
+    --accent: #005ac1;
+    --accent-soft: #d7e3ff;
+    --tag: #0d6e64;
+    --tag-bg: #e3f5f2;
+    --rule: #c7d3e8;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #101418;
+      --surface: #171c22;
+      --surface-alt: #1b2532;
+      --text: #e2e2e6;
+      --text-muted: #b7c0d1;
+      --border: #2b3542;
+      --accent: #9dc4ff;
+      --accent-soft: #163257;
+      --tag: #7fd9c9;
+      --tag-bg: #103430;
+      --rule: #2b3542;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #101418;
+    --surface: #171c22;
+    --surface-alt: #1b2532;
+    --text: #e2e2e6;
+    --text-muted: #b7c0d1;
+    --border: #2b3542;
+    --accent: #9dc4ff;
+    --accent-soft: #163257;
+    --tag: #7fd9c9;
+    --tag-bg: #103430;
+    --rule: #2b3542;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Source Sans 3", system-ui, -apple-system, "Segoe UI", sans-serif;
+    font-size: 17px;
+    line-height: 1.65;
+  }
+  .page {
+    max-width: 660px;
+    margin: 0 auto;
+    padding: 3.5rem 1.5rem 5rem;
+  }
+  .masthead {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 0.4rem;
+  }
+  .masthead img {
+    width: 44px;
+    height: 44px;
+    border-radius: 11px;
+    flex: none;
+    display: block;
+  }
+  .masthead .word {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 0.8rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+  h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    margin: 0.15rem 0 0;
+    text-wrap: balance;
+    letter-spacing: -0.01em;
+  }
+  .meta {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    margin-top: 0.6rem;
+  }
+  .tear {
+    height: 1px;
+    margin: 2.25rem 0;
+    background-image: linear-gradient(to right, var(--rule) 60%, transparent 0%);
+    background-size: 10px 1px;
+    background-repeat: repeat-x;
+  }
+  .summary {
+    background: var(--surface-alt);
+    border-radius: 10px;
+    padding: 1.15rem 1.35rem;
+    margin: 1.75rem 0 2.5rem;
+  }
+  .summary p { margin: 0; }
+  .summary strong { color: var(--accent); }
+
+  section { margin: 2.4rem 0; }
+  section + section {
+    border-top: 1px solid var(--border);
+    padding-top: 2.4rem;
+  }
+  .tag {
+    display: inline-block;
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.03em;
+    color: var(--tag);
+    background: var(--tag-bg);
+    border-radius: 5px;
+    padding: 0.15rem 0.5rem;
+    margin-bottom: 0.6rem;
+  }
+  h2 {
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin: 0 0 0.65rem;
+    text-wrap: balance;
+  }
+  p { margin: 0 0 0.9rem; color: var(--text); }
+  p:last-child { margin-bottom: 0; }
+  a { color: var(--accent); }
+
+  footer {
+    margin-top: 3rem;
+    padding-top: 1.75rem;
+    border-top: 1px solid var(--border);
+    font-size: 0.85rem;
+    color: var(--text-muted);
+  }
+  footer a { color: var(--text-muted); text-decoration-color: var(--border); }
+</style>
+
+<div class="page">
+
+  <div class="masthead">
+    <img src="data:image/png;base64,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" alt="">
+    <span class="word">ReceiptLens</span>
+  </div>
+  <h1>Privacy Policy</h1>
+  <div class="meta">Last updated &mdash; 2026-09-06</div>
+
+  <div class="tear"></div>
+
+  <div class="summary">
+    <p><strong>In short:</strong> ReceiptLens does not require an account, does not send your
+    receipts or receipt data to any server we operate, and does not currently show ads.
+    Everything you scan or enter is stored in the app's private storage, on your device.</p>
+  </div>
+
+  <section>
+    <span class="tag">data stored</span>
+    <h2>What ReceiptLens keeps</h2>
+    <p><strong>Receipt photos</strong> you capture or import, saved only in the app's private
+    storage on your device.</p>
+    <p><strong>Receipt data</strong> you enter or edit &mdash; merchant, date, amount, tax,
+    currency, category &mdash; kept in a local database on your device.</p>
+    <p><strong>Preferences</strong>, such as your default currency and display language.</p>
+    <p>None of this is transmitted to us. There is no account, sign-in, or profile of any kind.</p>
+  </section>
+
+  <section>
+    <span class="tag">camera</span>
+    <h2>Camera permission</h2>
+    <p>ReceiptLens asks for camera access only to photograph a receipt. The photo is processed
+    and stored on your device; the app does not upload it anywhere.</p>
+  </section>
+
+  <section>
+    <span class="tag">on-device ocr</span>
+    <h2>Text recognition</h2>
+    <p>ReceiptLens is designed to read a merchant, date, and amount off a receipt photo using
+    on-device text recognition, so you can review and correct the result before saving. This
+    runs, or is intended to run, entirely on your device &mdash; no photo or extracted text is
+    sent to a server for it. When recognition isn't available, ReceiptLens asks you to enter
+    the receipt manually instead; your data doesn't leave the device either way.</p>
+  </section>
+
+  <section>
+    <span class="tag">advertising</span>
+    <h2>Ads</h2>
+    <p>This version of ReceiptLens shows no ads. A later version may add Huawei Petal Ads on a
+    few non-critical screens, never during capture, review, or data entry. If we turn ads on,
+    we will update this page first to describe what the ad SDK collects, matching Huawei's own
+    AppGallery and Petal Ads disclosures.</p>
+  </section>
+
+  <section>
+    <span class="tag">export</span>
+    <h2>Exporting your data</h2>
+    <p>Settings lets you export your receipts to a CSV file. That file is built on your device
+    and shared through whatever option you pick; we never receive a copy.</p>
+  </section>
+
+  <section>
+    <span class="tag">device backup</span>
+    <h2>Device-level backups</h2>
+    <p>ReceiptLens does not back up your data to any cloud service of ours. If your device's
+    own backup feature is turned on &mdash; a Google or device-maker account backup, for
+    instance &mdash; that system-level feature may include ReceiptLens' app data, the same way
+    it can for any other app on your device. You can review and control that in your device's
+    backup settings.</p>
+  </section>
+
+  <section>
+    <span class="tag">deletion</span>
+    <h2>Deleting your data</h2>
+    <p>You can delete any receipt from inside the app at any time. Uninstalling ReceiptLens
+    removes everything it stored locally.</p>
+  </section>
+
+  <section>
+    <span class="tag">children</span>
+    <h2>Children's privacy</h2>
+    <p>ReceiptLens is a general-purpose expense tool, not directed at children. We don't
+    knowingly collect information from children &mdash; and as above, we don't collect
+    personal information on any server at all.</p>
+  </section>
+
+  <section>
+    <span class="tag">changes</span>
+    <h2>Changes to this policy</h2>
+    <p>If what ReceiptLens collects or does changes &mdash; enabling ads or a cloud feature in a
+    future version, for example &mdash; we'll update this page and the date above before that
+    version ships.</p>
+  </section>
+
+  <footer>
+    Questions about this policy or your data:
+    <a href="mailto:orlandoflorez@montechelo.net">orlandoflorez@montechelo.net</a>
+    &nbsp;&middot;&nbsp;
+    <a href="https://github.com/oflorezawaken-dev/huawei-app-factory">source on GitHub</a>
+  </footer>
+
+</div>
