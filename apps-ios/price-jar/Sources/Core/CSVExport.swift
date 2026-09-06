@@ -105,13 +105,18 @@ enum CSVParser {
                 case ",":
                     currentRow.append(currentField)
                     currentField = ""
-                case "\r":
-                    continue
-                case "\n":
+                case "\r\n", "\n":
+                    // Swift's Character is an extended grapheme cluster, so
+                    // "\r\n" from `csvString`'s CRLF line endings arrives as
+                    // ONE Character equal to neither "\r" nor "\n" alone --
+                    // matching only "\n" here silently swallowed every row
+                    // break into the next field's text.
                     currentRow.append(currentField)
                     rows.append(currentRow)
                     currentRow = []
                     currentField = ""
+                case "\r":
+                    continue
                 default:
                     currentField.append(char)
                 }
