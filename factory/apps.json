@@ -57,13 +57,12 @@
       "known_gaps": {
         "ml_kit_ocr": "No Huawei ML Kit dependency; OCR always falls back to manual entry and the notice text is developer-facing.",
         "history_filter": "Receipt History shows a false empty state until 'All Categories' is tapped.",
-        "backup_rules": "allowBackup=true with template backup rules; receipt data can be swept into OS backups.",
-        "ad_unit_ids": "Real Petal Ads unit IDs not yet pasted into factory/apps.json (ads section); builds use Huawei test units until then."
+        "backup_rules": "allowBackup=true with template backup rules; receipt data can be swept into OS backups."
       },
       "ads": {
-        "banner_ad_id": "",
-        "interstitial_ad_id": "",
-        "_note": "Paste the Petal Ads unit IDs from the Petal Ads console. Empty = builds fall back to Huawei TEST ad units; factory-publish refuses to upload while empty."
+        "banner_ad_id": "x356165ye8",
+        "interstitial_ad_id": "m16jsgk7s8",
+        "_note": "Petal Ads unit IDs from the Petal Ads console (set 2026-09-06). Public identifiers, not secrets. CI exports them as PETAL_*_AD_ID for Gradle."
       }
     }
   ]
