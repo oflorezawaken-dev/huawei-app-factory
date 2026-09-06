@@ -90,7 +90,7 @@ def env_ios(app: dict, defaults: dict, slug: str, slug_upper: str) -> dict:
         "APP_SUPPORT_PATH": app.get("support_path", ""),
         "ASC_APP_ID": str(app.get("asc_app_id") or ""),
         "APP_SKU": str(app.get("sku") or slug),
-        "APPLE_TEAM_ID": str(app.get("team_id") or ""),
+        "APPLE_TEAM_ID": str(app.get("team_id") or ios_defaults.get("team_id") or ""),
         "ADMOB_APP_ID": str(admob.get("app_id") or ""),
         "ADMOB_BANNER_UNIT_ID": str(admob.get("banner_unit_id") or ""),
         "ADMOB_INTERSTITIAL_UNIT_ID": str(admob.get("interstitial_unit_id") or ""),

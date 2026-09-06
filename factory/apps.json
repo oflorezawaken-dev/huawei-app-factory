@@ -39,6 +39,8 @@
     "ios": {
       "_note": "iOS lane defaults. Apple locale codes differ from Huawei's (ar-SA vs ar, zh-Hans vs zh-CN, it vs it-IT, tr vs tr-TR); never reuse defaults.languages here.",
       "bundle_id_prefix": "com.proapps",
+      "team_id": "S925H57N37",
+      "_team_id_note": "Apple Developer Team ID. Public (it appears in every provisioning profile and IPA), not a secret. Apps inherit it; an app entry may override team_id if it ever ships under a different team.",
       "_decisions_note": "bundle_id_prefix and the monetization rules below were decided by the owner on 2026-09-07. Every iOS app's bundle_id is com.proapps.<name>; monetization is real AdMob (banner + interstitial) plus a non-consumable remove-ads IAP, both enforced by check_ios_app.py.",
       "min_ios": "17.0",
       "languages": [
