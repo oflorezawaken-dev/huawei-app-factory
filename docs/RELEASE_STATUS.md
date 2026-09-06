@@ -37,3 +37,32 @@ Secrets used by the `release` job (names only): `RELEASE_KEYSTORE_BASE64`, `RELE
 
 Prerequisites that had to be completed in the console first: create the app, set distribution countries.
 Not yet done: privacy policy URL, content rating, icon/screenshots, review submission.
+
+## Store readiness (2026-09-06)
+
+| Item | Status | Where |
+|---|---|---|
+| Privacy policy | Published (private artifact) | https://claude.ai/code/artifact/d0654ce5-4a54-4e8e-a208-95e0eec411b6 — must be shared to public or hosted elsewhere before submitting for review; source kept at `docs/privacy/artifact.html`. GitHub Pages is unavailable because the repo is private on the Free plan. |
+| App icon | Done | `apps/receipt-lens/store/icon/icon-512.png` — 512x512, rendered from the app's real adaptive-icon vectors/colors, no placeholder. |
+| Screenshots | Done (English) | `apps/receipt-lens/store/screenshots/en/` — 5 real captures from the signed release APK on an emulator: Home (with data), Receipt Detail, Statistics, Receipt History, Settings. Camera/scan screen skipped (emulator has no camera feed, would look broken). |
+| Store listing text | Pushed to AppGallery Connect for all 9 languages | `apps/receipt-lens/store/listing.json`, uploaded via `.github/workflows/receipt-lens-listing.yml` runs 34053728967 (en-US), 34053759619 (8 languages), 34053801947 (ar retry). Machine-drafted; see `_notes` in listing.json — have a native speaker review before a real launch. Deliberately does not claim automatic OCR extraction (see known gaps below). |
+
+### Real bugs found while testing the signed build
+
+- **OCR notice leaks an internal message to end users.** The Review screen's "Text Recognition
+  Notice" reads "Huawei ML Kit OCR is ready for AppGallery deployment. Please configure
+  agconnect-services.json and Huawei HMS Core dependencies in production." That is a
+  developer-facing implementation note, not user-facing copy. Fix before shipping: replace with
+  something like "We couldn't read this receipt automatically — please enter the details below."
+  (`apps/receipt-lens/app/src/main/java/.../ml/HuaweiMlKitOcrService.kt` and wherever the string
+  is defined/localized.)
+- **Receipt History shows a false "no results" empty state on first entry**, even with receipts
+  present and no user-selected filter — reproduced by opening the History tab right after saving
+  a receipt. Tapping "All Categories" fixes it. Looks like the category-filter chip group doesn't
+  default to "all" on first composition. Worth a real fix before relying on this screen.
+- **`data_extraction_rules.xml` and `backup_rules.xml` are untouched Android Studio templates**
+  (all `<include>`/`<exclude>` commented out) while `android:allowBackup="true"` is set. That
+  means the app's private storage (including receipt images in `filesDir`) can be swept into a
+  standard OS-level device/account backup, which is broader than the in-app claim
+  "100% Offline & Private" and the privacy policy's implication of local-only storage. Either add
+  explicit excludes for the receipts/database, or soften the in-app and store copy.
