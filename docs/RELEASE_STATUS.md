@@ -122,6 +122,7 @@ Next: ReceiptLens 1.1 with the real Petal Ads SDK (closes the three excused gaps
 | Ad unit IDs | `BuildConfig.PETAL_BANNER_AD_ID` / `PETAL_INTERSTITIAL_AD_ID` from env `PETAL_*_AD_ID` (CI exports them from `factory/apps.json` → `ads`). Empty → Huawei TEST units `testw6vs28auh3` / `teste9ih9j0rc3` and `BuildConfig.PETAL_ADS_USING_TEST_IDS=true`. `factory-publish.yml` refuses to upload while the registry IDs are empty. |
 | Copy | Settings privacy + Petal Ads texts and version string updated in 9 locales (apostrophes escaped for AAPT); privacy policy page and `store/listing.json` now disclose ads; 1.1 release notes in 9 languages |
 | Local verification | `gradle :app:testDebugUnitTest :app:assembleDebug` green (5/5 tests), debug APK 24.3 MB (was 21.5 MB) with SDK classes present |
+| CI | Factory Build run 34057608591 green (plan / verify / release); artifacts `receipt-lens-release-apk` 15.5 MB, `receipt-lens-release-aab` 15.6 MB, `receipt-lens-debug-apk` 22.7 MB. Release log carries the expected warning: built with Huawei TEST ad unit IDs. |
 | Gate | `check_app.py receipt-lens`: petal_ads PASS, internet_perm PASS; excused: `ad_unit_ids` (until IDs are pasted), `ml_kit_ocr` |
 | Removed | `ads/PetalAdConfig.kt` (reflection stub) |
 
