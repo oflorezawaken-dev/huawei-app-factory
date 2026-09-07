@@ -29,7 +29,7 @@
     {
       "lang": "fr-FR",
       "appName": "PlantCue",
-      "briefInfo": "Des rappels de soins pour vos plantes, sur votre téléphone. Sans compte, sans paywall.",
+      "briefInfo": "Rappels de soins pour vos plantes, sur votre téléphone. Sans compte ni paywall.",
       "appDesc": "PlantCue vous rappelle d'arroser, de fertiliser et de brumiser vos plantes, et rien d'autre.\n\nAjoutez une plante avec une photo et une pièce, indiquez la fréquence des soins et PlantCue envoie un seul rappel par jour avec tout ce qui est à faire. Touchez Fait et la prochaine date avance ; touchez Reporter si ce n'est pas le bon jour.\n\nTout reste sur votre appareil. Pas de compte, pas de cloud, pas d'identification de plantes payante ni d'essai qui se transforme en facture.\n\nAu programme :\n• Programmes d'arrosage, d'engrais et de brumisation par plante\n• Vue Aujourd'hui avec les plantes en retard et du jour, et Fait en un geste\n• Un rappel quotidien à l'heure de votre choix\n• Liste des plantes avec photos, pièces et prochaines échéances\n• Historique des soins et statistiques simples : ponctualité et jours d'affilée\n• Thèmes clair, sombre et système\n• Interface en anglais, espagnol, portugais, français, allemand, italien, turc, arabe et chinois\n\nPlantCue est gratuit et financé par Huawei Petal Ads, affichées uniquement dans les écrans Plantes et Statistiques, jamais pendant l'ajout ou le soin d'une plante.",
       "newFeatures": "Version initiale : programmes d'arrosage, d'engrais et de brumisation par plante, rappel quotidien, historique et statistiques. Entièrement hors ligne, sans compte."
     },
@@ -43,7 +43,7 @@
     {
       "lang": "it-IT",
       "appName": "PlantCue",
-      "briefInfo": "Promemoria per la cura delle piante sul tuo telefono. Senza account, senza paywall.",
+      "briefInfo": "Promemoria per le tue piante, sul tuo telefono. Senza account, senza paywall.",
       "appDesc": "PlantCue ti ricorda di innaffiare, fertilizzare e nebulizzare le tue piante, e nient'altro.\n\nAggiungi una pianta con foto e stanza, imposta ogni quanto ha bisogno di cure e PlantCue ti invia un solo promemoria al giorno con tutto ciò che è in scadenza. Tocca Fatto e la prossima data avanza; tocca Rimanda se oggi non è il giorno giusto.\n\nTutto resta sul tuo dispositivo. Nessun account, nessun cloud, nessuna identificazione di piante a pagamento né prove gratuite che diventano addebiti.\n\nCosa include:\n• Piani di irrigazione, fertilizzazione e nebulizzazione per pianta\n• Vista Oggi con piante in ritardo e di oggi, e Fatto con un tocco\n• Un promemoria giornaliero all'ora che scegli\n• Elenco piante con foto, stanze e prossime date\n• Cronologia delle cure e statistiche semplici: puntualità e giorni di fila\n• Temi chiaro, scuro e di sistema\n• Interfaccia in inglese, spagnolo, portoghese, francese, tedesco, italiano, turco, arabo e cinese\n\nPlantCue è gratuito e sostenuto da Huawei Petal Ads, mostrati solo nelle schermate Piante e Statistiche, mai mentre aggiungi o curi una pianta.",
       "newFeatures": "Versione iniziale: piani di irrigazione, fertilizzazione e nebulizzazione per pianta, promemoria giornaliero, cronologia e statistiche. Completamente offline, nessun account."
     },

@@ -144,9 +144,13 @@ def main(argv: list[str]) -> int:
     # store_listing
     listing_path = os.path.join(ROOT, app["store_dir"], "listing.json")
     if os.path.isfile(listing_path):
-        have = {e.get("lang") for e in json.loads(read(listing_path)).get("languages", [])}
+        entries = json.loads(read(listing_path)).get("languages", [])
+        have = {e.get("lang") for e in entries}
         missing = [l for l in languages if l not in have]
-        report("store_listing", not missing, f"missing languages: {missing or 'none'}")
+        too_long = [e.get("lang") for e in entries if len(e.get("briefInfo", "")) > 80]
+        bad_notes = [e.get("lang") for e in entries if e.get("newFeatures") is not None and not (10 <= len(e["newFeatures"]) <= 300)]
+        report("store_listing", not (missing or too_long or bad_notes),
+               f"missing: {missing or 'none'}; briefInfo>80: {too_long or 'none'}; newFeatures out of 10-300: {bad_notes or 'none'}")
     else:
         report("store_listing", False, "listing.json missing")
 

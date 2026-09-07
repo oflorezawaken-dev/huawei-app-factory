@@ -106,6 +106,12 @@ def push_language(app_id: str, client_id: str, token: str, entry: dict, dry_run:
     for src_key, api_key in FIELD_MAP.items():
         if entry.get(src_key):
             body[api_key] = entry[src_key]
+    # AppGallery Connect limits (learned from API errors): briefInfo <= 80, newFeatures 10..300.
+    if len(body.get("briefInfo", "")) > 80:
+        raise PublishError(f"{lang}: briefInfo is {len(body['briefInfo'])} chars, AppGallery allows at most 80")
+    nf = body.get("newFeatures")
+    if nf is not None and not (10 <= len(nf) <= 300):
+        raise PublishError(f"{lang}: newFeatures must be 10-300 chars (got {len(nf)})")
 
     log(f"{lang}: fields={sorted(k for k in body if k != 'lang')}")
     if dry_run:
