@@ -1,0 +1,268 @@
+{
+  "spec_version": "1.0.0",
+
+  "app": {
+    "name": "PlantCue",
+    "package_name": "com.huaweiappfactory.plantcue",
+    "version_name": "1.0.0",
+    "version_code": 1,
+    "type": "app",
+    "category": "Lifestyle",
+    "description": "Plant-care reminders that live on your phone: add your plants, set how often they need water, fertiliser or misting, and get a local reminder. No account, no cloud, no paywall.",
+    "target_audience": "People with 3 to 30 houseplants who want a dependable watering reminder without a subscription or an account, on Huawei phones and any Android device.",
+    "problem_solved": "Houseplants die because people forget to water them or water them too often. The leading plant apps hide reminders behind trials, accounts and AI upsells; PlantCue is a plain, offline reminder that just works."
+  },
+
+  "product_strategy": {
+    "market_opportunity": "Plant-care apps are a large, active category whose leaders monetise through aggressive trials and paywalls (PictureThis, Planta) or require accounts and network for AI features (Greg, Garden.gg). A no-account, offline, ad-supported reminder is the underserved middle, and Huawei devices without Google services are poorly served by the incumbents.",
+    "competitive_advantage": "Works fully offline with local notifications, needs no account, has no paywall, runs on HMS devices, supports 9 languages, and keeps plant photos on the device. Honest scope: reminders and care history, no AI claims.",
+    "main_competitors": [
+      "PictureThis",
+      "Planta",
+      "Greg",
+      "Garden.gg",
+      "Generic watering-reminder apps"
+    ],
+    "estimated_development_complexity": 4,
+    "estimated_market_potential": 6,
+    "monetization_strategy": "Free application supported by Huawei Petal Ads: banners on the plant list and stats screens, an interstitial at most once per session when opening stats. Never on add/edit/photo screens and never when the app is opened from a reminder notification."
+  },
+
+  "technical": {
+    "platform": "Android",
+    "language": "Kotlin",
+    "ui": "Jetpack Compose",
+    "architecture": "MVVM",
+    "min_sdk": 26,
+    "target_sdk": 36,
+    "compile_sdk": 36,
+    "offline_first": true,
+    "dependency_injection": "Manual AppContainer (same pattern as ReceiptLens)",
+    "database": "Room",
+    "async": "Kotlin Coroutines",
+    "reactive_data": "Kotlin Flow",
+    "background_work": "WorkManager (periodic daily check) + local notifications; no exact alarms in V1",
+    "image_loading": "Coil",
+    "skeleton": "Copy apps/receipt-lens; strip receipts/OCR/CSV; keep theme, navigation shell, Room setup, settings pattern, 9-language string structure and the real Petal Ads integration"
+  },
+
+  "features": [
+    { "id": "F001", "name": "Add plant", "description": "Create a plant with name, optional photo (camera or gallery), room/tag and notes.", "priority": "P0", "requires_internet": false, "requires_permission": true, "permission": "android.permission.CAMERA (only if the user chooses to take a photo)" },
+    { "id": "F002", "name": "Care schedules", "description": "Per plant: water every N days (required); fertilise every N weeks (optional); mist every N days (optional). Each schedule tracks last done and next due.", "priority": "P0", "requires_internet": false, "requires_permission": false, "permission": "" },
+    { "id": "F003", "name": "Today view", "description": "List of plants due today and overdue, grouped, with one-tap 'Done' per care type and a 'Snooze 1 day' action.", "priority": "P0", "requires_internet": false, "requires_permission": false, "permission": "" },
+    { "id": "F004", "name": "Daily reminder notification", "description": "One local notification per day at a user-chosen hour summarising what needs care; tapping opens Today. Notification actions: Done all, Snooze.", "priority": "P0", "requires_internet": false, "requires_permission": true, "permission": "android.permission.POST_NOTIFICATIONS" },
+    { "id": "F005", "name": "Plant list", "description": "All plants with photo thumbnail, room, next due date; filter by room; sort by next due or name; empty state.", "priority": "P0", "requires_internet": false, "requires_permission": false, "permission": "" },
+    { "id": "F006", "name": "Plant detail", "description": "Photo, schedules with next due, care history timeline, edit and delete actions, mark-done actions.", "priority": "P0", "requires_internet": false, "requires_permission": false, "permission": "" },
+    { "id": "F007", "name": "Care history", "description": "Every Done/Snooze is stored per plant with timestamp and care type.", "priority": "P0", "requires_internet": false, "requires_permission": false, "permission": "" },
+    { "id": "F008", "name": "Stats", "description": "Plants count, care events this month, on-time percentage, current streak of days with all due care done.", "priority": "P1", "requires_internet": false, "requires_permission": false, "permission": "" },
+    { "id": "F009", "name": "Edit and delete plant", "description": "Edit any field or schedule; deleting a plant removes its photo file, schedules and history.", "priority": "P0", "requires_internet": false, "requires_permission": false, "permission": "" },
+    { "id": "F010", "name": "Settings", "description": "Reminder hour, theme (light/dark/system), privacy information, ads information, battery-optimisation guidance for reliable reminders, about.", "priority": "P0", "requires_internet": false, "requires_permission": false, "permission": "" },
+    { "id": "F011", "name": "Petal Ads", "description": "Real Huawei Petal Ads SDK: banner on Plant list and Stats; interstitial on opening Stats at most once per session with the factory frequency policy.", "priority": "P0", "requires_internet": true, "requires_permission": true, "permission": "android.permission.INTERNET, android.permission.ACCESS_NETWORK_STATE" },
+    { "id": "F012", "name": "Localization", "description": "All 9 factory languages with RTL support for Arabic; device language auto-detected.", "priority": "P0", "requires_internet": false, "requires_permission": false, "permission": "" },
+    { "id": "F013", "name": "Accessibility", "description": "Content descriptions, 48dp touch targets, font scaling, screen-reader compatible.", "priority": "P0", "requires_internet": false, "requires_permission": false, "permission": "" }
+  ],
+
+  "screens": [
+    { "id": "S001", "name": "Today", "purpose": "Show what needs care now and let the user mark it done.", "components": ["Header with date", "Overdue section", "Due today section", "Per-plant Done / Snooze buttons", "Empty state when nothing is due", "Add plant FAB", "Bottom navigation"], "navigation_to": ["S002", "S003", "S004"] },
+    { "id": "S002", "name": "Plants", "purpose": "Browse all plants.", "components": ["Room filter chips", "Sort control", "Plant cards with thumbnail and next due", "Empty state", "Petal Ads banner (bottom)", "Add plant FAB"], "navigation_to": ["S003", "S004"] },
+    { "id": "S003", "name": "Add / Edit Plant", "purpose": "Create or edit a plant and its schedules.", "components": ["Photo picker (camera / gallery / none)", "Name field", "Room field with suggestions", "Water every N days", "Optional fertilise every N weeks", "Optional mist every N days", "Notes", "Save"], "navigation_to": ["S004"] },
+    { "id": "S004", "name": "Plant Detail", "purpose": "Show one plant, its schedules and history.", "components": ["Photo", "Name and room", "Schedule cards with next due and Done button", "Care history list", "Edit", "Delete with confirmation"], "navigation_to": ["S003", "S002"] },
+    { "id": "S005", "name": "Stats", "purpose": "Show care performance.", "components": ["Plants count", "Care events this month", "On-time percentage", "Streak", "Petal Ads banner (bottom)"], "navigation_to": [] },
+    { "id": "S006", "name": "Settings", "purpose": "Configure reminders and app behaviour.", "components": ["Reminder hour picker", "Theme selector", "Battery optimisation guidance", "Privacy information", "Ads information", "About"], "navigation_to": [] }
+  ],
+
+  "data_model": {
+    "database": "Room",
+    "entities": [
+      { "name": "Plant", "fields": ["id", "name", "room", "notes", "photo_path", "created_at", "updated_at"] },
+      { "name": "CareSchedule", "fields": ["id", "plant_id", "care_type (WATER|FERTILISE|MIST)", "interval_days", "last_done_at", "next_due_at", "enabled"] },
+      { "name": "CareEvent", "fields": ["id", "plant_id", "care_type", "action (DONE|SNOOZED)", "at"] },
+      { "name": "Preferences (DataStore)", "fields": ["reminder_hour", "theme_mode", "notifications_intro_seen"] }
+    ],
+    "requirements": [
+      "Database operations off the main thread.",
+      "Room migrations for schema changes.",
+      "Deleting a plant deletes its photo file, schedules and events.",
+      "next_due_at is recomputed when a care action is marked done or snoozed.",
+      "No plant data leaves the device."
+    ]
+  },
+
+  "notifications": {
+    "requirements": [
+      "Exactly one daily summary notification at the configured hour, only when something is due or overdue.",
+      "Use WorkManager periodic work with flex window; do not request SCHEDULE_EXACT_ALARM in V1.",
+      "Request POST_NOTIFICATIONS in context (first time the user saves a plant), with an explanation screen, never at cold start.",
+      "Notification tap opens Today; ads are suppressed for that session start.",
+      "Settings must explain EMUI/battery-optimisation whitelisting with a button to the system settings page."
+    ]
+  },
+
+  "permissions": [
+    { "permission": "android.permission.POST_NOTIFICATIONS", "purpose": "Daily care reminder." },
+    { "permission": "android.permission.CAMERA", "purpose": "Optional plant photo; requested only when the user taps 'Take photo'." },
+    { "permission": "android.permission.INTERNET", "purpose": "Huawei Petal Ads only." },
+    { "permission": "android.permission.ACCESS_NETWORK_STATE", "purpose": "Huawei Petal Ads only." }
+  ],
+
+  "integrations": {
+    "huawei_services": ["Huawei Petal Ads"],
+    "external_services": [],
+    "analytics": false,
+    "crash_reporting": false,
+    "ads": true
+  },
+
+  "monetization": {
+    "enabled": true,
+    "provider": "Huawei Petal Ads",
+    "banner": true,
+    "interstitial": true,
+    "rewarded": false,
+    "iap": false,
+    "ad_frequency_rules": "Banners only on Plants (S002) and Stats (S005). Interstitial only when opening Stats, at most once per app session, not in the first 60 seconds after launch, at least 3 minutes apart, at most one per 4 triggers. Never on Today, Add/Edit, Plant Detail, or the photo picker, and never in a session started from a notification tap. Ad unit IDs come from factory/apps.json via BuildConfig; Huawei test IDs in debug."
+  },
+
+  "localization": {
+    "default_language": "en",
+    "supported_languages": ["en", "es", "pt", "fr", "de", "it", "tr", "ar", "zh"],
+    "auto_detect_device_language": true,
+    "fallback_language": "en",
+    "rtl_languages": ["ar"],
+    "requirements": [
+      "All visible strings in Android string resources; no hard-coded text.",
+      "Plurals for 'N plants', 'N days'.",
+      "Dates formatted per locale.",
+      "Arabic RTL verified on Today and Plant list."
+    ]
+  },
+
+  "design": {
+    "theme": "Calm botanical utility",
+    "style": "Friendly, clean, Material 3, generous whitespace, photo-forward plant cards",
+    "primary_color": "#2E7D32",
+    "secondary_color": "#8D6E63",
+    "supports_light_mode": true,
+    "supports_dark_mode": true,
+    "supports_system_theme": true,
+    "accessibility_required": true,
+    "requirements": ["Material 3", "Large Done buttons on Today", "Overdue state clearly distinct (colour + label, not colour alone)", "No decorative animations", "Accessible contrast", "Font scaling supported"]
+  },
+
+  "privacy": {
+    "collects_personal_data": false,
+    "collects_sensitive_data": false,
+    "stores_data_locally": true,
+    "uploads_user_content": false,
+    "requires_privacy_policy": true,
+    "privacy_policy_url": "https://oflorezawaken-dev.github.io/huawei-app-factory/plant-cue/privacy/",
+    "allow_backup": false,
+    "requirements": [
+      "Plants, photos and history stay in app-private storage.",
+      "android:allowBackup=false so the 'stays on your device' claim is literally true.",
+      "The only network user is the Petal Ads SDK; the privacy policy discloses what it may collect (OAID, device/network info, ad interactions) and how to limit personalisation.",
+      "No account, no backend, no analytics, no crash reporting.",
+      "Deleting a plant removes its photo file."
+    ]
+  },
+
+  "ai": {
+    "enabled": false,
+    "provider": "",
+    "backend_required": false,
+    "features": [],
+    "user_content_sent_to_ai": false,
+    "requirements": ["No plant identification or diagnosis claims anywhere in the app or store copy."]
+  },
+
+  "offline_behavior": {
+    "requirements": [
+      "Every feature except ads works with no network.",
+      "First launch works offline.",
+      "Reminders fire without network.",
+      "Ad failures are silent and leave no empty space."
+    ]
+  },
+
+  "qa": {
+    "unit_tests_required": true,
+    "ui_tests_required": true,
+    "lint_required": true,
+    "release_build_required": true,
+    "apk_required": true,
+    "aab_required": true,
+    "test_permissions": true,
+    "test_localization": true,
+    "test_dark_mode": true,
+    "test_ads": true,
+    "test_offline_behavior": true,
+    "test_accessibility": true,
+    "additional_tests": [
+      "Unit: next_due_at computation for water/fertilise/mist after Done and after Snooze, including month boundaries.",
+      "Unit: on-time percentage and streak computation.",
+      "Unit: room filter and sort.",
+      "UI/screenshot: Today with overdue + due; Plants with 3 plants; Plant detail; Stats; Settings.",
+      "Manual: deny notifications, deny camera, airplane mode, RTL, large font, process death on Add/Edit."
+    ]
+  },
+
+  "release": {
+    "build_type": "release",
+    "minify_enabled": false,
+    "shrink_resources": false,
+    "signed_release_required": true,
+    "generate_apk": true,
+    "generate_aab": true,
+    "submit_to_appgallery": true,
+    "requirements": ["Same signing keystore as ReceiptLens (factory RELEASE_* secrets).", "versionCode increases every release.", "No secrets in git."]
+  },
+
+  "appgallery": {
+    "default_language": "en",
+    "supported_languages": ["en", "es", "pt", "fr", "de", "it", "tr", "ar", "zh"],
+    "distribution_regions": ["Set by the owner in the console before the first upload (same as ReceiptLens)."],
+    "content_rating_required": true,
+    "free_app": true,
+    "appgallery_description": { "short": {}, "full": {}, "new_features": {} },
+    "keywords": {},
+    "screenshots_required": true,
+    "icon_required": true,
+    "requirements": [
+      "Real screenshots from the tested build only.",
+      "Store copy discloses ads and makes no AI claims.",
+      "App name availability ('PlantCue') verified when the app is created; fallbacks 'LeafCue', 'WaterWhen'."
+    ]
+  },
+
+  "assets": {
+    "icon": { "required": true, "description": "Leaf with a small clock/drop cue; green primary on a soft cream or deep green ground; 512x512 PNG rendered from the launcher vector." },
+    "screenshots": { "required": true, "source": "Real screenshots from the tested application build", "minimum_required": 4, "recommended_screens": ["Today", "Plants", "Plant detail", "Add plant", "Stats"] }
+  },
+
+  "security": {
+    "requirements": ["No hard-coded ad unit IDs, keys or credentials.", "App-private storage for photos.", "No exported components beyond the launcher activity and the notification receiver/worker."]
+  },
+
+  "performance": {
+    "requirements": ["Photos downscaled to max 1280px on save.", "Lazy lists for plants and history.", "Daily worker completes in under 2 seconds."]
+  },
+
+  "error_handling": {
+    "requirements": ["Camera/gallery failures show a readable message and let the user continue without a photo.", "Notification permission denied: app keeps working and Settings explains how to enable.", "Ad failures never block the UI.", "Database failures never silently lose data."]
+  },
+
+  "acceptance_criteria": [
+    "Release APK and AAB build in Factory Build with the quality gate in --strict mode passing.",
+    "A plant can be created with a photo from the gallery and without a photo.",
+    "Marking water Done moves next_due_at by the configured interval; Snooze moves it by one day.",
+    "Today lists overdue and due plants and hides them once done.",
+    "A daily notification fires at the configured hour when something is due (verified with a device clock change or WorkManager test).",
+    "Deleting a plant removes its photo file from app storage.",
+    "Stats numbers match the care events in the database for a known fixture.",
+    "All strings exist in all 9 languages; Arabic renders RTL.",
+    "Banners appear only on Plants and Stats; no ad on Today, Add/Edit, Detail; interstitial never fires in a session started from a notification.",
+    "Airplane mode: every screen works, no empty ad boxes.",
+    "android:allowBackup is false.",
+    "No Firebase, GMS, Google AI or reflection SDK stubs (quality gate)."
+  ]
+}

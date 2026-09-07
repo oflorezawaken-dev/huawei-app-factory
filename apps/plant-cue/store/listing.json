@@ -1,0 +1,48 @@
+{
+  "_notes": [
+    "English written; other languages marked _todo for the listing step (factory/prompts/50-listing.md).",
+    "Copy discloses Huawei Petal Ads and makes no plant-identification or AI claims.",
+    "Machine-drafted translations need a native review before a real launch."
+  ],
+  "languages": [
+    {
+      "lang": "en-US",
+      "appName": "PlantCue",
+      "briefInfo": "Plant-care reminders that live on your phone. No account, no paywall.",
+      "appDesc": "PlantCue reminds you to water, fertilise and mist your plants — and nothing more.\n\nAdd a plant with a photo and a room, set how often it needs care, and PlantCue sends one daily reminder listing everything that is due. Tap Done and the next date moves on; tap Snooze if today is not the day.\n\nEverything stays on your device. There is no account, no cloud, no plant-identification upsell and no trial that turns into a bill.\n\nWhat you get:\n• Watering, fertilising and misting schedules per plant\n• Today view with overdue and due plants and one-tap Done\n• One daily reminder at the hour you choose\n• Plant list with photos, rooms and next-due dates\n• Care history and simple stats: on-time rate and streak\n• Light, dark and system themes\n• Interface in English, Spanish, Portuguese, French, German, Italian, Turkish, Arabic and Chinese\n\nPlantCue is free and supported by Huawei Petal Ads, shown only on the plant list and stats screens — never while you add or care for a plant.",
+      "newFeatures": "Initial release: per-plant watering, fertilising and misting schedules, daily reminder, care history and stats. Fully offline, no account required."
+    },
+    {
+      "lang": "es-ES",
+      "_todo": true
+    },
+    {
+      "lang": "pt-PT",
+      "_todo": true
+    },
+    {
+      "lang": "fr-FR",
+      "_todo": true
+    },
+    {
+      "lang": "de-DE",
+      "_todo": true
+    },
+    {
+      "lang": "it-IT",
+      "_todo": true
+    },
+    {
+      "lang": "tr-TR",
+      "_todo": true
+    },
+    {
+      "lang": "ar",
+      "_todo": true
+    },
+    {
+      "lang": "zh-CN",
+      "_todo": true
+    }
+  ]
+}
