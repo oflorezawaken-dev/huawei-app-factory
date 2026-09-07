@@ -87,3 +87,17 @@ console time per app for the first three.
 
 Lessons from ReceiptLens (errors and their fixes) are in `docs/APPGALLERY_PUBLISHING.md`
 and `docs/RELEASE_STATUS.md`.
+
+## HarmonyOS NEXT (not now; how it would slot in)
+
+HarmonyOS NEXT does not run Android APKs, so nothing the factory builds today reaches new
+Huawei devices in mainland China. Outside China, Huawei phones still run the Android-based
+HarmonyOS 4.x and take APKs from AppGallery, which is what the factory targets.
+
+If a NEXT lane is ever added, the conductor stays: registry, gates, store metadata, Publishing API
+(it accepts `.app`/`.hap` packages through the same upload flow). What changes is the app layer:
+ArkTS/ArkUI code, the hvigor command-line toolchain, HarmonyOS signing (`.p12` + certificate +
+provisioning profile from AGC instead of a keystore), Ads Kit for HarmonyOS instead of the Android
+Petal Ads SDK, and a different emulator. Prerequisite that is not technical: distributing in
+mainland China needs a China-capable developer entity and its filings. Revisit when NEXT ships in
+the factory's target countries.

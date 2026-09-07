@@ -74,11 +74,12 @@
       "spec": "specifications/plant-cue.json",
       "store_dir": "apps/plant-cue/store",
       "privacy_path": "docs/plant-cue/privacy",
-      "status": "ready_to_publish",
+      "status": "in_review",
       "current_version": {
         "versionCode": 1,
         "versionName": "1.0.0",
-        "status": "planned"
+        "status": "in_review",
+        "submitted": "2026-09-07"
       },
       "known_gaps": {},
       "ads": {

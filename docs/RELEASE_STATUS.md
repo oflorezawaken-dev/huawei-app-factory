@@ -186,3 +186,4 @@ PlantCue is ready for review submission. The factory end-to-end test is complete
 approval → spec → generated app → PR → merge → signed build → store metadata → upload, with the
 human touching only the four gates (approve, merge, console setup, submit).
 
+PlantCue 1.0.0 submitted for Huawei review by the owner on 2026-09-07 (after removing Russia/Belarus from distribution countries: AGC blocks ad-monetised apps there because settlement in the developer's currency is not supported).
