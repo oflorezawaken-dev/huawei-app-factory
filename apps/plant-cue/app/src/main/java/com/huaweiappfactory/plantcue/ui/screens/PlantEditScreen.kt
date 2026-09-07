@@ -226,9 +226,16 @@ private fun IntervalRow(label: String, enabled: Boolean, onEnabled: ((Boolean) -
             }
         }
         if (enabled) {
+            // Local text state so the field can be emptied while typing a new number;
+            // only valid integers are committed upstream.
+            var text by remember(days) { mutableStateOf(days.toString()) }
             OutlinedTextField(
-                value = days.toString(),
-                onValueChange = { v -> v.filter { it.isDigit() }.take(3).toIntOrNull()?.let(onDays) },
+                value = text,
+                onValueChange = { v ->
+                    val digits = v.filter { it.isDigit() }.take(3)
+                    text = digits
+                    digits.toIntOrNull()?.let(onDays)
+                },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 singleLine = true,
                 modifier = Modifier.width(84.dp),
