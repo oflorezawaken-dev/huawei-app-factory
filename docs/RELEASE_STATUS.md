@@ -165,7 +165,7 @@ Submission is deliberately held until Huawei's verdict on 1.0.0 to avoid two ver
 | Signed build | Factory Build 34072658283 | plan / verify / release green; `plant-cue-release-apk` 12.8 MB, `plant-cue-release-aab` 12.9 MB; 2 expected "TEST ad unit IDs" warnings |
 | Gate 3: console | human | AGC app created → App ID 118898889 (registry). Petal Ads units pending (SHA-256 fingerprint entry gave an error in the console, being diagnosed). |
 | Store setup | factory-store run 34073241532 | listing 9/9 languages, icon, 5 screenshots, privacy URL — all saved. First attempt (34073169388) failed on fr/it `briefInfo` > 80 chars → texts shortened, limit now validated by the listing tool and the gate. |
-| Publish | factory-publish | pending ad unit IDs (workflow refuses test-unit builds) |
+| Upload (test ad units) | factory-publish run 34073579126 | APK 1.0.0 (13.9 MB, TEST ad units) uploaded and registered on app 118898889 with the explicit `allow_test_ad_units` override (upload only). Needed because the Petal Ads console requires the app package to exist before ad units can be created. Must be rebuilt and re-uploaded with real unit IDs before submission; the workflow blocks submit_for_review while IDs are missing. |
 
 Bugs found by driving the generated app on the emulator: interval TextField could not be cleared
 (fixed in `4ca8271`). Emulator ANR "No response to onStartJob" appeared once after a device date
