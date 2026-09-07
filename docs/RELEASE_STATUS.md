@@ -163,8 +163,9 @@ Submission is deliberately held until Huawei's verdict on 1.0.0 to avoid two ver
 | Generate | factory (prompt 30-generate) | branch `app/plant-cue`: full app, 9 langs, icon, privacy page, 9-lang listing, 5 emulator screenshots; local tests 11/11 |
 | Gate 2: review | human | PR #2 merged (`2031662`); PR CI 34072553929 green (verify only) |
 | Signed build | Factory Build 34072658283 | plan / verify / release green; `plant-cue-release-apk` 12.8 MB, `plant-cue-release-aab` 12.9 MB; 2 expected "TEST ad unit IDs" warnings |
-| Gate 3: console | human | pending: create app in AGC (+ countries, content rating) → App ID; Petal Ads units → IDs |
-| Store setup + publish | factory-store / factory-publish | pending gate 3 |
+| Gate 3: console | human | AGC app created → App ID 118898889 (registry). Petal Ads units pending (SHA-256 fingerprint entry gave an error in the console, being diagnosed). |
+| Store setup | factory-store run 34073241532 | listing 9/9 languages, icon, 5 screenshots, privacy URL — all saved. First attempt (34073169388) failed on fr/it `briefInfo` > 80 chars → texts shortened, limit now validated by the listing tool and the gate. |
+| Publish | factory-publish | pending ad unit IDs (workflow refuses test-unit builds) |
 
 Bugs found by driving the generated app on the emulator: interval TextField could not be cleared
 (fixed in `4ca8271`). Emulator ANR "No response to onStartJob" appeared once after a device date
