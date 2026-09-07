@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Leaf body (pale mint) -->
+    <path
+        android:fillColor="#E8F5E9"
+        android:pathData="M74,30 C56,30 40,40 37,60 C36.5,63 36.5,65.5 37,68 L33,72 L36,75 L40,71 C42,71.3 44.5,71.3 47,70.8 C66,67.5 74,50 74,30 Z" />
+
+    <!-- Leaf midrib and veins (green) -->
+    <path
+        android:strokeColor="#2E7D32"
+        android:strokeWidth="2.2"
+        android:strokeLineCap="round"
+        android:fillColor="#00000000"
+        android:pathData="M41,69 C44,58 51,47 63,39" />
+    <path
+        android:strokeColor="#2E7D32"
+        android:strokeWidth="1.6"
+        android:strokeLineCap="round"
+        android:fillColor="#00000000"
+        android:pathData="M47,58 C50,57 52.5,55 54,52 M52,50 C55,49 57.5,47 59,44 M44,64.5 C47,63.5 49.5,61.5 51,58.5" />
+
+    <!-- Water drop cue with a clock tick (the "cue") -->
+    <path
+        android:fillColor="#4FC3F7"
+        android:pathData="M72,60 C72,60 63,70 63,76.5 A9,9 0 0,0 81,76.5 C81,70 72,60 72,60 Z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M72,71.5 m-5,0 a5,5 0 1,0 10,0 a5,5 0 1,0 -10,0" />
+    <path
+        android:strokeColor="#0277BD"
+        android:strokeWidth="1.5"
+        android:strokeLineCap="round"
+        android:fillColor="#00000000"
+        android:pathData="M72,68.5 L72,71.5 L74.3,72.8" />
+</vector>

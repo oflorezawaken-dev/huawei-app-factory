@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">PlantCue</string>
+
+    <!-- Navigation -->
+    <string name="nav_today">Today</string>
+    <string name="nav_plants">Plants</string>
+    <string name="nav_stats">Stats</string>
+    <string name="nav_settings">Settings</string>
+
+    <!-- Common actions -->
+    <string name="action_done">Done</string>
+    <string name="action_snooze">Snooze 1 day</string>
+    <string name="action_add_plant">Add plant</string>
+    <string name="action_save">Save</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="action_delete">Delete</string>
+    <string name="action_edit">Edit</string>
+    <string name="action_ok">OK</string>
+    <string name="action_open_plant">Open plant</string>
+    <string name="cd_back">Back</string>
+    <string name="cd_plant_photo">Photo of %1$s</string>
+
+    <!-- Care types -->
+    <string name="care_water">Water</string>
+    <string name="care_fertilise">Fertilise</string>
+    <string name="care_mist">Mist</string>
+    <string name="due_today">Due today</string>
+    <plurals name="days_late">
+        <item quantity="one">%d day late</item>
+        <item quantity="other">%d days late</item>
+    </plurals>
+
+    <!-- Today -->
+    <string name="today_title">Today</string>
+    <string name="today_overdue">Overdue</string>
+    <string name="today_due">Due today</string>
+    <string name="today_empty_title">All plants are happy</string>
+    <string name="today_empty_body">Nothing needs care today. Come back tomorrow, or add another plant.</string>
+    <string name="today_no_plants_title">No plants yet</string>
+    <string name="today_no_plants_body">Add your first plant and PlantCue will remind you when it needs water.</string>
+
+    <!-- Plants -->
+    <string name="plants_title">My plants</string>
+    <string name="plants_filter_all">All rooms</string>
+    <string name="plants_sort_due">Sort by next due</string>
+    <string name="plants_sort_name">Sort by name</string>
+    <string name="plants_empty_title">No plants yet</string>
+    <string name="plants_empty_body">Tap + to add your first plant.</string>
+
+    <!-- Add / Edit -->
+    <string name="edit_title_new">Add plant</string>
+    <string name="edit_title_edit">Edit plant</string>
+    <string name="edit_name">Name</string>
+    <string name="edit_name_required">Give your plant a name</string>
+    <string name="edit_room">Room (optional)</string>
+    <string name="edit_notes">Notes (optional)</string>
+    <string name="edit_photo_take">Take photo</string>
+    <string name="edit_photo_gallery">Choose photo</string>
+    <string name="edit_photo_remove">Remove photo</string>
+    <string name="edit_photo_error_title">Photo not saved</string>
+    <string name="edit_photo_error">We could not save that photo. You can continue without it or try another one.</string>
+    <string name="edit_schedules">Care schedule</string>
+    <string name="edit_days_suffix">days</string>
+    <string name="edit_every_short">every %1$d d</string>
+    <plurals name="edit_every_days">
+        <item quantity="one">Every day</item>
+        <item quantity="other">Every %d days</item>
+    </plurals>
+
+    <!-- Notifications -->
+    <string name="notif_intro_title">Turn on reminders?</string>
+    <string name="notif_intro_body">PlantCue sends one notification a day, and only when a plant needs care.</string>
+    <string name="notif_intro_allow">Allow</string>
+    <string name="notif_intro_later">Not now</string>
+    <string name="notif_channel_name">Care reminders</string>
+    <string name="notif_channel_desc">Daily summary of plants that need care</string>
+    <plurals name="notif_title_plants_need_care">
+        <item quantity="one">%d plant needs care</item>
+        <item quantity="other">%d plants need care</item>
+    </plurals>
+    <string name="notif_action_done_all">Done, all cared for</string>
+    <string name="notif_action_snooze">Snooze</string>
+
+    <!-- Plant detail -->
+    <string name="detail_schedules">Care</string>
+    <string name="detail_last_done">Last: %1$s</string>
+    <string name="detail_history">History</string>
+    <string name="detail_history_empty">No care recorded yet.</string>
+    <string name="detail_delete_title">Delete %1$s?</string>
+    <string name="detail_delete_body">Its photo, schedules and history will be removed from this device.</string>
+    <string name="history_done">Done</string>
+    <string name="history_snoozed">Snoozed</string>
+
+    <!-- Stats -->
+    <string name="stats_title">Stats</string>
+    <string name="stats_plants">Plants</string>
+    <string name="stats_events_month">Care actions this month</string>
+    <string name="stats_on_time">On time</string>
+    <string name="stats_streak">Day streak</string>
+    <string name="stats_no_data">–</string>
+    <string name="stats_empty">No care recorded this month yet. Mark something done and the numbers appear here.</string>
+
+    <!-- Settings -->
+    <string name="settings_title">Settings</string>
+    <string name="settings_reminders">Reminders</string>
+    <string name="settings_reminder_hour">Daily reminder</string>
+    <string name="settings_reminder_hour_desc">One notification a day, only when something is due. Tap to change the hour.</string>
+    <string name="settings_battery_title">Reliable reminders on Huawei devices</string>
+    <string name="settings_battery_desc">Some phones stop background apps to save battery. If reminders arrive late, allow PlantCue to run in the background.</string>
+    <string name="settings_battery_open">Open battery settings</string>
+    <string name="settings_appearance">Appearance</string>
+    <string name="settings_theme">Theme</string>
+    <string name="settings_theme_system">System</string>
+    <string name="settings_theme_light">Light</string>
+    <string name="settings_theme_dark">Dark</string>
+    <string name="settings_privacy">Privacy</string>
+    <string name="settings_privacy_title">Your plants stay on your phone</string>
+    <string name="settings_privacy_desc">Plants, photos and care history are stored only in this app\'s private storage on your device. No account, no cloud, no tracking by us. Ads use the network; nothing about your plants is ever uploaded.</string>
+    <string name="settings_ads">Huawei Petal Ads</string>
+    <string name="settings_ads_desc">PlantCue is free and supported by Huawei Petal Ads. Ads appear only on the Plants and Stats screens, never while you add or care for a plant.</string>
+    <string name="settings_about">About</string>
+    <string name="settings_about_version">Version 1.0.0 (Huawei AppGallery Edition)</string>
+    <string name="settings_about_desc">Plant-care reminders that live on your phone.</string>
+</resources>
