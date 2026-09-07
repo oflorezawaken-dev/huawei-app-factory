@@ -68,7 +68,13 @@ jobs:
               slugs="$(python3 factory/tools/registry.py list)"
             fi
           fi
-          json="$(printf '%s\n' $slugs | python3 -c 'import sys,json; print(json.dumps([l.strip() for l in sys.stdin if l.strip()]))')"
+          # Registered apps without an Android project yet (status: planned) are skipped.
+          buildable=""
+          for s in $slugs; do
+            path="$(python3 factory/tools/registry.py get "$s" path)"
+            if [[ -f "$path/settings.gradle.kts" ]]; then buildable="$buildable $s"; else echo "skip $s: no project at $path yet"; fi
+          done
+          json="$(printf '%s\n' $buildable | python3 -c 'import sys,json; print(json.dumps([l.strip() for l in sys.stdin if l.strip()]))')"
           echo "apps=$json" >> "$GITHUB_OUTPUT"
           echo "Building: $json"
 
