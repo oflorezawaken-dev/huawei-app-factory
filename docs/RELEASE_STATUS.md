@@ -152,3 +152,22 @@ Pending for release: paste the real banner + interstitial ad unit IDs into `fact
 
 1.1.0 (versionCode 2) is ready to upload with `factory-publish.yml` (`app=receipt-lens`, upload only).
 Submission is deliberately held until Huawei's verdict on 1.0.0 to avoid two versions in the queue.
+
+## App #2 — PlantCue: factory end-to-end test (2026-09-06 → 07)
+
+| Step | Who | Result |
+|---|---|---|
+| Research | factory (in-session, prompt 10-research) | `proposals/2026-09-06-plant-cue.md`, issue #1 with label `proposal` |
+| Gate 1: approve | human | label `approved` added to issue #1 |
+| Spec | factory (prompt 20-spec) | `specifications/plant-cue.json`, registry entry, listing skeleton |
+| Generate | factory (prompt 30-generate) | branch `app/plant-cue`: full app, 9 langs, icon, privacy page, 9-lang listing, 5 emulator screenshots; local tests 11/11 |
+| Gate 2: review | human | PR #2 merged (`2031662`); PR CI 34072553929 green (verify only) |
+| Signed build | Factory Build 34072658283 | plan / verify / release green; `plant-cue-release-apk` 12.8 MB, `plant-cue-release-aab` 12.9 MB; 2 expected "TEST ad unit IDs" warnings |
+| Gate 3: console | human | pending: create app in AGC (+ countries, content rating) → App ID; Petal Ads units → IDs |
+| Store setup + publish | factory-store / factory-publish | pending gate 3 |
+
+Bugs found by driving the generated app on the emulator: interval TextField could not be cleared
+(fixed in `4ca8271`). Emulator ANR "No response to onStartJob" appeared once after a device date
+jump with the main thread busy in Compose draw under software rendering — emulator load, to be
+re-checked on a Huawei device. Factory Build now skips registered apps without a project (status
+`planned`) so a spec-only app does not turn CI red.
