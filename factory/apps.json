@@ -70,11 +70,11 @@
       "name": "PlantCue",
       "path": "apps/plant-cue",
       "package": "com.huaweiappfactory.plantcue",
-      "agc_app_id": "",
+      "agc_app_id": "118898889",
       "spec": "specifications/plant-cue.json",
       "store_dir": "apps/plant-cue/store",
       "privacy_path": "docs/plant-cue/privacy",
-      "status": "generated",
+      "status": "in_store_setup",
       "current_version": {
         "versionCode": 1,
         "versionName": "1.0.0",
