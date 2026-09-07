@@ -172,3 +172,17 @@ Bugs found by driving the generated app on the emulator: interval TextField coul
 jump with the main thread busy in Compose draw under software rendering — emulator load, to be
 re-checked on a Huawei device. Factory Build now skips registered apps without a project (status
 `planned`) so a spec-only app does not turn CI red.
+
+### PlantCue: real ad units and final upload (2026-09-07)
+
+| Item | Result |
+|---|---|
+| Petal Ads unit IDs | pasted into `factory/apps.json`; `ad_unit_ids` gap removed; status `ready_to_publish` |
+| Quality gate | `--strict` 11/11 PASS — first app with no excused gaps |
+| Factory Build | run 34073917729 green (both apps rebuilt); **0** "TEST ad unit IDs" warnings for plant-cue |
+| Upload | factory-publish run 34074408074: APK 1.0.0 (13.9 MB, real ad units) uploaded and registered on app 118898889, replacing the test-unit package. Not submitted. |
+
+PlantCue is ready for review submission. The factory end-to-end test is complete: idea → issue →
+approval → spec → generated app → PR → merge → signed build → store metadata → upload, with the
+human touching only the four gates (approve, merge, console setup, submit).
+
