@@ -76,6 +76,24 @@ jobs:
             fi
           fi
 
+      - name: Refuse to submit before the privacy tags are configured in the console
+        env:
+          SUBMIT: ${{ inputs.submit_for_review }}
+        run: |
+          set -euo pipefail
+          # AppGallery has no API for privacy tags. ReceiptLens 1.0 was rejected because the
+          # console said "collects no personal data" while Petal Ads collects OAID/device data.
+          python3 factory/tools/privacy_tags.py check "$APP_SLUG"
+          if [[ "$SUBMIT" == "true" && -z "$PRIVACY_TAGS_CONFIGURED" ]]; then
+            echo "::error::factory/apps.json -> $APP_SLUG.privacy_tags_configured is empty. Tick the privacy tags in AppGallery Connect (Version information > Privacy tags) following $APP_STORE_DIR/privacy-tags.md, then record the date in the registry and re-run."
+            exit 1
+          fi
+          {
+            echo "## Privacy tags (manual console step)"
+            echo "- Registry says configured on: \`${PRIVACY_TAGS_CONFIGURED:-NOT YET}\`"
+            echo "- Checklist: \`$APP_STORE_DIR/privacy-tags.md\`"
+          } >> "$GITHUB_STEP_SUMMARY"
+
       - name: Resolve release run
         id: run
         env:
@@ -140,4 +158,5 @@ jobs:
             echo "- Source run: ${{ steps.run.outputs.run_id }}"
             echo "- Package: \`$(basename "$PACKAGE_FILE")\`"
             echo "- Submitted for review: ${{ inputs.submit_for_review }}"
+            echo "- Privacy tags configured in console: ${PRIVACY_TAGS_CONFIGURED:-NOT YET}"
           } >> "$GITHUB_STEP_SUMMARY"

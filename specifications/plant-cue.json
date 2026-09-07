@@ -400,7 +400,7 @@
     ]
   },
   "privacy": {
-    "collects_personal_data": false,
+    "collects_personal_data": true,
     "collects_sensitive_data": false,
     "stores_data_locally": true,
     "uploads_user_content": false,
@@ -413,7 +413,15 @@
       "The only network user is the Petal Ads SDK; the privacy policy discloses what it may collect (OAID, device/network info, ad interactions) and how to limit personalisation.",
       "No account, no backend, no analytics, no crash reporting.",
       "Deleting a plant removes its photo file."
-    ]
+    ],
+    "_collects_personal_data_note": "Set to true on 2026-09-07: the Huawei Petal Ads SDK collects OAID, IP, device and app information, so AppGallery's privacy tags must say Yes. The app's own data stays on the device.",
+    "appgallery_privacy_tags": {
+      "App functionality": {
+        "User information": [
+          "Image or video"
+        ]
+      }
+    }
   },
   "ai": {
     "enabled": false,

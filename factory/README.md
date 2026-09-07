@@ -27,19 +27,24 @@ Actions           Factory Build on main: signed APK + AAB artifacts
 YOU (10 min)      AppGallery Connect: create app, content rating, countries → paste App ID into factory/apps.json
 you               python factory/factory.py store <slug>       → listing (9 langs), icon, screenshots, privacy URL
 you               python factory/factory.py publish <slug>     → upload APK, no submission
-YOU (2 min)       glance at the console
+YOU (5 min)       AppGallery Connect > Version information > Privacy tags: tick the boxes listed in
+                  apps/<slug>/store/privacy-tags.md → write the date in factory/apps.json (privacy_tags_configured)
 you               python factory/factory.py publish <slug> --submit --notes "..."
 ```
 
 "you" lines can be a scheduled task; "YOU" lines are decisions only a person can make.
+
+The privacy-tags step exists because Huawei has no API for it and rejects releases whose
+tags contradict the app (ReceiptLens 1.0, 2026-09-07). `publish --submit` refuses to run
+while `privacy_tags_configured` is empty.
 
 ## Workflows
 
 | Workflow | Trigger | Input | Does |
 |---|---|---|---|
 | `factory-build.yml` | push/PR touching `apps/**` or `factory/**`, or manual | `app` (optional) | Builds only the apps whose folder changed. `verify`: gate + unit tests + debug APK. `release` (main only): signed APK + AAB as `<slug>-release-apk/-aab`. |
-| `factory-store.yml` | manual | `app`, `what`, `lang`, `app_info_fields`, `dry_run` | Pushes listing text, icon, screenshots, and/or app-info (privacy URL by default) to AppGallery Connect. |
-| `factory-publish.yml` | manual | `app`, `release_run_id`, `package_type`, `submit_for_review`, `release_notes` | Downloads the signed artifact, verifies the signature, uploads it, optionally submits for review. |
+| `factory-store.yml` | manual | `app`, `what`, `lang`, `app_info_fields`, `dry_run` | Pushes listing text, icon, screenshots, and/or app-info (privacy URL by default) to AppGallery Connect. `what: privacy-tags` prints the console checklist in the run summary (no API exists for it). |
+| `factory-publish.yml` | manual | `app`, `release_run_id`, `package_type`, `submit_for_review`, `release_notes`, `allow_test_ad_units` | Downloads the signed artifact, verifies the signature, uploads it, optionally submits for review. Refuses to submit with test ad units or while `privacy_tags_configured` is empty in the registry. |
 
 All AppGallery steps run in the `appgallery` environment, which holds `AGC_CLIENT_ID`
 and `AGC_CLIENT_SECRET`. Release signing uses the four `RELEASE_*` repository secrets.
@@ -57,7 +62,10 @@ Runs in every build and before you open a PR. Checks that Petal Ads is really in
 Gradle (repo + dependency + INTERNET permission), that there are no
 `Class.forName("com.huawei...")` reflection stubs, no Firebase/GMS/Google-AI
 dependencies, that `applicationId` matches the registry, and that icon, ≥3
-screenshots, full-language listing, privacy page, and spec exist.
+screenshots, full-language listing, privacy page, and spec exist. It also validates
+`store/privacy-tags.json` (`factory/tools/privacy_tags.py`): official AppGallery labels
+only, the Petal Ads data items always present, and one declared item for every
+data-bearing permission in the manifest (camera → "Image or video", and so on).
 
 A failure listed in the app's `known_gaps` is reported as `EXCUSED` instead of failing
 the build, so gaps are documented rather than hidden. `--strict` ignores excuses and is
@@ -74,16 +82,22 @@ ML Kit stub, missing INTERNET) that 1.1 must close.
 
 ## What Huawei will not let us automate
 
-Creating the app in AppGallery Connect, the content-rating questionnaire, the Petal Ads
-publisher account and ad units, and responding to review results. Budget ~15 minutes of
-console time per app for the first three.
+Creating the app in AppGallery Connect, the content-rating questionnaire, the **privacy
+tags** (personal-data declaration under Version information), the Petal Ads publisher
+account and ad units, and responding to review results. Budget ~20 minutes of console time
+per app. For the privacy tags the factory hands you the exact boxes to tick:
+`apps/<slug>/store/privacy-tags.md` (regenerate with
+`python factory/factory.py privacy-tags <slug>`).
 
 ## Adding app #2
 
 1. `python factory/factory.py research` → approve the issue.
 2. `spec`, then `generate` → PR → merge.
 3. Console: create app + rating + countries → paste App ID into `factory/apps.json`.
-4. `store`, `publish`, then `publish --submit`.
+4. `store`, `publish`.
+5. Console: Version information → Privacy tags, following `store/privacy-tags.md` → date into
+   `privacy_tags_configured`.
+6. `publish --submit`.
 
 Lessons from ReceiptLens (errors and their fixes) are in `docs/APPGALLERY_PUBLISHING.md`
 and `docs/RELEASE_STATUS.md`.

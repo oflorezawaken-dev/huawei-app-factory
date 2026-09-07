@@ -19,6 +19,8 @@ Rules (from factory/apps.json defaults.rules plus store-readiness basics):
   store_shots      at least 3 PNG screenshots for the default language
   store_listing    listing.json covers every registry language
   privacy_page     privacy_path/index.html exists
+  privacy_tags     store/privacy-tags.json exists, uses official AppGallery labels, declares the
+                   Petal Ads items and one item per data permission in the manifest
   spec             spec file exists
 
 A failure listed in the app's "known_gaps" is reported as EXCUSED (not fatal)
@@ -37,6 +39,7 @@ import sys
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from registry import find, load  # noqa: E402
+from privacy_tags import validate as validate_privacy_tags  # noqa: E402
 
 
 def read(path: str) -> str:
@@ -157,6 +160,12 @@ def main(argv: list[str]) -> int:
     # privacy_page
     privacy = os.path.join(ROOT, app["privacy_path"], "index.html")
     report("privacy_page", os.path.isfile(privacy), os.path.relpath(privacy, ROOT))
+
+    # privacy_tags (AppGallery personal-data declaration; ReceiptLens 1.0 was rejected without it)
+    tags_ok, tags_problems = validate_privacy_tags(app, rules)
+    report("privacy_tags", tags_ok,
+           "store/privacy-tags.json consistent with manifest + Petal Ads" if tags_ok else "; ".join(tags_problems),
+           gap_key="privacy_tags")
 
     # spec
     report("spec", os.path.isfile(os.path.join(ROOT, app["spec"])), app["spec"])

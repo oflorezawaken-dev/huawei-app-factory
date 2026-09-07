@@ -64,6 +64,7 @@ def cmd_env(slug: str) -> None:
         "APP_STORE_DIR": app["store_dir"],
         "APP_PRIVACY_PATH": app["privacy_path"],
         "AGC_APP_ID": str(app.get("agc_app_id") or ""),
+        "PRIVACY_TAGS_CONFIGURED": str(app.get("privacy_tags_configured") or ""),
         "PETAL_BANNER_AD_ID": str((app.get("ads") or {}).get("banner_ad_id") or ""),
         "PETAL_INTERSTITIAL_AD_ID": str((app.get("ads") or {}).get("interstitial_ad_id") or ""),
         "FACTORY_JAVA_VERSION": defaults["java_version"],

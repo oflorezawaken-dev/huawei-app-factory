@@ -13,7 +13,11 @@ Read `factory/prompts/00-factory-rules.md` first. Input: the approved proposal f
      never interrupt the core task.
    - `privacy` must state what is stored, that nothing is sent to our servers, that ads
      use network and the ad SDK collects data, and the backup decision
-     (`allowBackup=false` is the default for new apps).
+     (`allowBackup=false` is the default for new apps). `collects_personal_data` is
+     **true** for every factory app (Petal Ads collects OAID, IP, device and app info);
+     list under `appgallery_privacy_tags` the data items the app itself will handle,
+     using the official labels (e.g. "Image or video", "Transaction records") so the
+     generate step can fill `store/privacy-tags.json` without guessing.
    - `localization.supported_languages` = the registry default languages.
    - `qa.acceptance_criteria` must be testable statements, not adjectives.
 2. A new entry in `factory/apps.json` → `apps[]` with `status: "planned"`,

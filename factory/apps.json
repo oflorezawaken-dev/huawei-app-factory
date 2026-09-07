@@ -1,5 +1,5 @@
 {
-  "$schema_note": "Registry of every app the factory manages. Workflows and tools read this file; humans edit it (e.g. paste the AppGallery Connect App ID after creating the app in the console).",
+  "$schema_note": "Registry of every app the factory manages. Workflows and tools read this file; humans edit it (e.g. paste the AppGallery Connect App ID after creating the app in the console, and the date in privacy_tags_configured after ticking the privacy tags from store/privacy-tags.md in the console; submit_for_review is refused while it is empty).",
   "defaults": {
     "java_version": "17",
     "gradle_version": "9.3.1",
@@ -47,12 +47,13 @@
       "spec": "specifications/receipt-lens.json",
       "store_dir": "apps/receipt-lens/store",
       "privacy_path": "docs/privacy",
-      "status": "in_review",
+      "privacy_tags_configured": "",
+      "status": "rejected",
       "current_version": {
         "versionCode": 2,
         "versionName": "1.1.0",
-        "status": "in_progress",
-        "note": "1.0.0 (versionCode 1) submitted for review 2026-09-06"
+        "status": "ready_to_publish",
+        "note": "1.0.0 (versionCode 1) submitted 2026-09-06, REJECTED 2026-09-07: privacy tags said the app collects no personal data. Fix the tags (store/privacy-tags.md), then upload and submit 1.1.0."
       },
       "known_gaps": {
         "ml_kit_ocr": "No Huawei ML Kit dependency; OCR always falls back to manual entry and the notice text is developer-facing.",
@@ -74,6 +75,7 @@
       "spec": "specifications/plant-cue.json",
       "store_dir": "apps/plant-cue/store",
       "privacy_path": "docs/plant-cue/privacy",
+      "privacy_tags_configured": "",
       "status": "in_review",
       "current_version": {
         "versionCode": 1,

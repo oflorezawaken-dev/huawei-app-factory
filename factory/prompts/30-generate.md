@@ -30,7 +30,13 @@ and its registry entry in `factory/apps.json`.
 7. **Store scaffolding.** `store/icon/icon-512.png` (render from the launcher vector),
    `store/listing.json` (English complete), `docs/<slug>/privacy/index.html`
    (copy `docs/privacy/index.html` and rewrite honestly for this app, including the
-   Petal Ads disclosure). Add an instrumented screenshot test or a documented
+   Petal Ads disclosure). Then the AppGallery privacy tags:
+   `python factory/tools/privacy_tags.py init <slug>` (baseline from the manifest and
+   the Petal Ads block), add under "App functionality" every data item the app really
+   stores or processes (photos, transaction records, notes with personal content...)
+   using the labels from the spec's `appgallery_privacy_tags`, then
+   `python factory/tools/privacy_tags.py render <slug> --write`. The items must match
+   what the privacy policy page says. Add an instrumented screenshot test or a documented
    `adb` script under `apps/<slug>/store/screenshots/README.md` describing how to
    capture the 5 store screenshots.
 8. **Gate.** `python factory/tools/check_app.py <slug> --strict` must pass.

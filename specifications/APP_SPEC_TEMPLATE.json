@@ -107,12 +107,17 @@
   },
 
   "privacy": {
-    "collects_personal_data": false,
+    "collects_personal_data": true,
+    "_collects_personal_data_note": "Always true: the mandatory Huawei Petal Ads SDK collects OAID, IP, device and app information. AppGallery rejects releases whose privacy tags say otherwise.",
     "collects_sensitive_data": false,
     "stores_data_locally": true,
     "uploads_user_content": false,
     "requires_privacy_policy": true,
-    "privacy_policy_url": ""
+    "privacy_policy_url": "",
+    "appgallery_privacy_tags": {
+      "_note": "Data items the app ITSELF handles, using the exact labels from https://developer.huawei.com/consumer/en/doc/app/privacy-label (category -> items). The Petal Ads items are added automatically by factory/tools/privacy_tags.py.",
+      "App functionality": {}
+    }
   },
 
   "ai": {
