@@ -74,13 +74,15 @@
       "spec": "specifications/plant-cue.json",
       "store_dir": "apps/plant-cue/store",
       "privacy_path": "docs/plant-cue/privacy",
-      "status": "planned",
+      "status": "generated",
       "current_version": {
         "versionCode": 1,
         "versionName": "1.0.0",
         "status": "planned"
       },
-      "known_gaps": {},
+      "known_gaps": {
+        "ad_unit_ids": "Petal Ads unit IDs not pasted yet: the app must first exist in AppGallery Connect and in the Petal Ads console (human step). Builds use Huawei test units; factory-publish refuses to upload until set."
+      },
       "ads": {
         "banner_ad_id": "",
         "interstitial_ad_id": "",
