@@ -30,6 +30,11 @@ on:
         description: 'Release notes for the reviewer (10-300 chars, required when submitting)'
         required: false
         default: ''
+      allow_test_ad_units:
+        description: 'Upload even if the build carries Huawei TEST ad units (upload only; never allowed with submit_for_review)'
+        required: true
+        default: false
+        type: boolean
 
 permissions:
   actions: read
@@ -55,10 +60,20 @@ jobs:
           fi
 
       - name: Refuse to publish a build with test ad units
+        env:
+          ALLOW_TEST: ${{ inputs.allow_test_ad_units }}
+          SUBMIT: ${{ inputs.submit_for_review }}
         run: |
           if [[ -z "$PETAL_BANNER_AD_ID" || -z "$PETAL_INTERSTITIAL_AD_ID" ]]; then
-            echo "::error::factory/apps.json has no Petal Ads unit IDs for $APP_SLUG; the signed build would carry Huawei TEST ad units. Paste the IDs from the Petal Ads console first."
-            exit 1
+            if [[ "$SUBMIT" == "true" ]]; then
+              echo "::error::Cannot submit $APP_SLUG for review: factory/apps.json has no Petal Ads unit IDs, so the build carries Huawei TEST ad units."
+              exit 1
+            elif [[ "$ALLOW_TEST" != "true" ]]; then
+              echo "::error::factory/apps.json has no Petal Ads unit IDs for $APP_SLUG (build carries TEST ad units). Paste the IDs, or set allow_test_ad_units=true for an upload-only test."
+              exit 1
+            else
+              echo "::warning::Uploading $APP_SLUG with Huawei TEST ad units (upload only). Rebuild and re-upload with real unit IDs before any submission."
+            fi
           fi
 
       - name: Resolve release run
