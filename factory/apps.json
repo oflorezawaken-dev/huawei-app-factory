@@ -35,6 +35,102 @@
         "com.google.android.gms",
         "com.google.ai"
       ]
+    },
+    "ios": {
+      "_note": "iOS lane defaults. Apple locale codes differ from Huawei's (ar-SA vs ar, zh-Hans vs zh-CN, it vs it-IT, tr vs tr-TR); never reuse defaults.languages here.",
+      "bundle_id_prefix": "com.proapps",
+      "_decisions_note": "bundle_id_prefix and the monetization rules below were decided by the owner on 2026-09-07. Every iOS app's bundle_id is com.proapps.<name>; monetization is real AdMob (banner + interstitial) plus a non-consumable remove-ads IAP, both enforced by check_ios_app.py.",
+      "min_ios": "17.0",
+      "languages": [
+        "en-US",
+        "es-ES",
+        "pt-PT",
+        "fr-FR",
+        "de-DE",
+        "it",
+        "tr",
+        "ar-SA",
+        "zh-Hans"
+      ],
+      "screenshot_dir_to_asc_lang": {
+        "en": "en-US",
+        "es": "es-ES",
+        "pt": "pt-PT",
+        "fr": "fr-FR",
+        "de": "de-DE",
+        "it": "it",
+        "tr": "tr",
+        "ar": "ar-SA",
+        "zh": "zh-Hans"
+      },
+      "screenshot_sets": {
+        "APP_IPHONE_69": {
+          "required": true,
+          "display_type": "APP_IPHONE_69",
+          "sizes": [
+            [
+              1320,
+              2868
+            ],
+            [
+              1290,
+              2796
+            ],
+            [
+              1260,
+              2736
+            ]
+          ],
+          "_note": "6.9-inch iPhone. Apple scales this set down to every smaller iPhone, so it is the only required iPhone set."
+        },
+        "APP_IPAD_PRO_3GEN_129": {
+          "required": false,
+          "display_type": "APP_IPAD_PRO_3GEN_129",
+          "sizes": [
+            [
+              2064,
+              2752
+            ],
+            [
+              2048,
+              2732
+            ]
+          ],
+          "_note": "13-inch iPad. Only required when the app declares iPad support; keep apps iPhone-only at first."
+        }
+      },
+      "screenshot_count": {
+        "min": 3,
+        "max": 10
+      },
+      "listing_limits": {
+        "name": 30,
+        "subtitle": 30,
+        "promotional_text": 170,
+        "description": 4000,
+        "keywords": 100,
+        "release_notes": 4000
+      },
+      "admob_test_id_prefix": "ca-app-pub-3940256099942544",
+      "rules": {
+        "admob_required": true,
+        "remove_ads_iap_required": true,
+        "offline_first_core": true,
+        "no_stubs": true,
+        "privacy_manifest_required": true,
+        "att_required": true,
+        "forbidden_dependencies": [
+          "FirebaseAnalytics",
+          "FirebaseCrashlytics",
+          "FirebasePerformance",
+          "Amplitude",
+          "Mixpanel",
+          "AppsFlyer",
+          "Adjust",
+          "Segment",
+          "Sentry"
+        ]
+      }
     }
   },
   "apps": [

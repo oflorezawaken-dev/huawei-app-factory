@@ -1,0 +1,228 @@
+name: Factory iOS Build
+
+# Generic build for every iOS app in factory/apps.json.
+# - push/PR: builds only the apps whose folder changed (registry.py changed)
+# - manual: builds one app, or all when the input is empty
+# verify  = quality gate + xcodegen generate + unit tests + screenshot capture
+#           (PRs get no secrets; ad IDs fall back to the template's Google test
+#           defaults, which is exactly what the quality gate expects on a PR)
+# release = signed IPA via cloud-managed signing, main branch only,
+#           artifact <slug>-release-ipa
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'apps-ios/**'
+      - 'factory/**'
+      - '.github/workflows/factory-ios-build.yml'
+  pull_request:
+    paths:
+      - 'apps-ios/**'
+      - 'factory/**'
+  workflow_dispatch:
+    inputs:
+      app:
+        description: 'iOS app slug from factory/apps.json (empty = every iOS app)'
+        required: false
+        default: ''
+
+permissions:
+  contents: read
+
+env:
+  # Pin the toolchain: xcodebuild output is not reproducible across Xcode
+  # versions, and macos-latest silently moves. Verified present on this image
+  # as of 2026-09-07; bump this when Apple ships a new stable and re-verify
+  # `xcodebuild -version` picks it up.
+  FACTORY_XCODE_VERSION: '26.6'
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      apps: ${{ steps.plan.outputs.apps }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Decide which apps to build
+        id: plan
+        env:
+          EVENT: ${{ github.event_name }}
+          INPUT_APP: ${{ inputs.app }}
+          BEFORE: ${{ github.event.before }}
+          AFTER: ${{ github.sha }}
+          PR_BASE: ${{ github.event.pull_request.base.sha }}
+          PR_HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          slugs="$(python3 factory/tools/registry.py plan-ios "$EVENT" \
+                    "${PR_BASE:-$BEFORE}" "${PR_HEAD:-$AFTER}" "$INPUT_APP" | \
+                    python3 -c 'import json,sys; print(" ".join(json.load(sys.stdin)))')"
+          # Registered apps without an Xcode project yet (status: planned) are skipped.
+          buildable=""
+          for s in $slugs; do
+            path="$(python3 factory/tools/registry.py get "$s" path)"
+            if [[ -f "$path/project.yml" ]]; then buildable="$buildable $s"; else echo "skip $s: no project.yml at $path yet"; fi
+          done
+          json="$(printf '%s\n' $buildable | python3 -c 'import sys,json; print(json.dumps([l.strip() for l in sys.stdin if l.strip()]))')"
+          echo "apps=$json" >> "$GITHUB_OUTPUT"
+          echo "Building: $json"
+
+  verify:
+    needs: plan
+    if: needs.plan.outputs.apps != '[]'
+    runs-on: macos-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        app: ${{ fromJson(needs.plan.outputs.apps) }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Load app from registry
+        run: python3 factory/tools/registry.py env "${{ matrix.app }}" >> "$GITHUB_ENV"
+
+      - name: Quality gate
+        run: python3 factory/tools/check_ios_app.py "$APP_SLUG"
+
+      - name: Select Xcode ${{ env.FACTORY_XCODE_VERSION }}
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: ${{ env.FACTORY_XCODE_VERSION }}
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate Xcode project
+        run: cd "$APP_PATH" && xcodegen generate
+
+      - name: Pick simulators
+        run: |
+          set -euo pipefail
+          unit="$(xcrun simctl list devices available | grep -m1 -E 'iPhone 1[6-9]( Pro)?( Max)?' \
+                   | sed -E 's/^ *([^(]+) \(.*/\1/' | sed 's/ *$//')"
+          shots="$(xcrun simctl list devices available | grep -m1 -E 'iPhone 1[6-9] Pro Max' \
+                   | sed -E 's/^ *([^(]+) \(.*/\1/' | sed 's/ *$//')"
+          [[ -n "$unit" ]] || { echo "::error::no iPhone 16/17-class simulator available"; exit 1; }
+          [[ -n "$shots" ]] || { echo "::error::no iPhone *Pro Max simulator (6.9in) available"; exit 1; }
+          echo "UNIT_SIMULATOR=$unit" >> "$GITHUB_ENV"
+          echo "SHOTS_SIMULATOR=$shots" >> "$GITHUB_ENV"
+
+      - name: Unit tests
+        run: |
+          cd "$APP_PATH"
+          xcodebuild test -project "$(find . -maxdepth 1 -name '*.xcodeproj')" -scheme "$APP_SCHEME" \
+            -destination "platform=iOS Simulator,name=$UNIT_SIMULATOR" \
+            CODE_SIGNING_ALLOWED=NO
+
+      - name: Screenshot capture
+        run: |
+          cd "$APP_PATH"
+          rm -rf shots.xcresult
+          xcodebuild test -project "$(find . -maxdepth 1 -name '*.xcodeproj')" -scheme "${APP_SCHEME}Screenshots" \
+            -destination "platform=iOS Simulator,name=$SHOTS_SIMULATOR" \
+            -resultBundlePath shots.xcresult CODE_SIGNING_ALLOWED=NO
+
+      - name: Extract screenshots
+        run: |
+          cd "$APP_PATH"
+          mkdir -p screenshots-out
+          xcrun xcresulttool export attachments --path shots.xcresult --output-path screenshots-out
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.app }}-screenshots
+          path: ${{ env.APP_PATH }}/screenshots-out/*.png
+          if-no-files-found: error
+
+  release:
+    needs: [plan, verify]
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && needs.plan.outputs.apps != '[]'
+    runs-on: macos-latest
+    environment: appstore
+    strategy:
+      fail-fast: false
+      matrix:
+        app: ${{ fromJson(needs.plan.outputs.apps) }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Load app from registry
+        run: python3 factory/tools/registry.py env "${{ matrix.app }}" >> "$GITHUB_ENV"
+
+      - name: Select Xcode ${{ env.FACTORY_XCODE_VERSION }}
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: ${{ env.FACTORY_XCODE_VERSION }}
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate Xcode project
+        run: cd "$APP_PATH" && xcodegen generate
+
+      - name: Materialize App Store Connect API key
+        env:
+          ASC_PRIVATE_KEY_P8: ${{ secrets.ASC_PRIVATE_KEY_P8 }}
+        run: |
+          set -euo pipefail
+          [[ -n "$ASC_PRIVATE_KEY_P8" ]] || { echo "::error::ASC_PRIVATE_KEY_P8 is not configured in the appstore environment."; exit 1; }
+          mkdir -p "$RUNNER_TEMP/keys"
+          printf '%s' "$ASC_PRIVATE_KEY_P8" | base64 --decode > "$RUNNER_TEMP/keys/AuthKey.p8"
+          test -s "$RUNNER_TEMP/keys/AuthKey.p8"
+          chmod 600 "$RUNNER_TEMP/keys/AuthKey.p8"
+
+      - name: Resolve ExportOptions.plist
+        run: |
+          set -euo pipefail
+          [[ -n "$APPLE_TEAM_ID" ]] || { echo "::error::factory/apps.json has no team_id for $APP_SLUG."; exit 1; }
+          sed "s/TEAM_ID_PLACEHOLDER/$APPLE_TEAM_ID/" "$APP_PATH/ExportOptions.plist" > "$RUNNER_TEMP/ExportOptions.plist"
+
+      - name: Archive (cloud-managed signing)
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+        run: |
+          set -euo pipefail
+          [[ -n "$ASC_KEY_ID" && -n "$ASC_ISSUER_ID" ]] || { echo "::error::ASC_KEY_ID/ASC_ISSUER_ID are not configured in the appstore environment."; exit 1; }
+          cd "$APP_PATH"
+          xcodebuild -project "$(find . -maxdepth 1 -name '*.xcodeproj')" -scheme "$APP_SCHEME" -configuration Release \
+            -destination 'generic/platform=iOS' -archivePath build/App.xcarchive archive \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "$RUNNER_TEMP/keys/AuthKey.p8" \
+            -authenticationKeyID "$ASC_KEY_ID" \
+            -authenticationKeyIssuerID "$ASC_ISSUER_ID"
+
+      - name: Export IPA
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+        run: |
+          set -euo pipefail
+          cd "$APP_PATH"
+          xcodebuild -exportArchive -archivePath build/App.xcarchive -exportPath build/ipa \
+            -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist" -allowProvisioningUpdates \
+            -authenticationKeyPath "$RUNNER_TEMP/keys/AuthKey.p8" \
+            -authenticationKeyID "$ASC_KEY_ID" \
+            -authenticationKeyIssuerID "$ASC_ISSUER_ID"
+
+      - name: Verify the export is actually signed
+        run: |
+          set -euo pipefail
+          ipa="$(find "$APP_PATH/build/ipa" -name '*.ipa' | head -n 1)"
+          [[ -n "$ipa" ]] || { echo "::error::export produced no .ipa"; exit 1; }
+          rm -rf /tmp/ipa-check && unzip -q "$ipa" -d /tmp/ipa-check
+          codesign -dv --verbose=4 /tmp/ipa-check/Payload/*.app
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.ARTIFACT_IPA }}
+          path: ${{ env.APP_PATH }}/build/ipa/*.ipa
+          if-no-files-found: error
+
+      - name: Remove temporary signing key
+        if: always()
+        run: rm -rf "$RUNNER_TEMP/keys"

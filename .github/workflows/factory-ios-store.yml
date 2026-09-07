@@ -1,0 +1,80 @@
+name: Factory iOS Store Setup
+
+# Pushes store metadata and screenshots for a registered iOS app to App Store
+# Connect: name/subtitle/privacy URL (appInfoLocalizations), description/
+# keywords/promotional text/support URL/what's new (appStoreVersionLocalizations),
+# and screenshots (App Store Connect Media API). All locales in listing.json
+# are pushed together; there is no per-locale filter, since redoing every
+# locale is cheap. Manual trigger, `appstore` environment (read/write, but no
+# binary is uploaded here -- that is factory-ios-publish.yml's job).
+#
+# Requires an appStoreVersion to already exist in App Store Connect in an
+# editable state (PREPARE_FOR_SUBMISSION, *_REJECTED); the human creates that
+# once per version (step 6.2 of the iOS handoff).
+
+on:
+  workflow_dispatch:
+    inputs:
+      app:
+        description: 'iOS app slug from factory/apps.json'
+        required: true
+      what:
+        description: 'What to push'
+        required: true
+        default: 'all'
+        type: choice
+        options: [all, text, screenshots]
+      dry_run:
+        description: 'Print what would be sent without calling App Store Connect'
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+jobs:
+  store:
+    runs-on: ubuntu-latest
+    environment: appstore
+    env:
+      ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+      ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+      ASC_PRIVATE_KEY_P8: ${{ secrets.ASC_PRIVATE_KEY_P8 }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Load app from registry
+        run: |
+          set -euo pipefail
+          python3 factory/tools/registry.py env "${{ inputs.app }}" >> "$GITHUB_ENV"
+          if [[ -z "$(python3 factory/tools/registry.py get "${{ inputs.app }}" asc_app_id)" ]]; then
+            echo "::error::factory/apps.json has no asc_app_id for ${{ inputs.app }}. Create the app in App Store Connect and paste its numeric Apple ID into the registry."
+            exit 1
+          fi
+
+      - name: Confirm signing credentials are configured
+        run: |
+          [[ -n "$ASC_KEY_ID" && -n "$ASC_ISSUER_ID" && -n "$ASC_PRIVATE_KEY_P8" ]] || {
+            echo "::error::ASC_KEY_ID/ASC_ISSUER_ID/ASC_PRIVATE_KEY_P8 are not configured in the appstore environment."
+            exit 1
+          }
+
+      - name: Push metadata
+        env:
+          DRY: ${{ inputs.dry_run }}
+        run: |
+          set -euo pipefail
+          args=("$APP_SLUG" --what "${{ inputs.what }}")
+          [[ "$DRY" == "true" ]] && args+=(--dry-run)
+          python3 factory/tools/asc_metadata.py "${args[@]}"
+
+      - name: Summary
+        if: always()
+        run: |
+          {
+            echo "## App Store metadata: $APP_NAME ($APP_SLUG)"
+            echo "- What: ${{ inputs.what }}"
+            echo "- Dry run: ${{ inputs.dry_run }}"
+            echo "- App Store Connect app: $ASC_APP_ID"
+          } >> "$GITHUB_STEP_SUMMARY"
