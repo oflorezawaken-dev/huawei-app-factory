@@ -39,8 +39,8 @@ android {
     applicationId = "com.huaweiappfactory.plantcue"
     minSdk = 26
     targetSdk = 36
-    versionCode = 1
-    versionName = "1.0.0"
+    versionCode = 2
+    versionName = "1.0.1"
 
     buildConfigField("String", "PETAL_BANNER_AD_ID", "\"$petalBannerId\"")
     buildConfigField("String", "PETAL_INTERSTITIAL_AD_ID", "\"$petalInterstitialId\"")

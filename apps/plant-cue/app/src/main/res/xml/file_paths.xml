@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <paths xmlns:android="http://schemas.android.com/apk/res/android">
-    <files-path name="receipt_images" path="receipts/" />
-    <cache-path name="exports" path="exports/" />
+    <!-- Must match ImageStorageManager.newCameraTempFile(): File(context.cacheDir, "camera").
+         Missing this entry makes FileProvider.getUriForFile() throw
+         IllegalArgumentException("Failed to find configured root...") the instant
+         "Take photo" is tapped, before the camera even opens. -->
+    <cache-path name="camera" path="camera/" />
 </paths>
