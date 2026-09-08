@@ -21,7 +21,7 @@ enum SampleDataFactory {
                              preferredDisplayUnit: spec.displayUnit, isSample: true)
             context.insert(item)
             for point in spec.history {
-                guard let date = calendar.date(byAdding: .day, value: point.daysAgo, to: now) else { continue }
+                guard let date = calendar.date(byAdding: .day, value: -point.daysAgo, to: now) else { continue }
                 let entry = PriceEntry(item: item, store: store, price: point.price,
                                         packageSize: spec.packageSize, unit: spec.unit,
                                         date: date, isSale: point.isSale, isLoyalty: false, isSample: true)

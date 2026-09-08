@@ -196,30 +196,27 @@
       "platform": "ios",
       "path": "apps-ios/price-jar",
       "bundle_id": "com.proapps.pricejar",
-      "asc_app_id": "",
+      "asc_app_id": "6809919555",
       "sku": "price-jar",
       "spec": "specifications/price-jar.json",
       "store_dir": "apps-ios/price-jar/store",
       "privacy_path": "docs/price-jar/privacy",
       "support_path": "docs/price-jar/support",
-      "status": "planned",
+      "status": "in_console",
       "current_version": {
         "marketing_version": "1.0.0",
         "build": 1,
         "status": "planned"
       },
       "admob": {
-        "app_id": "",
-        "banner_unit_id": "",
-        "interstitial_unit_id": "",
-        "_note": "Empty until a human creates the AdMob app and its two ad units. factory-ios-publish.yml refuses to submit while these are empty or still Google's test IDs."
+        "app_id": "ca-app-pub-9018069817306473~9402543373",
+        "banner_unit_id": "ca-app-pub-9018069817306473/8752796364",
+        "interstitial_unit_id": "ca-app-pub-9018069817306473/5635678437"
       },
       "iap": {
         "remove_ads_product_id": "com.proapps.pricejar.removeads"
       },
-      "known_gaps": {
-        "admob_unit_ids": "AdMob console pending; step 6 of the iOS flow."
-      },
+      "known_gaps": {},
       "proposal": "proposals/2026-09-08-price-jar-ios.md"
     }
   ]
