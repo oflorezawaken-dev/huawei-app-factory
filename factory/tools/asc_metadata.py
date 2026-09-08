@@ -38,7 +38,7 @@ import urllib.error
 import urllib.request
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from asc_client import API_BASE, ASCError, log, make_token, resolve_app  # noqa: E402
+from asc_client import API_BASE, ASCError, log, make_token, resolve_app, version_state  # noqa: E402
 from registry import ROOT, load  # noqa: E402
 
 # App info fields live on the app record, editable regardless of version state.
@@ -92,16 +92,19 @@ def find_app_info_id(asc_app_id: str, token: str) -> str:
 
 
 def find_editable_version(asc_app_id: str, marketing_version: str, token: str) -> str:
+    # No fields[] restriction: naming the wrong field there gets the whole
+    # request rejected with 400, which is exactly what cost the first real
+    # PriceJar upload a step. version_state() reads whichever key Apple
+    # actually sent back instead of a field name guessed in advance.
     data = api_call("GET", f"/v1/apps/{asc_app_id}/appStoreVersions"
-                    f"?filter[versionString]={marketing_version}"
-                    "&fields[appStoreVersions]=versionString,appStoreVersionState", token=token)
+                    f"?filter[versionString]={marketing_version}", token=token)
     rows = data.get("data", [])
     if not rows:
         raise ASCError(
             f"no appStoreVersion {marketing_version} found. Create it in App Store Connect "
             "(App Store tab > + Version) before pushing metadata.")
     row = rows[0]
-    state = row.get("attributes", {}).get("appStoreVersionState", "")
+    state = version_state(row.get("attributes", {}))
     if state not in EDITABLE_VERSION_STATES:
         raise ASCError(
             f"appStoreVersion {marketing_version} is in state {state}, which App Store Connect will "

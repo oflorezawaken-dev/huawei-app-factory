@@ -59,6 +59,25 @@ class ASCError(RuntimeError):
     pass
 
 
+# Apple's own field name for an appStoreVersions review/release state has been
+# seen under more than one name across API revisions and our own earlier,
+# unverified guesses (appStoreState, appStoreVersionState). Rather than pin one
+# and risk a repeat of the 400 that cost the first real PriceJar upload a step,
+# this checks every candidate and is loud about it if Apple ever renames the
+# field again: better a clear error naming what WAS in the response than a
+# silent empty string.
+VERSION_STATE_KEYS = ("appStoreVersionState", "appVersionState", "appStoreState", "state")
+
+
+def version_state(attrs: dict) -> str:
+    for key in VERSION_STATE_KEYS:
+        if key in attrs:
+            return attrs[key]
+    raise ASCError(
+        f"none of {VERSION_STATE_KEYS} found in appStoreVersions attributes; "
+        f"Apple returned: {sorted(attrs)}. Update VERSION_STATE_KEYS in asc_client.py.")
+
+
 def log(msg: str) -> None:
     print(f"[asc] {msg}", flush=True)
 
@@ -252,7 +271,7 @@ def cmd_app(slug: str) -> int:
 
 def versions(asc_app_id: str, token: str | None = None) -> list[dict]:
     data = api_get(f"/v1/apps/{asc_app_id}/appStoreVersions",
-                   {"limit": 10, "fields[appStoreVersions]": "versionString,appStoreState,createdDate,platform"},
+                   {"limit": 10},
                    token)
     return data.get("data", [])
 
@@ -264,7 +283,7 @@ def cmd_versions(slug: str) -> int:
         log("no versions yet; create version 1.0 in App Store Connect")
     for row in rows:
         attrs = row.get("attributes", {})
-        print(f"{attrs.get('versionString', '?')}\t{attrs.get('appStoreState', '?')}\t{row['id']}")
+        print(f"{attrs.get('versionString', '?')}\t{version_state(attrs)}\t{row['id']}")
     return 0
 
 
@@ -275,7 +294,7 @@ def cmd_state(slug: str) -> int:
         print("NO_VERSION")
         return 0
     attrs = rows[0].get("attributes", {})
-    state = attrs.get("appStoreState", "UNKNOWN")
+    state = version_state(attrs)
     print(state)
     log(f"{slug} {attrs.get('versionString', '?')}: {state}"
         + ("  (terminal)" if state in TERMINAL_STATES else ""))
