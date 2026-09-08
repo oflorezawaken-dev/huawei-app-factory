@@ -162,11 +162,30 @@ def submit_for_review(asc_app_id: str, token: str) -> None:
         raise ASCError("no editable appStoreVersion found to attach to the review submission")
     version_id = editable[0]["id"]
 
-    api_call("POST", "/v1/reviewSubmissionItems", {
-        "data": {"type": "reviewSubmissionItems",
-                 "relationships": {
-                     "reviewSubmission": {"data": {"type": "reviewSubmissions", "id": submission_id}},
-                     "appStoreVersion": {"data": {"type": "appStoreVersions", "id": version_id}}}}}, token)
+    try:
+        api_call("POST", "/v1/reviewSubmissionItems", {
+            "data": {"type": "reviewSubmissionItems",
+                     "relationships": {
+                         "reviewSubmission": {"data": {"type": "reviewSubmissions", "id": submission_id}},
+                         "appStoreVersion": {"data": {"type": "appStoreVersions", "id": version_id}}}}}, token)
+    except ASCError as exc:
+        if "not in valid state" not in str(exc):
+            raise
+        # Apple says the version cannot be reviewed but will not say which
+        # requirement is unmet over the API -- only the console lists them.
+        # These are the ones that are not part of anything the factory pushes,
+        # so they are the ones a run like this leaves outstanding.
+        raise ASCError(
+            f"Apple will not accept version {version_id} for review yet. It does not report "
+            "which requirement is missing over the API; App Store Connect shows them on the "
+            "version page, marked in red. The ones the factory cannot fill in for you:\n"
+            "  - App Privacy questionnaire answered and published\n"
+            "  - Age rating questionnaire completed (App Information)\n"
+            "  - Pricing and Availability set\n"
+            "  - Export compliance answered, unless ITSAppUsesNonExemptEncryption settles it\n"
+            "  - App Review contact details, and a demo account if any feature needs sign-in\n"
+            f"Open https://appstoreconnect.apple.com/apps/{asc_app_id}/distribution and fix "
+            "whatever it flags, then re-run this workflow.") from exc
     log(f"added appStoreVersion {version_id} to the submission")
 
     api_call("PATCH", f"/v1/reviewSubmissions/{submission_id}",
