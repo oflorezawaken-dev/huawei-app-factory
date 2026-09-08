@@ -42,7 +42,7 @@ import tempfile
 import time
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from asc_client import ASCError, builds, log, make_token, mask_in_ci, resolve_app  # noqa: E402
+from asc_client import ASCError, builds, log, make_token, mask_in_ci, resolve_app, version_state  # noqa: E402
 from asc_metadata import EDITABLE_VERSION_STATES, api_call, find_editable_version  # noqa: E402
 
 RELEASE_NOTES_MIN = 10
@@ -130,13 +130,18 @@ def submit_for_review(asc_app_id: str, token: str) -> None:
         raise ASCError("reviewSubmissions POST did not return an id")
     log(f"created reviewSubmission {submission_id}")
 
-    versions = api_call("GET", f"/v1/apps/{asc_app_id}/appStoreVersions"
-                        "?filter[appStoreVersionState]=" + ",".join(sorted(EDITABLE_VERSION_STATES))
-                        + "&fields[appStoreVersions]=versionString&limit=1", token=token)
-    rows = versions.get("data", [])
-    if not rows:
+    # Filtered client-side, not server-side: an unverified attribute name in
+    # filter[] gets the whole request rejected with 400 the same way a bad
+    # fields[] name does, which is exactly what happened here on the first
+    # real upload. Fetching everything and checking version_state() ourselves
+    # costs one extra round trip but never depends on guessing Apple's field
+    # name correctly in a query string.
+    all_versions = api_call("GET", f"/v1/apps/{asc_app_id}/appStoreVersions?limit=50", token=token)
+    editable = [r for r in all_versions.get("data", [])
+                if version_state(r.get("attributes", {})) in EDITABLE_VERSION_STATES]
+    if not editable:
         raise ASCError("no editable appStoreVersion found to attach to the review submission")
-    version_id = rows[0]["id"]
+    version_id = editable[0]["id"]
 
     api_call("POST", "/v1/reviewSubmissionItems", {
         "data": {"type": "reviewSubmissionItems",

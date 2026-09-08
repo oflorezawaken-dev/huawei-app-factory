@@ -171,6 +171,21 @@ def main() -> int:
     code, out = run(["apps"], root)
     check("the JWT never reaches stdout", not re.search(r"eyJ[\w-]+\.eyJ[\w-]+\.", out), out)
 
+    print("\nversion_state() reads whichever key Apple sends back:")
+    sys.path.insert(0, TOOLS)
+    from asc_client import ASCError, version_state  # noqa: E402
+    check("appStoreVersionState", version_state({"appStoreVersionState": "REJECTED"}) == "REJECTED")
+    check("appVersionState", version_state({"appVersionState": "IN_REVIEW"}) == "IN_REVIEW")
+    check("appStoreState", version_state({"appStoreState": "READY_FOR_SALE"}) == "READY_FOR_SALE")
+    check("state", version_state({"state": "PREPARE_FOR_SUBMISSION"}) == "PREPARE_FOR_SUBMISSION")
+    try:
+        version_state({"somethingElse": "x"})
+        check("raises when no known key is present -- the exact 400 that cost "
+              "the first real PriceJar upload a step, now a clear local error instead", False)
+    except ASCError as exc:
+        check("raises when no known key is present, naming what Apple actually returned",
+              "Apple returned" in str(exc), str(exc))
+
     server.shutdown()
     print(f"\n{len(failures)} assertion(s) failed" if failures else "\nall assertions passed")
     return 1 if failures else 0
