@@ -42,6 +42,7 @@ STATE = {
     "screenshots": {},        # id -> {uploaded, checksum}
     "submissions": {},        # id -> {"attributes": {...}, "items": [...]}
     "attached_build": None,
+    "copyright": None,
     "next_id": 100,
 }
 
@@ -165,7 +166,12 @@ class Handler(BaseHTTPRequestHandler):
         rtype, rid = data.get("type"), data.get("id")
 
         if rtype == "appStoreVersions" and rid == VERSION_ID:
-            STATE["attached_build"] = data.get("relationships", {}).get("build", {}).get("data", {}).get("id")
+            attrs = data.get("attributes", {})
+            if "copyright" in attrs:
+                STATE["copyright"] = attrs["copyright"]
+            build_rel = data.get("relationships", {}).get("build", {}).get("data")
+            if build_rel:
+                STATE["attached_build"] = build_rel.get("id")
             self._json(200, {"data": {"type": rtype, "id": rid}})
         elif rtype == "appStoreVersionLocalizations":
             attrs = data.get("attributes", {})
@@ -281,6 +287,20 @@ def main() -> int:
     check("description went to appStoreVersionLocalizations, not appInfo",
           "description" not in STATE["app_info_locs"].get("en-US", {}).get("attrs", {})
           and STATE["version_locs"].get("en-US", {}).get("attrs", {}).get("description") == "Desc", out)
+
+    # listing.json carries no URLs at all: these must come from the registry's
+    # privacy_path/support_path, which is what the app actually published.
+    info_attrs = STATE["app_info_locs"].get("en-US", {}).get("attrs", {})
+    ver_attrs = STATE["version_locs"].get("en-US", {}).get("attrs", {})
+    check("privacy policy URL derived from the registry path",
+          info_attrs.get("privacyPolicyUrl", "").endswith(f"/{SLUG}/privacy/"),
+          str(info_attrs))
+    check("support URL derived from the registry path",
+          ver_attrs.get("supportUrl", "").endswith(f"/{SLUG}/support/"),
+          str(ver_attrs))
+    check("copyright written to the version itself, as '<year> <holder>'",
+          bool(STATE["copyright"]) and STATE["copyright"].split(" ", 1)[0].isdigit(),
+          str(STATE["copyright"]))
 
     # Second run must PATCH the existing rows, not create duplicates.
     before_count = len(STATE["app_info_locs"])
