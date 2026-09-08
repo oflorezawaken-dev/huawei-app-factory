@@ -1,0 +1,73 @@
+name: Factory iOS Review Watch
+
+# Daily poll of every registered iOS app's App Store review state. Opens an
+# issue when a version reaches a state a human must act on (rejected, approved,
+# waiting for you to release), and stays silent while it is merely in review.
+# Step 10.7 of the iOS handoff.
+#
+# One issue per app+version+state, so a rejection sitting unfixed for a week
+# does not produce seven issues. See factory/tools/asc_watch.py for why there
+# is no state file.
+
+on:
+  schedule:
+    # 13:00 UTC = 08:00 in Bogota. Apple's review decisions usually land
+    # overnight Pacific time, so this catches them at the start of the workday.
+    - cron: '0 13 * * *'
+  workflow_dispatch:
+    inputs:
+      app:
+        description: 'iOS app slug (empty = every registered iOS app)'
+        required: false
+        default: ''
+      dry_run:
+        description: 'Report the states without opening any issue'
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: factory-ios-watch
+  cancel-in-progress: false
+
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    environment: appstore
+    env:
+      ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+      ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+      ASC_PRIVATE_KEY_P8: ${{ secrets.ASC_PRIVATE_KEY_P8 }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Confirm credentials are configured
+        run: |
+          [[ -n "$ASC_KEY_ID" && -n "$ASC_ISSUER_ID" && -n "$ASC_PRIVATE_KEY_P8" ]] || {
+            echo "::error::ASC_KEY_ID/ASC_ISSUER_ID/ASC_PRIVATE_KEY_P8 are not configured in the appstore environment."
+            exit 1
+          }
+
+      - name: Poll review state
+        id: watch
+        run: |
+          set -euo pipefail
+          args=()
+          [[ -n "${{ inputs.app }}" ]] && args+=("${{ inputs.app }}")
+          [[ "${{ inputs.dry_run }}" == "true" ]] && args+=(--dry-run)
+          python3 factory/tools/asc_watch.py "${args[@]}" | tee watch.log
+
+      - name: Summary
+        if: always()
+        run: |
+          {
+            echo "## App Store review watch"
+            echo '```'
+            cat watch.log 2>/dev/null || echo "(the poll did not produce output)"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"

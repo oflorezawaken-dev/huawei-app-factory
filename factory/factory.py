@@ -9,6 +9,7 @@ remembering gh/claude invocations. Standard library only.
   python factory/factory.py check <slug> [--strict]           # Android quality gate
   python factory/factory.py check-ios <slug> [--strict]       # iOS quality gate
   python factory/factory.py asc <slug> [--what state|app|versions|builds]   # App Store Connect status
+  python factory/factory.py watch [<slug>] [--dry-run]        # review state -> issue when it changes
   python factory/factory.py build <slug>                      # gh: Factory Build
   python factory/factory.py store <slug> [--what all|listing|icon|screenshots|app-info|privacy-tags] [--lang X] [--dry-run]
   python factory/factory.py privacy-tags <slug> [--init]     # local: validate + write store/privacy-tags.md (console checklist)
@@ -124,6 +125,10 @@ def main(argv: list[str]) -> int:
         return run(cmd, a.print_only)
     if a.command == "check-ios":
         cmd = [py, "factory/tools/check_ios_app.py", a.slug] + (["--strict"] if a.strict else [])
+        return run(cmd, a.print_only)
+    if a.command == "watch":
+        cmd = [py, "factory/tools/asc_watch.py"] + ([a.slug] if a.slug else []) \
+              + (["--dry-run"] if a.dry_run else [])
         return run(cmd, a.print_only)
     if a.command == "asc":
         # Reads only; needs ASC_* in the environment (never passed on the command line).
