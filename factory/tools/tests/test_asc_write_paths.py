@@ -97,6 +97,10 @@ class Handler(BaseHTTPRequestHandler):
                 rows = [{"id": r["id"], "attributes": {"locale": loc}}
                         for loc, r in STATE["version_locs"].items()]
                 self._json(200, {"data": rows[:1]})
+        elif path.endswith("/appScreenshotSets"):
+            display_type = params.get("filter[screenshotDisplayType]")
+            set_id = STATE["screenshot_sets"].get(display_type)
+            self._json(200, {"data": [{"id": set_id}] if set_id else []})
         elif path == "/v1/builds":
             self._json(200, {"data": [{"type": "builds", "id": "b1",
                                        "attributes": {"version": "3", "processingState": "VALID"}}]})
@@ -123,6 +127,14 @@ class Handler(BaseHTTPRequestHandler):
             self._json(201, {"data": {"type": rtype, "id": row["id"]}})
         elif rtype == "appScreenshotSets":
             display_type = data["attributes"]["screenshotDisplayType"]
+            # Apple refuses a duplicate set with 409 rather than returning the
+            # existing one. Faking it as idempotent is what let the real bug
+            # through: the second screenshot of every locale aborted the run.
+            if display_type in STATE["screenshot_sets"]:
+                self._json(409, {"errors": [{
+                    "title": "The request cannot be fulfilled because of the state of another resource.",
+                    "detail": "Screenshot Set Already Exists!"}]})
+                return
             set_id = STATE["screenshot_sets"].setdefault(display_type, new_id())
             self._json(201, {"data": {"type": rtype, "id": set_id}})
         elif rtype == "appScreenshots":
@@ -222,8 +234,12 @@ def fixture_root() -> str:
     png = bytes.fromhex(
         "89504e470d0a1a0a0000000d49484452000000010000000108020000009077"
         "53de0000000c4944415478da6360606060000000050001a5f645400000000049454e44ae426082")
-    with open(os.path.join(store, "screenshots", "en", "01.png"), "wb") as fh:
-        fh.write(png)
+    # Two files, not one: with a single screenshot the set is only ever created
+    # once and the "already exists" path -- the one that actually broke -- is
+    # never exercised.
+    for name in ("01.png", "02.png"):
+        with open(os.path.join(store, "screenshots", "en", name), "wb") as fh:
+            fh.write(png)
     return root
 
 
@@ -278,8 +294,9 @@ def main() -> int:
     check("a screenshot set was created for the registry display type",
           "APP_IPHONE_67" in STATE["screenshot_sets"], out)
     uploaded = [s for s in STATE["screenshots"].values() if s["uploaded"]]
-    check("the screenshot was marked uploaded with a checksum",
-          len(uploaded) == 1 and uploaded[0]["checksum"], out)
+    check("both screenshots uploaded, each with a checksum -- the second one is "
+          "what proves the set is reused instead of re-created",
+          len(uploaded) == 2 and all(s["checksum"] for s in uploaded), out)
 
     print("\nasc_publish.py --attach:")
     code, out = run(PUBLISH, [SLUG, "--ipa", os.path.join(root, "fake.ipa"), "--attach", "--dry-run"])
