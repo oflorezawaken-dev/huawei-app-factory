@@ -11,7 +11,7 @@ struct BannerAdFooter: ViewModifier {
     func body(content: Content) -> some View {
         VStack(spacing: 0) {
             content
-            if !store.adsRemoved && !UITestMode.isActive {
+            if AdsConfiguration.bannerEnabled && !store.adsRemoved && !UITestMode.isActive {
                 BannerAdView()
                     .frame(height: 50)
                     .accessibilityIdentifier("ad.banner")

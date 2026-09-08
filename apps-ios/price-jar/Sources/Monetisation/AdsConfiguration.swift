@@ -7,6 +7,20 @@ enum AdsConfiguration {
     /// reach review; the publish workflow refuses to submit one.
     static let testIDPrefix = "ca-app-pub-3940256099942544"
 
+    /// The anchored banner is off for the 1.0.0 submission. On a real device it
+    /// sat badly against the tab bar, and a banner crowding navigation is the
+    /// single most common ad-related rejection in this category -- it is also
+    /// the exact complaint that made the case for this app in the first place.
+    /// Turned back on once the app is approved and the placement has been
+    /// redesigned against a real device rather than a simulator.
+    ///
+    /// The interstitial stays live (TripSummaryView, once per session). That
+    /// matters beyond revenue: the app genuinely still serves ads, so the ATT
+    /// prompt, the privacy manifest and the App Privacy answers remain true.
+    /// Shipping none of them while still declaring advertising data collection
+    /// would make those declarations false and the tracking prompt baseless.
+    static let bannerEnabled = false
+
     static var appID: String { value(for: "GADApplicationIdentifier") }
     static var bannerUnitID: String { value(for: "ADMOB_BANNER_UNIT_ID") }
     static var interstitialUnitID: String { value(for: "ADMOB_INTERSTITIAL_UNIT_ID") }
