@@ -15,7 +15,7 @@ remembering gh/claude invocations. Standard library only.
   python factory/factory.py privacy-tags <slug> [--init]     # local: validate + write store/privacy-tags.md (console checklist)
   python factory/factory.py publish <slug> [--aab] [--submit --notes "..."] [--run-id N]
   python factory/factory.py research [--ios]                  # claude: propose an app (App Store lane with --ios)
-  python factory/factory.py spec <slug> --proposal proposals/<file>.md
+  python factory/factory.py spec <slug> --proposal proposals/<file>.md [--ios]
   python factory/factory.py generate <slug>                   # claude: build the app from its spec
   python factory/factory.py fix <slug> --run-id N             # claude: fix a failing build
   python factory/factory.py listing <slug>                    # claude: 9-language store text
@@ -155,7 +155,10 @@ def main(argv: list[str]) -> int:
     if a.command == "spec":
         if not a.proposal:
             sys.exit("spec needs --proposal proposals/<file>.md")
-        return claude_step(["20-spec.md"], f"Slug: {a.slug}\nProposal file: {a.proposal}", a.print_only, model_for("spec", a.model))
+        # The iOS spec template and prompt are not interchangeable with the
+        # Android ones: bundle IDs, AdMob, Apple privacy answers, Apple locales.
+        prompt = "20-spec-ios.md" if a.ios else "20-spec.md"
+        return claude_step([prompt], f"Slug: {a.slug}\nProposal file: {a.proposal}", a.print_only, model_for("spec", a.model))
     if a.command == "generate":
         return claude_step(["30-generate.md"], f"Slug: {a.slug}", a.print_only, model_for("generate", a.model))
     if a.command == "fix":
