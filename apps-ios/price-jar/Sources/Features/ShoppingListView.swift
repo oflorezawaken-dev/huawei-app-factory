@@ -60,6 +60,11 @@ struct ShoppingListView: View {
                                     }
                                     .fixedSize()
                                 }
+                                // .contain, not .combine: the row must be a queryable
+                                // element in its own right (a bare container is not,
+                                // so its identifier was invisible to XCUITest), while
+                                // the Stepper stays individually reachable by VoiceOver.
+                                .accessibilityElement(children: .contain)
                                 .accessibilityIdentifier("shoppingList.row.\(entry.displayName)")
                             }
                             .onDelete(perform: deleteEntries)

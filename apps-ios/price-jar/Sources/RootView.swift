@@ -4,7 +4,6 @@ import SwiftUI
 struct RootView: View {
     @Environment(AppSettings.self) private var settings
     @Environment(\.modelContext) private var context
-    @Query private var allItems: [Item]
     @State private var showFirstRun = false
 
     var body: some View {
@@ -25,10 +24,8 @@ struct RootView: View {
         .onAppear {
             if UITestMode.isActive {
                 showFirstRun = false
-                if UITestMode.shouldSeedSampleData && allItems.isEmpty {
-                    SampleDataFactory.load(into: context)
-                    settings.hasCompletedFirstRun = true
-                }
+                // Sample data is seeded in PriceJarApp.init(), before any view
+                // exists, so the app is never observed in an unseeded state.
             } else {
                 showFirstRun = !settings.hasCompletedFirstRun
             }
