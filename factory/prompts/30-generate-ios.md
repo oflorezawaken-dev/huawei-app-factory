@@ -35,6 +35,7 @@ detached is not.
      the committed one, taking the ad app ID and usage strings with it.
    - `excludes: [Info.plist]` on the sources entry, so the plist is not also copied as
      a resource.
+   - `UIRequiresFullScreen: true` in Info.plist. Without it Apple's upload servers reject an iPhone-only, portrait-only app with error 90474 ("iPad Multitasking support requires these orientations"), because a single-orientation app must either declare all four orientations or opt out of iPad multitasking entirely. The first PriceJar upload found this after Archive and Export both succeeded.
    Add targets or dependencies if the spec needs them; do not rewrite what is there.
 
 3. **AdMob is already wired.** The template has the real `GoogleMobileAds` SPM package,
