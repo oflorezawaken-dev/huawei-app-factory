@@ -53,19 +53,19 @@ jobs:
             if [[ -n "$INPUT_APP" ]]; then
               slugs="$INPUT_APP"
             else
-              slugs="$(python3 factory/tools/registry.py list)"
+              slugs="$(python3 factory/tools/registry.py list --platform android)"
             fi
           elif [[ "$EVENT" == "pull_request" ]]; then
-            slugs="$(python3 factory/tools/registry.py changed "$PR_BASE" "$PR_HEAD")"
+            slugs="$(python3 factory/tools/registry.py changed "$PR_BASE" "$PR_HEAD" --platform android)"
           else
             if [[ "$BEFORE" =~ ^0+$ ]]; then
-              slugs="$(python3 factory/tools/registry.py list)"
+              slugs="$(python3 factory/tools/registry.py list --platform android)"
             else
-              slugs="$(python3 factory/tools/registry.py changed "$BEFORE" "$AFTER")"
+              slugs="$(python3 factory/tools/registry.py changed "$BEFORE" "$AFTER" --platform android)"
             fi
             # factory/ or workflow changes without app changes: rebuild everything once
             if [[ -z "$slugs" ]]; then
-              slugs="$(python3 factory/tools/registry.py list)"
+              slugs="$(python3 factory/tools/registry.py list --platform android)"
             fi
           fi
           # Registered apps without an Android project yet (status: planned) are skipped.

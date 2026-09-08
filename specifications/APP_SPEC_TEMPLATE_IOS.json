@@ -1,0 +1,160 @@
+{
+  "spec_version": "1.0.0",
+  "_note": "iOS / App Store spec template. The Android one (APP_SPEC_TEMPLATE.json) is not interchangeable: bundle IDs replace package names, AdMob replaces Petal Ads, Apple's App Privacy questionnaire replaces AppGallery privacy tags, and the locale codes differ.",
+  "app": {
+    "name": "",
+    "bundle_id": "",
+    "sku": "",
+    "marketing_version": "1.0.0",
+    "build": 1,
+    "category_primary": "",
+    "category_secondary": "",
+    "description": "",
+    "target_audience": "",
+    "problem_solved": ""
+  },
+  "product_strategy": {
+    "market_opportunity": "",
+    "competitive_advantage": "",
+    "main_competitors": [],
+    "estimated_development_complexity": 0,
+    "estimated_market_potential": 0,
+    "monetization_strategy": ""
+  },
+  "technical": {
+    "platform": "iOS",
+    "language": "Swift",
+    "ui": "SwiftUI",
+    "architecture": "MVVM with @Observable",
+    "persistence": "SwiftData",
+    "min_ios": "17.0",
+    "devices": [
+      "iPhone"
+    ],
+    "project_generator": "XcodeGen",
+    "offline_first": true
+  },
+  "features": [
+    {
+      "id": "",
+      "name": "",
+      "description": "",
+      "priority": "P0",
+      "requires_internet": false,
+      "requires_permission": false,
+      "permission": ""
+    }
+  ],
+  "screens": [
+    {
+      "id": "",
+      "name": "",
+      "purpose": "",
+      "components": [],
+      "navigation_to": [],
+      "_accessibility_identifiers_note": "Every interactive control needs one from day one; the screenshot UI test addresses controls by identifier, never by coordinates."
+    }
+  ],
+  "permissions": [
+    {
+      "key": "",
+      "_key_note": "The Info.plist key, e.g. NSCameraUsageDescription.",
+      "usage_description": "",
+      "_usage_description_note": "Names the feature and is true. The gate rejects strings under 25 characters and generic phrasings; Apple rejects vague ones under guideline 5.1.1.",
+      "requested_when": "",
+      "works_if_denied": ""
+    }
+  ],
+  "integrations": {
+    "swift_packages": [
+      "GoogleMobileAds"
+    ],
+    "apple_frameworks": [],
+    "analytics": false,
+    "crash_reporting": false,
+    "ads": true,
+    "_forbidden_note": "No Firebase, Amplitude, Mixpanel, AppsFlyer, Adjust, Segment or Sentry: check_ios_app.py fails the build on any of them."
+  },
+  "monetization": {
+    "enabled": true,
+    "provider": "Google AdMob",
+    "banner": true,
+    "interstitial": true,
+    "rewarded": false,
+    "remove_ads_iap": true,
+    "iap_product_id": "",
+    "_iap_product_id_note": "Non-consumable, <bundle_id>.removeads. Must be created in App Store Connect by hand before it can be purchased.",
+    "banner_screens": [],
+    "interstitial_moments": [],
+    "ads_never_on": [],
+    "_ads_never_on_note": "Screens and moments where no ad may ever appear. Two of the loudest complaints in every utility category are about ads interrupting the core task.",
+    "att_requested_when": ""
+  },
+  "localization": {
+    "default_language": "en-US",
+    "supported_languages": [
+      "en-US",
+      "es-ES",
+      "pt-PT",
+      "fr-FR",
+      "de-DE",
+      "it",
+      "tr",
+      "ar-SA",
+      "zh-Hans"
+    ],
+    "_supported_languages_note": "Apple's locale codes, which differ from Huawei's (ar-SA not ar, zh-Hans not zh-CN, it not it-IT, tr not tr-TR). Mirrors defaults.ios.languages.",
+    "string_catalog": "Localizable.xcstrings",
+    "rtl_languages": [
+      "ar-SA"
+    ]
+  },
+  "design": {
+    "theme": "",
+    "style": "",
+    "primary_color": "",
+    "secondary_color": "",
+    "supports_light_mode": true,
+    "supports_dark_mode": true,
+    "supports_dynamic_type": true,
+    "accessibility_required": true,
+    "_identity_note": "Its own palette, icon and copy. The shared factory skeleton is internal and must never be visible: Apple's guideline 4.3 treats template reskins as spam and penalises the whole account."
+  },
+  "privacy": {
+    "collects_personal_data": true,
+    "_collects_personal_data_note": "Always true while ads ship: the AdMob SDK collects device and advertising identifiers. Apple's App Privacy answers must say so.",
+    "collects_sensitive_data": false,
+    "stores_data_locally": true,
+    "uploads_user_content": false,
+    "requires_privacy_policy": true,
+    "privacy_policy_url": "",
+    "support_url": "",
+    "_support_url_note": "Apple requires a support URL; GitHub Pages under docs/<slug>/support/ satisfies it.",
+    "privacy_manifest": {
+      "_note": "Goes into PrivacyInfo.xcprivacy. Data types use Apple's NSPrivacyCollectedDataType* labels; required-reason APIs use their approved reason codes.",
+      "collected_data_types": [],
+      "accessed_api_types": [],
+      "tracking": true
+    },
+    "app_privacy_answers": {
+      "_note": "What to tick in App Store Connect's App Privacy questionnaire. Manual the first time. With AdMob this means identifiers and usage data used for third-party advertising, and 'used to track you' when ATT is accepted.",
+      "data_used_to_track_you": [],
+      "data_linked_to_you": [],
+      "data_not_linked_to_you": []
+    }
+  },
+  "qa": {
+    "unit_tests_required": true,
+    "screenshot_ui_test_required": true,
+    "release_build_required": true,
+    "ipa_required": true,
+    "test_permissions": true,
+    "test_localization": true,
+    "test_dark_mode": true,
+    "test_ads": true,
+    "test_offline_behavior": true,
+    "test_accessibility": true,
+    "acceptance_criteria": [],
+    "_acceptance_criteria_note": "Testable statements with numbers, not adjectives. 'Recording a price for a known item takes at most 4 taps plus the number' is testable; 'entry is fast' is not."
+  }
+}

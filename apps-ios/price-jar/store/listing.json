@@ -1,0 +1,27 @@
+{
+  "_notes": [
+    "Apple locale codes from factory/apps.json defaults.ios.languages (it, tr, ar-SA, zh-Hans - not the AppGallery codes).",
+    "Only en-US is written. The other eight are marked \"_todo\": true for the listing step (factory/prompts/50-listing.md); translations will be machine-drafted and need a native review before a real launch.",
+    "Copy discloses AdMob advertising and the one-time Remove Ads purchase, and states that the barcode scanner recalls the user's own items rather than looking products up online. Nothing listed under 'not in V1' in the proposal is promised: no CSV import, no receipt scanning, no online product lookup, no iCloud or family sharing, no iPad, widgets, Watch or notifications.",
+    "Apple limits enforced by factory/tools/check_ios_app.py: name 30, subtitle 30, promotional_text 170, description 4000, keywords 100, release_notes 4000."
+  ],
+  "languages": [
+    {
+      "lang": "en-US",
+      "name": "PriceJar: Grocery Price Book",
+      "subtitle": "Track unit prices per store",
+      "promotional_text": "Standing in the aisle? PriceJar tells you whether this price is the best you have ever paid, typical, or above your usual - from your own records, offline.",
+      "description": "PriceJar is the price book frugal shoppers have kept in a notebook for decades, on your iPhone.\n\nYou write down what a product actually cost, at which store, in which size. PriceJar turns every price into a comparable unit - per kg, per litre, per item - and the next time you are holding that jar of coffee it tells you in one screen whether the price is the best you have ever paid, typical, or above your usual.\n\nWHY A PRICE BOOK\nA price is only good or bad compared with what you paid before, somewhere else, in a different package size. Nobody remembers that. A price book does.\n\nWHAT IT DOES\n• Records a price in about ten seconds - store, size and unit are pre-filled from last time\n• Normalises everything to a comparable unit, metric and imperial: per kg, per 100 g, per lb, per litre, per 100 mL, per fl oz, per item\n• Answers \"is this a good price?\" with your best price, the store that had it and the date\n• Keeps the full history of every item, with a chart of the unit price over time\n• Tracks unlimited stores of your choosing - no chain database, no cap\n• Builds a shopping list, estimates the total from your own prices, and compares the same basket across your stores, always telling you how many items it had prices for\n• Trip mode: pick a store, tick items off, and record what you actually paid as you shop - the price book fills itself\n• Shows what your basket costs month by month and which items rose the most\n• Exports everything as CSV through the share sheet\n• Marks sale prices and loyalty-card prices separately, so they do not distort your typical price\n\nWORKS ENTIRELY OFFLINE\nYour items, prices, stores, lists and trips are stored only on this iPhone. There is no account, no sign-in, no cloud and no server. PriceJar does not use anyone else's price feed, so it works in any country, in any currency, with the stores you actually shop at.\n\nABOUT THE BARCODE SCANNER\nThe scanner recalls your own items. Scan something you have bought before and PriceJar jumps to your price history for it; scan something new and you name it once. PriceJar does not look products up online and will not fill in a product name for you.\n\nFREE, WITH ADS - AND A WAY OUT\nPriceJar is free and supported by Google AdMob. A banner appears at the bottom of the price book, stores, item history and stats screens, and a single full-screen ad can appear after you finish and save a shopping trip. No ad ever appears while you are entering a price, scanning, looking at the \"good price?\" verdict, or shopping - you are standing in a shop, and that is not the moment. One optional purchase removes all advertising forever. It unlocks nothing else, because nothing else is locked.\n\nGOOD TO KNOW\n• iPhone, iOS 17 or later\n• Available in English, Spanish, Portuguese, French, German, Italian, Turkish, Arabic and Chinese\n• Light and dark, Dynamic Type and VoiceOver supported\n• Sample data on first run so you can see how it works before typing anything\n• No CSV import, no receipt scanning and no online product lookup in this version",
+      "keywords": "price book,grocery prices,unit price,price tracker,shopping list,compare stores,budget,offline",
+      "release_notes": "First release.\n\n• Price book with unit-price normalisation across metric and imperial\n• \"Good price?\" verdict against your own history: best, typical or above your usual\n• Per-item price history with a chart\n• Your own stores, with no limit\n• Shopping list with an estimated total and a per-store basket comparison\n• Trip mode that records what you paid as you shop\n• Barcode recall for items you have already added\n• Stats and CSV export\n• Works fully offline, no account\n• Free with ads, one-time purchase to remove them"
+    },
+    { "lang": "es-ES", "_todo": true },
+    { "lang": "pt-PT", "_todo": true },
+    { "lang": "fr-FR", "_todo": true },
+    { "lang": "de-DE", "_todo": true },
+    { "lang": "it", "_todo": true },
+    { "lang": "tr", "_todo": true },
+    { "lang": "ar-SA", "_todo": true },
+    { "lang": "zh-Hans", "_todo": true }
+  ]
+}

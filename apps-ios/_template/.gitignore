@@ -1,0 +1,4 @@
+# XcodeGen output: generated from project.yml, never hand-edited or reviewed.
+*.xcodeproj/
+build/
+DerivedData/
