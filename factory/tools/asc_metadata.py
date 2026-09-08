@@ -238,6 +238,16 @@ def push_screenshots(app: dict, asc_app_id: str, token: str, dry_run: bool) -> N
     ios = load()["defaults"]["ios"]
     version_id = "dry-run" if dry_run else find_editable_version(
         asc_app_id, str((app.get("current_version") or {}).get("marketing_version") or ""), token)
+    # Read the display type from the registry rather than hardcoding it here:
+    # the registry already declares the required sets and their accepted pixel
+    # sizes, and check_ios_app.py validates the images against exactly that.
+    # A second, hardcoded copy is how this shipped APP_IPHONE_69 -- a value
+    # that is not in Apple's enum at all -- past a passing quality gate.
+    required = [cfg for cfg in ios["screenshot_sets"].values() if cfg.get("required")]
+    if not required:
+        raise ASCError("defaults.ios.screenshot_sets declares no required set")
+    display_type = required[0]["display_type"]
+
     mapping = ios["screenshot_dir_to_asc_lang"]
     for folder, locale in mapping.items():
         shots_dir = os.path.join(ROOT, app["store_dir"], "screenshots", folder)
@@ -251,7 +261,7 @@ def push_screenshots(app: dict, asc_app_id: str, token: str, dry_run: bool) -> N
             continue
         loc_id = find_version_localization_id(version_id, locale, token)
         for name in files:
-            upload_screenshot(loc_id, "APP_IPHONE_69", os.path.join(shots_dir, name), token)
+            upload_screenshot(loc_id, display_type, os.path.join(shots_dir, name), token)
 
 
 def main(argv: list[str]) -> int:

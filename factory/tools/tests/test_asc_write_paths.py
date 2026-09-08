@@ -275,8 +275,8 @@ def main() -> int:
     print("\nasc_metadata.py --what screenshots:")
     code, out = run(METADATA, [SLUG, "--what", "screenshots"])
     check("exits 0", code == 0, out)
-    check("a screenshot set was created for the 6.9in display type",
-          "APP_IPHONE_69" in STATE["screenshot_sets"], out)
+    check("a screenshot set was created for the registry display type",
+          "APP_IPHONE_67" in STATE["screenshot_sets"], out)
     uploaded = [s for s in STATE["screenshots"].values() if s["uploaded"]]
     check("the screenshot was marked uploaded with a checksum",
           len(uploaded) == 1 and uploaded[0]["checksum"], out)
