@@ -334,6 +334,23 @@ def main(argv: list[str]) -> int:
            f"MARKETING_VERSION {sorted(proj_marketing) or 'unset'} vs {want_marketing or 'unset'}; "
            f"CURRENT_PROJECT_VERSION {sorted(proj_build) or 'unset'} vs {want_build or 'unset'}")
 
+    # --- device family ------------------------------------------------------
+    # Xcode builds universal when TARGETED_DEVICE_FAMILY is unset, so an app
+    # specced as iPhone-only silently ships an iPad build: Apple then demands
+    # 13-inch iPad screenshots and reviews a layout nobody designed. Caught
+    # here rather than by Apple, which is where PriceJar 1.0.0 found it.
+    FAMILY_BY_DEVICE = {"iPhone": "1", "iPad": "2"}
+    spec_devices = []
+    spec_path = os.path.join(ROOT, app["spec"])
+    if os.path.isfile(spec_path):
+        spec_devices = (json.loads(read(spec_path)).get("technical") or {}).get("devices") or []
+    if spec_devices:
+        want_family = ",".join(FAMILY_BY_DEVICE[d] for d in spec_devices if d in FAMILY_BY_DEVICE)
+        got = resolved_settings("TARGETED_DEVICE_FAMILY")
+        report("device_family", bool(want_family) and want_family in got,
+               f"spec devices {spec_devices} need TARGETED_DEVICE_FAMILY={want_family or '?'}; "
+               f"project has {sorted(got) or 'UNSET (Xcode defaults to universal)'}")
+
     # --- permission strings -------------------------------------------------
     if info:
         vague = []
