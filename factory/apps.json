@@ -66,9 +66,9 @@
         "zh": "zh-Hans"
       },
       "screenshot_sets": {
-        "APP_IPHONE_69": {
+        "APP_IPHONE_67": {
           "required": true,
-          "display_type": "APP_IPHONE_69",
+          "display_type": "APP_IPHONE_67",
           "sizes": [
             [
               1320,
@@ -83,7 +83,7 @@
               2736
             ]
           ],
-          "_note": "6.9-inch iPhone. Apple scales this set down to every smaller iPhone, so it is the only required iPhone set."
+          "_note": "Largest iPhone set. Apple's screenshotDisplayType enum has no APP_IPHONE_69 -- it kept the APP_IPHONE_67 name and accepts 6.9-inch resolutions there. Apple scales this set down to every smaller iPhone, so it is the only required iPhone set."
         },
         "APP_IPAD_PRO_3GEN_129": {
           "required": false,
