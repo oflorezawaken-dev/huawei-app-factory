@@ -300,6 +300,45 @@ def main() -> int:
     check("that submission has the version attached as an item",
           bool(submitted) and VERSION_ID in submitted[0]["items"])
 
+    print("\nupload() treats error -19232 (build already present) as non-fatal:")
+    import subprocess as _subprocess
+
+    class FakeCompleted:
+        def __init__(self, returncode, stdout):
+            self.returncode, self.stdout, self.stderr = returncode, stdout, ""
+
+    real_run = _subprocess.run
+
+    def fake_run_already_uploaded(cmd, **kwargs):
+        if cmd[:2] == ["xcrun", "altool"]:
+            return FakeCompleted(1, "ERROR: The provided entity includes an attribute with a "
+                                   "value that has already been used (-19232) The bundle version "
+                                   "must be higher than the previously uploaded version: '1'.")
+        return real_run(cmd, **kwargs)
+
+    def fake_run_other_failure(cmd, **kwargs):
+        if cmd[:2] == ["xcrun", "altool"]:
+            return FakeCompleted(1, "ERROR: some unrelated failure")
+        return real_run(cmd, **kwargs)
+
+    _subprocess.run = fake_run_already_uploaded
+    try:
+        asc_publish.upload(os.path.join(root, "fake.ipa"), "TESTKEY1234")
+        check("does not raise on -19232", True)
+    except asc_publish.ASCError:
+        check("does not raise on -19232", False)
+    finally:
+        _subprocess.run = real_run
+
+    _subprocess.run = fake_run_other_failure
+    try:
+        asc_publish.upload(os.path.join(root, "fake.ipa"), "TESTKEY1234")
+        check("still raises on an unrelated altool failure", False)
+    except asc_publish.ASCError:
+        check("still raises on an unrelated altool failure", True)
+    finally:
+        _subprocess.run = real_run
+
     server.shutdown()
     print(f"\n{len(failures)} assertion(s) failed" if failures else "\nall assertions passed")
     return 1 if failures else 0

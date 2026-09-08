@@ -70,6 +70,16 @@ def upload(ipa_path: str, key_id: str) -> None:
         out = proc.stdout + proc.stderr
         print(out.replace(os.environ.get("ASC_ISSUER_ID", "\x00"), "***"))
         if proc.returncode != 0:
+            # Error -19232: this exact build number already reached Apple on an
+            # earlier, since-failed run of this same tool (attaching or
+            # submitting failed after a successful upload). The binary is
+            # already there and processing; re-running --wait/--attach against
+            # it is correct, re-raising here would force a pointless registry
+            # version bump for a retry that has nothing wrong with the upload.
+            if "-19232" in out or "must be higher than the previously uploaded version" in out:
+                log("build already present at Apple (error -19232); continuing "
+                   "as if the upload had just succeeded")
+                return
             raise ASCError(f"altool --upload-package exited {proc.returncode}")
     finally:
         if os.path.exists(key_path):
