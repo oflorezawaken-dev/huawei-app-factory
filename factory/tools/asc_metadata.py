@@ -189,23 +189,34 @@ def find_version_localization_id(version_id: str, locale: str, token: str) -> st
     return existing
 
 
-def upload_screenshot(localization_id: str, display_type: str, path: str, token: str) -> None:
-    filename, size = os.path.basename(path), os.path.getsize(path)
-    reserve = api_call("POST", "/v1/appScreenshotSets", {
+def find_or_create_screenshot_set(localization_id: str, display_type: str, token: str) -> str:
+    """The set for this locale and device, reused if it exists.
+
+    Look-up comes first deliberately. Creating one per screenshot and treating
+    the failure as the signal does not work: Apple answers a duplicate create
+    with 409 "Screenshot Set Already Exists!", which is an exception, not an
+    empty id -- so the second screenshot of every locale aborted the run. It is
+    also one API call per locale instead of one per image.
+    """
+    existing = api_call("GET", f"/v1/appStoreVersionLocalizations/{localization_id}/appScreenshotSets"
+                        f"?filter[screenshotDisplayType]={display_type}", token)
+    rows = existing.get("data", [])
+    if rows:
+        return rows[0]["id"]
+
+    created = api_call("POST", "/v1/appScreenshotSets", {
         "data": {"type": "appScreenshotSets", "attributes": {"screenshotDisplayType": display_type},
                  "relationships": {"appStoreVersionLocalization":
                                    {"data": {"type": "appStoreVersionLocalizations", "id": localization_id}}}}},
         token)
-    set_id = reserve.get("data", {}).get("id")
+    set_id = created.get("data", {}).get("id")
     if not set_id:
-        # A set for this display type usually already exists; look it up instead of failing.
-        existing = api_call("GET", f"/v1/appStoreVersionLocalizations/{localization_id}/appScreenshotSets"
-                            f"?filter[screenshotDisplayType]={display_type}", token)
-        rows = existing.get("data", [])
-        if not rows:
-            raise ASCError(f"could not create or find an appScreenshotSet for {display_type}")
-        set_id = rows[0]["id"]
+        raise ASCError(f"could not create or find an appScreenshotSet for {display_type}")
+    return set_id
 
+
+def upload_screenshot(set_id: str, path: str, token: str) -> None:
+    filename, size = os.path.basename(path), os.path.getsize(path)
     reservation = api_call("POST", "/v1/appScreenshots", {
         "data": {"type": "appScreenshots",
                  "attributes": {"fileName": filename, "fileSize": size},
@@ -231,7 +242,7 @@ def upload_screenshot(localization_id: str, display_type: str, path: str, token:
     api_call("PATCH", f"/v1/appScreenshots/{shot_id}", {
         "data": {"type": "appScreenshots", "id": shot_id,
                  "attributes": {"uploaded": True, "sourceFileChecksum": md5_of(path)}}}, token)
-    log(f"  uploaded {filename} to {display_type}")
+    log(f"  uploaded {filename}")
 
 
 def push_screenshots(app: dict, asc_app_id: str, token: str, dry_run: bool) -> None:
@@ -260,8 +271,9 @@ def push_screenshots(app: dict, asc_app_id: str, token: str, dry_run: bool) -> N
             log(f"  [dry-run] {locale}: would upload {len(files)} screenshot(s)")
             continue
         loc_id = find_version_localization_id(version_id, locale, token)
+        set_id = find_or_create_screenshot_set(loc_id, display_type, token)
         for name in files:
-            upload_screenshot(loc_id, display_type, os.path.join(shots_dir, name), token)
+            upload_screenshot(set_id, os.path.join(shots_dir, name), token)
 
 
 def main(argv: list[str]) -> int:
