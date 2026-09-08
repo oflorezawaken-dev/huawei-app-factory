@@ -3,6 +3,15 @@
 Read `factory/prompts/00-factory-rules.md` first. Input: `specifications/<slug>.json`
 and its registry entry in `factory/apps.json`.
 
+## Do the work in this session
+
+Build the app here, directly, with your own tools. Do not delegate it to a
+background agent, a sub-agent or a separate git worktree: this step is invoked as
+headless `claude -p`, and work handed to a background task is terminated when the
+step's own session ends -- the first PriceJar run lost a finished models-and-logic
+layer that way, and reported success while the tree held one file. Long is fine;
+detached is not.
+
 ## Method
 
 1. **Skeleton.** Copy `apps-ios/_template` to `apps-ios/<slug>`. Rename `AppTemplate`

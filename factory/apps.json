@@ -217,7 +217,9 @@
       "iap": {
         "remove_ads_product_id": "com.proapps.pricejar.removeads"
       },
-      "known_gaps": {},
+      "known_gaps": {
+        "admob_unit_ids": "AdMob console pending; step 6 of the iOS flow."
+      },
       "proposal": "proposals/2026-09-08-price-jar-ios.md"
     }
   ]
