@@ -156,9 +156,18 @@ class Handler(BaseHTTPRequestHandler):
             STATE["attached_build"] = data.get("relationships", {}).get("build", {}).get("data", {}).get("id")
             self._json(200, {"data": {"type": rtype, "id": rid}})
         elif rtype == "appStoreVersionLocalizations":
+            attrs = data.get("attributes", {})
+            # Apple refuses whatsNew on a first version -- there is no previous
+            # release for anything to be new relative to -- and rejects the
+            # whole PATCH with 409 rather than ignoring the one field.
+            if STATE.get("reject_whats_new") and "whatsNew" in attrs:
+                self._json(409, {"errors": [{
+                    "title": "The request cannot be fulfilled because of the state of another resource.",
+                    "detail": "Attribute 'whatsNew' cannot be edited at this time"}]})
+                return
             for loc, row in STATE["version_locs"].items():
                 if row["id"] == rid:
-                    row["attrs"].update(data.get("attributes", {}))
+                    row["attrs"].update(attrs)
             self._json(200, {"data": {"type": rtype, "id": rid}})
         elif rtype == "appScreenshots":
             STATE["screenshots"][rid]["uploaded"] = data["attributes"].get("uploaded")
@@ -299,6 +308,16 @@ def main() -> int:
     check("exactly one submission ended up submitted:true", len(submitted) == 1)
     check("that submission has the version attached as an item",
           bool(submitted) and VERSION_ID in submitted[0]["items"])
+
+    print("\na first version rejects whatsNew; the rest of the listing still lands:")
+    STATE["reject_whats_new"] = True
+    STATE["version_locs"]["en-US"]["attrs"].pop("description", None)
+    code, out = run(METADATA, [SLUG, "--what", "text"])
+    check("exits 0 instead of aborting the whole listing", code == 0, out)
+    check("says which attribute Apple refused", "whatsNew" in out and "will not accept" in out, out)
+    check("description still got through on the retry",
+          STATE["version_locs"]["en-US"]["attrs"].get("description") == "Desc", out)
+    STATE["reject_whats_new"] = False
 
     print("\nupload() treats error -19232 (build already present) as non-fatal:")
     import subprocess as _subprocess

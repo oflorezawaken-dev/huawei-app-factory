@@ -128,8 +128,25 @@ def upsert_localization(resource: str, parent_type: str, parent_field: str, pare
         log(f"  [dry-run] {resource} {locale}: {attributes}")
         return
     if existing_id:
-        api_call("PATCH", f"/v1/{resource}/{existing_id}",
-                 {"data": {"type": resource, "id": existing_id, "attributes": attributes}}, token)
+        try:
+            api_call("PATCH", f"/v1/{resource}/{existing_id}",
+                     {"data": {"type": resource, "id": existing_id, "attributes": attributes}}, token)
+        except ASCError as exc:
+            # A first version has no "What's New": there is no previous release
+            # for anything to be new relative to, and Apple rejects the whole
+            # PATCH with 409 rather than ignoring the field. Drop it and retry
+            # so one inapplicable attribute does not block the entire listing.
+            blocked = [k for k in attributes if f"Attribute '{k}' cannot be edited" in str(exc)]
+            if not blocked:
+                raise
+            remaining = {k: v for k, v in attributes.items() if k not in blocked}
+            log(f"  {resource} {locale}: Apple will not accept {blocked} on this version yet; "
+               f"sending the rest")
+            if not remaining:
+                return
+            api_call("PATCH", f"/v1/{resource}/{existing_id}",
+                     {"data": {"type": resource, "id": existing_id, "attributes": remaining}}, token)
+            attributes = remaining
     else:
         body = {"data": {"type": resource, "attributes": {**attributes, "locale": locale},
                          "relationships": {parent_type: {"data": {"type": parent_type + "s", "id": parent_id}}}}}
