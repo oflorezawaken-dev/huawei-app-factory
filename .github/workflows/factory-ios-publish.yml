@@ -143,9 +143,13 @@ jobs:
           set -euo pipefail
           args=("$APP_SLUG" --ipa "$IPA_FILE" --wait)
           if [[ "$SUBMIT" == "true" ]]; then
-            len=${#NOTES}
-            (( len >= 10 && len <= 300 )) || { echo "::error::release_notes must be 10-300 chars when submitting (got $len)."; exit 1; }
-            args+=(--attach --submit --notes "$NOTES")
+            # Optional: a first version cannot carry What's New at all.
+            if [[ -n "$NOTES" ]]; then
+              len=${#NOTES}
+              (( len >= 10 && len <= 300 )) || { echo "::error::release_notes must be 10-300 chars when given (got $len)."; exit 1; }
+              args+=(--notes "$NOTES")
+            fi
+            args+=(--attach --submit)
           else
             args+=(--attach)
           fi

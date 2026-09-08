@@ -125,9 +125,18 @@ def set_release_notes(version_id: str, notes: str, token: str) -> None:
             "no appStoreVersionLocalizations yet; run asc_metadata.py --what text "
             "before submitting so there is a locale row to carry the release notes")
     loc_id = rows[0]["id"]
-    api_call("PATCH", f"/v1/appStoreVersionLocalizations/{loc_id}",
-              {"data": {"type": "appStoreVersionLocalizations", "id": loc_id,
-                       "attributes": {"whatsNew": notes}}}, token)
+    try:
+        api_call("PATCH", f"/v1/appStoreVersionLocalizations/{loc_id}",
+                  {"data": {"type": "appStoreVersionLocalizations", "id": loc_id,
+                           "attributes": {"whatsNew": notes}}}, token)
+    except ASCError as exc:
+        # A 1.0.0 has no previous release for anything to be new relative to,
+        # and Apple refuses the field outright. Not an error worth aborting a
+        # submission over: there is simply nothing for What's New to say yet.
+        if "Attribute 'whatsNew' cannot be edited" not in str(exc):
+            raise
+        log("this version does not take release notes yet (first version); continuing")
+        return
     log(f"release notes set on locale {rows[0].get('attributes', {}).get('locale', loc_id)}")
 
 
@@ -180,8 +189,11 @@ def main(argv: list[str]) -> int:
 
     if a.submit:
         a.attach = a.wait = True
-    if a.submit and not (RELEASE_NOTES_MIN <= len(a.notes) <= RELEASE_NOTES_MAX):
-        sys.exit(f"--submit requires --notes with {RELEASE_NOTES_MIN}-{RELEASE_NOTES_MAX} characters")
+    # Notes are optional: a first version cannot carry What's New at all, so
+    # requiring them would make the very first submission impossible. When they
+    # are given they still have to fit Apple's limits.
+    if a.notes and not (RELEASE_NOTES_MIN <= len(a.notes) <= RELEASE_NOTES_MAX):
+        sys.exit(f"--notes must be {RELEASE_NOTES_MIN}-{RELEASE_NOTES_MAX} characters when given")
     if not a.dry_run and not os.path.isfile(a.ipa):
         sys.exit(f"no such file: {a.ipa}")
 
@@ -219,7 +231,8 @@ def main(argv: list[str]) -> int:
             if build_id:
                 attach_build(version_id, build_id, token)
             if a.submit:
-                set_release_notes(version_id, a.notes, token)
+                if a.notes:
+                    set_release_notes(version_id, a.notes, token)
                 submit_for_review(asc_app_id, token)
         return 0
     except TimeoutError as exc:
