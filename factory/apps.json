@@ -105,6 +105,8 @@
         "min": 3,
         "max": 10
       },
+      "copyright_holder": "ProApps",
+      "_copyright_note": "Shown publicly on the App Store listing as '<year> <holder>'. Apple adds the (c) symbol itself, so it must not be in the value.",
       "listing_limits": {
         "name": 30,
         "subtitle": 30,

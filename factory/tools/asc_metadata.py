@@ -48,6 +48,9 @@ VERSION_FIELDS = {
     "description": "description", "keywords": "keywords",
     "promotional_text": "promotionalText", "release_notes": "whatsNew",
     "support_url": "supportUrl",
+    # Optional in App Store Connect and deliberately unset: pointing it at the
+    # support page would just duplicate a link Apple already shows separately.
+    "marketing_url": "marketingUrl",
 }
 EDITABLE_VERSION_STATES = {"PREPARE_FOR_SUBMISSION", "DEVELOPER_REJECTED", "REJECTED", "METADATA_REJECTED"}
 
@@ -154,22 +157,65 @@ def upsert_localization(resource: str, parent_type: str, parent_field: str, pare
     log(f"  {resource} {locale}: {sorted(attributes)}")
 
 
+def page_urls(app: dict) -> dict[str, str]:
+    """The published privacy and support page URLs, derived from the registry.
+
+    Not read from listing.json: the registry already knows privacy_path and
+    support_path and the Pages base URL, and Apple requires the privacy URL to
+    publish at all. Asking a human to retype them into nine locale entries is
+    how PriceJar's first metadata push reached Apple with neither.
+    """
+    base = load()["defaults"]["privacy_base_url"].rstrip("/")
+    out = {}
+    for key, field in (("privacy_path", "privacy_policy_url"), ("support_path", "support_url")):
+        path = app.get(key, "")
+        if path:
+            out[field] = f"{base}/{path.removeprefix('docs/').strip('/')}/"
+    return out
+
+
+def push_version_attributes(version_id: str, token: str, dry_run: bool) -> None:
+    """Attributes on the version itself rather than on a localization.
+
+    Copyright is the one that matters here: it is shown publicly on the store
+    listing and Apple will not let a version be submitted without it.
+    """
+    holder = load()["defaults"]["ios"].get("copyright_holder", "")
+    if not holder:
+        return
+    # Apple renders the (c) symbol itself; the value is "<year> <holder>".
+    value = f"{time.gmtime().tm_year} {holder}"
+    if dry_run:
+        log(f"  [dry-run] appStoreVersions copyright: {value}")
+        return
+    api_call("PATCH", f"/v1/appStoreVersions/{version_id}",
+             {"data": {"type": "appStoreVersions", "id": version_id,
+                       "attributes": {"copyright": value}}}, token)
+    log(f"  appStoreVersions copyright: {value}")
+
+
 def push_text(app: dict, asc_app_id: str, listing: list[dict], token: str, dry_run: bool) -> None:
     app_info_id = "dry-run" if dry_run else find_app_info_id(asc_app_id, token)
     version = app.get("current_version") or {}
     marketing_version = str(version.get("marketing_version") or "")
     version_id = "dry-run" if dry_run else find_editable_version(asc_app_id, marketing_version, token)
+    urls = page_urls(app)
 
     for entry in listing:
         locale = entry.get("lang")
         if not locale:
             continue
-        info_attrs = {v: entry[k] for k, v in APP_INFO_FIELDS.items() if entry.get(k)}
+        # The registry's URLs win over anything in listing.json: they are
+        # derived from the paths that actually got published to Pages.
+        merged = {**entry, **urls}
+        info_attrs = {v: merged[k] for k, v in APP_INFO_FIELDS.items() if merged.get(k)}
         upsert_localization("appInfoLocalizations", "appInfo", "appInfos", app_info_id,
                             locale, info_attrs, token, dry_run)
-        version_attrs = {v: entry[k] for k, v in VERSION_FIELDS.items() if entry.get(k)}
+        version_attrs = {v: merged[k] for k, v in VERSION_FIELDS.items() if merged.get(k)}
         upsert_localization("appStoreVersionLocalizations", "appStoreVersion", "appStoreVersions", version_id,
                             locale, version_attrs, token, dry_run)
+
+    push_version_attributes(version_id, token, dry_run)
 
 
 def md5_of(path: str) -> str:
