@@ -265,6 +265,21 @@ def find_or_create_screenshot_set(localization_id: str, display_type: str, token
     return set_id
 
 
+def clear_screenshot_set(set_id: str, token: str) -> int:
+    """Delete every screenshot already in the set, returning how many.
+
+    Pushing screenshots means "these are the screenshots now", not "add these
+    to whatever is there". Without this, a second run appends: Apple caps a set
+    at 10 and the third push of five images fails with "Too many screenshots",
+    which is exactly what happened on PriceJar's.
+    """
+    existing = api_call("GET", f"/v1/appScreenshotSets/{set_id}/appScreenshots?limit=50", token)
+    rows = existing.get("data", [])
+    for row in rows:
+        api_call("DELETE", f"/v1/appScreenshots/{row['id']}", token=token)
+    return len(rows)
+
+
 def upload_screenshot(set_id: str, path: str, token: str) -> None:
     filename, size = os.path.basename(path), os.path.getsize(path)
     reservation = api_call("POST", "/v1/appScreenshots", {
@@ -336,6 +351,9 @@ def push_screenshots(app: dict, asc_app_id: str, token: str, dry_run: bool) -> N
                     f"screenshot set. Accepted: {sorted(size_to_display)}")
             if display_type not in sets:
                 sets[display_type] = find_or_create_screenshot_set(loc_id, display_type, token)
+                removed = clear_screenshot_set(sets[display_type], token)
+                if removed:
+                    log(f"  {locale} {display_type}: replaced {removed} existing screenshot(s)")
             upload_screenshot(sets[display_type], path, token)
             log(f"    -> {display_type}")
 
