@@ -198,19 +198,18 @@
       "store_dir": "apps/habit-cue/store",
       "privacy_path": "docs/habit-cue/privacy",
       "privacy_tags_configured": "",
-      "status": "in_console",
+      "status": "ready_to_publish",
       "current_version": {
         "versionCode": 1,
         "versionName": "1.0.0",
-        "status": "generated"
+        "status": "ready_to_publish",
+        "note": "1.0.0 uploaded 2026-09-09 with Huawei TEST ad units (upload-only, allow_test_ad_units override) to unblock the Petal Ads console. Real unit IDs pasted the same day; rebuild and re-upload replace that test package before any submission."
       },
-      "known_gaps": {
-        "ad_unit_ids": "Petal Ads console needs the app's package/SHA-256 before unit IDs can be created; the build carries Huawei TEST ad units until a human creates the AppGallery Connect app and the Petal Ads units and pastes the real IDs here."
-      },
+      "known_gaps": {},
       "ads": {
-        "banner_ad_id": "",
-        "interstitial_ad_id": "",
-        "_note": "Empty until a human creates the app in AppGallery Connect and the Petal Ads unit IDs. factory-publish.yml refuses to submit while these are empty or the build still carries Huawei TEST ad units."
+        "banner_ad_id": "g9h2yi5k1g",
+        "interstitial_ad_id": "v1o7h3tkyt",
+        "_note": "Petal Ads unit IDs from the Petal Ads console (set 2026-09-09). Public identifiers, not secrets."
       },
       "proposal": "proposals/2026-09-09-habit-cue.md",
       "issue": "https://github.com/oflorezawaken-dev/huawei-app-factory/issues/35"
