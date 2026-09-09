@@ -102,18 +102,35 @@ jobs:
       - name: Pick simulators
         run: |
           set -euo pipefail
-          unit="$(xcrun simctl list devices available | grep -m1 -E 'iPhone 1[6-9]( Pro)?( Max)?' \
-                   | sed -E 's/^ *([^(]+) \(.*/\1/' | sed 's/ *$//')"
-          shots="$(xcrun simctl list devices available | grep -m1 -E 'iPhone 1[6-9] Pro Max' \
-                   | sed -E 's/^ *([^(]+) \(.*/\1/' | sed 's/ *$//')"
-          ipad="$(xcrun simctl list devices available | grep -m1 -E 'iPad Pro 13-inch' \
-                   | sed -E 's/^ *([^(]+) \(.*/\1/' | sed 's/ *$//')"
-          [[ -n "$unit" ]] || { echo "::error::no iPhone 16/17-class simulator available"; exit 1; }
-          [[ -n "$shots" ]] || { echo "::error::no iPhone *Pro Max simulator (6.9in) available"; exit 1; }
-          [[ -n "$ipad" ]] || { echo "::error::no 13-inch iPad simulator available"; exit 1; }
-          echo "UNIT_SIMULATOR=$unit" >> "$GITHUB_ENV"
-          echo "SHOTS_SIMULATOR=$shots" >> "$GITHUB_ENV"
-          echo "IPAD_SIMULATOR=$ipad" >> "$GITHUB_ENV"
+          # simctl prints "<name> (<UDID>) (<state>)", and an iPad's own name
+          # contains parentheses -- "iPad Pro 13-inch (M5)". Cutting at the
+          # first "(" therefore yielded "iPad Pro 13-inch", which matches no
+          # destination and failed the iPad screenshot capture. Cut at the
+          # UDID instead, which is unambiguous.
+          strip_udid='s/^ *(.*) \([0-9A-Fa-f-]{36}\) \(.*\) *$/\1/'
+          available="$(xcrun simctl list devices available)"
+          names="$(printf '%s\n' "$available" | sed -E "$strip_udid")"
+          pick() {
+            local pattern="$1" label="$2" name
+            name="$(printf '%s\n' "$available" | grep -m1 -E "$pattern" | sed -E "$strip_udid")"
+            [[ -n "$name" ]] || { echo "::error::no $label simulator available"; return 1; }
+            # A wrong-but-non-empty name is exactly how this broke, and the
+            # truncated name is a prefix of the real one -- so this has to be
+            # a whole-line exact match, not a substring search.
+            printf '%s\n' "$names" | grep -qxF "$name" || {
+              echo "::error::extracted simulator name '$name' ($label) is not a device simctl listed"
+              return 1
+            }
+            printf '%s' "$name"
+          }
+          # Assign first: a failing $(...) inside an argument list would not
+          # trip `set -e`, and would write an empty name to the environment.
+          unit="$(pick 'iPhone 1[6-9]( Pro)?( Max)?' 'iPhone 16/17-class')"
+          shots="$(pick 'iPhone 1[6-9] Pro Max' 'iPhone Pro Max (6.9in)')"
+          ipad="$(pick 'iPad Pro 13-inch' '13-inch iPad')"
+          echo "UNIT_SIMULATOR=$unit"   | tee -a "$GITHUB_ENV"
+          echo "SHOTS_SIMULATOR=$shots" | tee -a "$GITHUB_ENV"
+          echo "IPAD_SIMULATOR=$ipad"   | tee -a "$GITHUB_ENV"
 
       - name: Unit tests
         run: |
