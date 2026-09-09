@@ -1,0 +1,19 @@
+{
+  "languages": [
+    {
+      "lang": "en-US",
+      "appName": "HabitCue",
+      "briefInfo": "Free daily habit tracker with streaks. No account. No paywall. Ever.",
+      "appDesc": "HabitCue tracks your daily habits and nothing more.\n\nAdd a habit, pick every day, specific weekdays, or a target number of times a week, and tap it done whenever you keep it. HabitCue keeps your current streak and your longest streak, and shows a simple monthly calendar so you can see the pattern at a glance.\n\nEverything stays on your device. There is no account, no cloud, no coaching upsell and no trial that turns into a bill. Unlike most habit trackers, every feature here is free for every user: unlimited habits, every schedule type, full stats, from day one.\n\nWhat you get:\n• Unlimited habits with three schedule types: daily, specific weekdays, or N times a week\n• Today view with everything due, one tap to mark done\n• Current streak and longest streak per habit\n• Monthly calendar and full completion history per habit\n• One daily reminder at the hour you choose, only when something is still undone\n• Overall stats: completion rate, best streak, completions this month\n• Light, dark and system themes\n• Interface in English, Spanish, Portuguese, French, German, Italian, Turkish, Arabic and Chinese\n\nHabitCue is free and supported by Huawei Petal Ads, shown only on the Habits and Stats screens — never on Today, never while you add or edit a habit.",
+      "newFeatures": "Initial release: unlimited habits, three schedule types, streaks, a monthly calendar and stats. Fully offline, no account, no paywall."
+    },
+    { "lang": "es-ES", "_todo": true },
+    { "lang": "pt-PT", "_todo": true },
+    { "lang": "fr-FR", "_todo": true },
+    { "lang": "de-DE", "_todo": true },
+    { "lang": "it-IT", "_todo": true },
+    { "lang": "tr-TR", "_todo": true },
+    { "lang": "ar", "_todo": true },
+    { "lang": "zh-CN", "_todo": true }
+  ]
+}

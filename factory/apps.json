@@ -189,6 +189,31 @@
       "issue": "https://github.com/oflorezawaken-dev/huawei-app-factory/issues/1"
     },
     {
+      "slug": "habit-cue",
+      "name": "HabitCue",
+      "path": "apps/habit-cue",
+      "package": "com.huaweiappfactory.habitcue",
+      "agc_app_id": "",
+      "spec": "specifications/habit-cue.json",
+      "store_dir": "apps/habit-cue/store",
+      "privacy_path": "docs/habit-cue/privacy",
+      "privacy_tags_configured": "",
+      "status": "planned",
+      "current_version": {
+        "versionCode": 1,
+        "versionName": "1.0.0",
+        "status": "planned"
+      },
+      "known_gaps": {},
+      "ads": {
+        "banner_ad_id": "",
+        "interstitial_ad_id": "",
+        "_note": "Empty until a human creates the app in AppGallery Connect and the Petal Ads unit IDs. factory-publish.yml refuses to submit while these are empty or the build still carries Huawei TEST ad units."
+      },
+      "proposal": "proposals/2026-09-09-habit-cue.md",
+      "issue": "https://github.com/oflorezawaken-dev/huawei-app-factory/issues/35"
+    },
+    {
       "slug": "price-jar",
       "name": "PriceJar",
       "platform": "ios",

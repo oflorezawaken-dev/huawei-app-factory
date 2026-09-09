@@ -1,0 +1,547 @@
+{
+  "spec_version": "1.0.0",
+  "app": {
+    "name": "HabitCue",
+    "package_name": "com.huaweiappfactory.habitcue",
+    "version_name": "1.0.0",
+    "version_code": 1,
+    "type": "app",
+    "category": "Productivity",
+    "description": "A daily habit tracker that stays free: add a habit, pick how often it repeats, tap it done, keep a streak. No account, no cloud, no paywall on any feature, ever.",
+    "target_audience": "People building a handful of daily routines (exercise, reading, water, meditation, screen-time limits) who have hit a paywall in Habitify, Streaks, HabitNow or similar and want the whole feature set for free, on Huawei phones and any Android device.",
+    "problem_solved": "The leading habit trackers hide recurring schedules, more than a few habits, calendar sync and even basic stats behind a subscription, and reviewers say the free tier feels like a teaser. HabitCue ships the entire habit-tracking feature set unlocked from day one, supported by ads instead of a subscription."
+  },
+  "product_strategy": {
+    "market_opportunity": "Habit tracking is a large, actively searched category (Habitify, Streaks, HabitNow, TickTick, EasyHabits) whose leaders cap free users at 3-5 habits or lock recurring schedules, calendar sync and stats behind Pro. The one honestly-free competitor found (Loop Habit Tracker) is Google Play / GMS-oriented and does not reach Huawei AppGallery users.",
+    "competitive_advantage": "Every feature unlocked for every user, forever: unlimited habits, all schedule types, full stats, no account, no trial, no surprise renewal. Runs on HMS devices, supports 9 languages, and has the smallest permission footprint of any factory app (no camera, no photos, no storage, no location).",
+    "main_competitors": [
+      "Habitify",
+      "Streaks",
+      "HabitNow",
+      "TickTick",
+      "EasyHabits",
+      "Loop Habit Tracker"
+    ],
+    "estimated_development_complexity": 4,
+    "estimated_market_potential": 7,
+    "monetization_strategy": "Free application supported by Huawei Petal Ads: banners on the Habits list and Stats screens, an interstitial at most once per session when opening Stats. Never on Today's checklist, never on Add/Edit habit, and never in a session started from the daily reminder notification."
+  },
+  "technical": {
+    "platform": "Android",
+    "language": "Kotlin",
+    "ui": "Jetpack Compose",
+    "architecture": "MVVM",
+    "min_sdk": 26,
+    "target_sdk": 36,
+    "compile_sdk": 36,
+    "offline_first": true,
+    "dependency_injection": "Manual AppContainer (same pattern as ReceiptLens/PlantCue)",
+    "database": "Room",
+    "async": "Kotlin Coroutines",
+    "reactive_data": "Kotlin Flow",
+    "background_work": "WorkManager (periodic daily check) + local notifications; no exact alarms in V1",
+    "image_loading": "Not needed -- no photos in this app",
+    "skeleton": "Copy apps/plant-cue; strip photo handling (ImageStorageManager, FileProvider, file_paths.xml, camera/gallery pickers) entirely -- this app never touches a photo or the CAMERA permission; keep theme shell, navigation pattern, Room setup, WorkManager daily reminder, settings pattern, 9-language string structure and the real Petal Ads integration"
+  },
+  "features": [
+    {
+      "id": "F001",
+      "name": "Add habit",
+      "description": "Create a habit with a name, a colour (from a fixed palette, no image picker), and a schedule: every day, specific weekdays, or N times a week.",
+      "priority": "P0",
+      "requires_internet": false,
+      "requires_permission": false,
+      "permission": ""
+    },
+    {
+      "id": "F002",
+      "name": "Today view",
+      "description": "List of habits due today (every-day and specific-weekday habits scheduled for today, plus N-times-a-week habits not yet met this week), grouped, with one-tap Done and Undo.",
+      "priority": "P0",
+      "requires_internet": false,
+      "requires_permission": false,
+      "permission": ""
+    },
+    {
+      "id": "F003",
+      "name": "Streaks",
+      "description": "Per habit: current streak and longest streak. For every-day/specific-weekday habits, a streak is consecutive scheduled days completed (non-scheduled days do not break it). For N-times-a-week habits, a streak is consecutive calendar weeks (Monday start) meeting the target count.",
+      "priority": "P0",
+      "requires_internet": false,
+      "requires_permission": false,
+      "permission": ""
+    },
+    {
+      "id": "F004",
+      "name": "Daily reminder notification",
+      "description": "One local notification per day at a user-chosen hour, sent only when at least one habit is still undone; tapping opens Today. Notification action: Done all.",
+      "priority": "P0",
+      "requires_internet": false,
+      "requires_permission": true,
+      "permission": "android.permission.POST_NOTIFICATIONS"
+    },
+    {
+      "id": "F005",
+      "name": "Habits list",
+      "description": "All habits with colour swatch, schedule summary and current streak; edit and delete; empty state.",
+      "priority": "P0",
+      "requires_internet": false,
+      "requires_permission": false,
+      "permission": ""
+    },
+    {
+      "id": "F006",
+      "name": "Habit detail",
+      "description": "Current streak, longest streak, a monthly calendar grid marking completed days, and a plain completion history list; edit and delete actions.",
+      "priority": "P0",
+      "requires_internet": false,
+      "requires_permission": false,
+      "permission": ""
+    },
+    {
+      "id": "F007",
+      "name": "Completion history",
+      "description": "Every Done (and its Undo) is stored per habit with the calendar date, independent of when it was tapped.",
+      "priority": "P0",
+      "requires_internet": false,
+      "requires_permission": false,
+      "permission": ""
+    },
+    {
+      "id": "F008",
+      "name": "Stats",
+      "description": "Overall completion rate across all habits, best streak across all habits, and total completions this month.",
+      "priority": "P1",
+      "requires_internet": false,
+      "requires_permission": false,
+      "permission": ""
+    },
+    {
+      "id": "F009",
+      "name": "Edit and delete habit",
+      "description": "Edit name, colour or schedule; deleting a habit removes its full completion history.",
+      "priority": "P0",
+      "requires_internet": false,
+      "requires_permission": false,
+      "permission": ""
+    },
+    {
+      "id": "F010",
+      "name": "Settings",
+      "description": "Reminder hour, theme (light/dark/system), privacy information, ads information, battery-optimisation guidance for reliable reminders, about.",
+      "priority": "P0",
+      "requires_internet": false,
+      "requires_permission": false,
+      "permission": ""
+    },
+    {
+      "id": "F011",
+      "name": "Petal Ads",
+      "description": "Real Huawei Petal Ads SDK: banner on Habits list and Stats; interstitial on opening Stats at most once per session with the factory frequency policy.",
+      "priority": "P0",
+      "requires_internet": true,
+      "requires_permission": true,
+      "permission": "android.permission.INTERNET, android.permission.ACCESS_NETWORK_STATE"
+    },
+    {
+      "id": "F012",
+      "name": "Localization",
+      "description": "All 9 factory languages with RTL support for Arabic; device language auto-detected.",
+      "priority": "P0",
+      "requires_internet": false,
+      "requires_permission": false,
+      "permission": ""
+    },
+    {
+      "id": "F013",
+      "name": "Accessibility",
+      "description": "Content descriptions, 48dp touch targets, font scaling, screen-reader compatible.",
+      "priority": "P0",
+      "requires_internet": false,
+      "requires_permission": false,
+      "permission": ""
+    }
+  ],
+  "screens": [
+    {
+      "id": "S001",
+      "name": "Today",
+      "purpose": "Show what is due today and let the user mark it done.",
+      "components": [
+        "Header with date",
+        "Due habits list, grouped if overdue-from-a-missed-weekly-target exists",
+        "Per-habit Done / Undo button",
+        "Empty state when everything for today is done or no habits exist yet",
+        "Add habit FAB",
+        "Bottom navigation"
+      ],
+      "navigation_to": [
+        "S002",
+        "S003",
+        "S004"
+      ]
+    },
+    {
+      "id": "S002",
+      "name": "Habits",
+      "purpose": "Browse all habits.",
+      "components": [
+        "Habit cards with colour swatch, schedule summary and current streak",
+        "Empty state",
+        "Petal Ads banner (bottom)",
+        "Add habit FAB"
+      ],
+      "navigation_to": [
+        "S003",
+        "S004"
+      ]
+    },
+    {
+      "id": "S003",
+      "name": "Add / Edit Habit",
+      "purpose": "Create or edit a habit and its schedule.",
+      "components": [
+        "Name field",
+        "Colour picker (fixed palette swatches)",
+        "Schedule type selector: every day / specific weekdays / N times a week",
+        "Weekday chips (when specific weekdays is selected)",
+        "Times-per-week stepper (when N times a week is selected)",
+        "Save"
+      ],
+      "navigation_to": [
+        "S004"
+      ]
+    },
+    {
+      "id": "S004",
+      "name": "Habit Detail",
+      "purpose": "Show one habit, its streaks and history.",
+      "components": [
+        "Name and colour swatch",
+        "Current streak and longest streak",
+        "Monthly calendar grid marking completed days",
+        "Completion history list",
+        "Edit",
+        "Delete with confirmation"
+      ],
+      "navigation_to": [
+        "S003",
+        "S002"
+      ]
+    },
+    {
+      "id": "S005",
+      "name": "Stats",
+      "purpose": "Show tracking performance across all habits.",
+      "components": [
+        "Overall completion rate",
+        "Best streak across habits",
+        "Total completions this month",
+        "Petal Ads banner (bottom)"
+      ],
+      "navigation_to": []
+    },
+    {
+      "id": "S006",
+      "name": "Settings",
+      "purpose": "Configure reminders and app behaviour.",
+      "components": [
+        "Reminder hour picker",
+        "Theme selector",
+        "Battery optimisation guidance",
+        "Privacy information",
+        "Ads information",
+        "About"
+      ],
+      "navigation_to": []
+    }
+  ],
+  "data_model": {
+    "database": "Room",
+    "entities": [
+      {
+        "name": "Habit",
+        "fields": [
+          "id",
+          "name",
+          "colour",
+          "schedule_type (DAILY|SPECIFIC_WEEKDAYS|TIMES_PER_WEEK)",
+          "schedule_weekdays (bitmask, used when SPECIFIC_WEEKDAYS)",
+          "schedule_times_per_week (used when TIMES_PER_WEEK)",
+          "created_at"
+        ]
+      },
+      {
+        "name": "HabitCompletion",
+        "fields": [
+          "id",
+          "habit_id",
+          "date (calendar date the habit was completed for, not the tap timestamp)",
+          "completed_at (actual tap timestamp)"
+        ]
+      },
+      {
+        "name": "Preferences (DataStore)",
+        "fields": [
+          "reminder_hour",
+          "theme_mode",
+          "notifications_intro_seen"
+        ]
+      }
+    ],
+    "requirements": [
+      "Database operations off the main thread.",
+      "Room migrations for schema changes.",
+      "Deleting a habit deletes its full completion history.",
+      "Marking a habit done for a date that already has a completion is a no-op (idempotent); Undo removes that date's completion.",
+      "No habit data leaves the device."
+    ]
+  },
+  "notifications": {
+    "requirements": [
+      "Exactly one daily summary notification at the configured hour, only when at least one habit is still undone for its schedule today.",
+      "Use WorkManager periodic work with flex window; do not request SCHEDULE_EXACT_ALARM in V1.",
+      "Request POST_NOTIFICATIONS in context (first time the user saves a habit), with an explanation screen, never at cold start.",
+      "Notification tap opens Today; ads are suppressed for that session start.",
+      "Settings must explain EMUI/battery-optimisation whitelisting with a button to the system settings page."
+    ]
+  },
+  "permissions": [
+    {
+      "permission": "android.permission.POST_NOTIFICATIONS",
+      "purpose": "Daily habit reminder."
+    },
+    {
+      "permission": "android.permission.INTERNET",
+      "purpose": "Huawei Petal Ads only."
+    },
+    {
+      "permission": "android.permission.ACCESS_NETWORK_STATE",
+      "purpose": "Huawei Petal Ads only."
+    }
+  ],
+  "integrations": {
+    "huawei_services": [
+      "Huawei Petal Ads"
+    ],
+    "external_services": [],
+    "analytics": false,
+    "crash_reporting": false,
+    "ads": true
+  },
+  "monetization": {
+    "enabled": true,
+    "provider": "Huawei Petal Ads",
+    "banner": true,
+    "interstitial": true,
+    "rewarded": false,
+    "iap": false,
+    "ad_frequency_rules": "Banners only on Habits (S002) and Stats (S005). Interstitial only when opening Stats, at most once per app session, not in the first 60 seconds after launch, at least 3 minutes apart, at most one per 4 triggers. Never on Today, Add/Edit, Habit Detail, and never in a session started from a notification tap. Ad unit IDs come from factory/apps.json via BuildConfig; Huawei test IDs in debug."
+  },
+  "localization": {
+    "default_language": "en",
+    "supported_languages": [
+      "en",
+      "es",
+      "pt",
+      "fr",
+      "de",
+      "it",
+      "tr",
+      "ar",
+      "zh"
+    ],
+    "auto_detect_device_language": true,
+    "fallback_language": "en",
+    "rtl_languages": [
+      "ar"
+    ],
+    "requirements": [
+      "All visible strings in Android string resources; no hard-coded text.",
+      "Plurals for 'N habits', 'N days', 'N times a week'.",
+      "Dates formatted per locale.",
+      "Arabic RTL verified on Today and Habits list."
+    ]
+  },
+  "design": {
+    "theme": "Focused, energetic productivity",
+    "style": "Clean, motivating, Material 3, bold colour swatches per habit, generous whitespace",
+    "primary_color": "#5B4FCF",
+    "secondary_color": "#FF6B6B",
+    "supports_light_mode": true,
+    "supports_dark_mode": true,
+    "supports_system_theme": true,
+    "accessibility_required": true,
+    "requirements": [
+      "Material 3",
+      "Large Done buttons on Today",
+      "Streak numbers prominent, not just a small badge",
+      "Colour swatches distinguishable without relying on colour alone (also shown as a label/initial)",
+      "No decorative animations",
+      "Accessible contrast",
+      "Font scaling supported"
+    ]
+  },
+  "privacy": {
+    "collects_personal_data": true,
+    "collects_sensitive_data": false,
+    "stores_data_locally": true,
+    "uploads_user_content": false,
+    "requires_privacy_policy": true,
+    "privacy_policy_url": "https://oflorezawaken-dev.github.io/huawei-app-factory/habit-cue/privacy/",
+    "allow_backup": false,
+    "requirements": [
+      "Habits, colours and completion history stay in app-private storage.",
+      "android:allowBackup=false so the 'stays on your device' claim is literally true.",
+      "The only network user is the Petal Ads SDK; the privacy policy discloses what it may collect (OAID, device/network info, ad interactions) and how to limit personalisation.",
+      "No account, no backend, no analytics, no crash reporting.",
+      "No camera, no photos, no storage permission, no location -- the smallest data footprint of any factory app so far."
+    ],
+    "_collects_personal_data_note": "True from day one: the Huawei Petal Ads SDK collects OAID, IP, device and app information, so AppGallery's privacy tags must say Yes. Set the privacy tags (factory/tools/privacy_tags.py) and get them ticked in the console BEFORE first submission -- ReceiptLens 1.0 was rejected for skipping this, and PlantCue 1.0 for an unrelated crash caught late; do not repeat either mistake with app #3.",
+    "appgallery_privacy_tags": {
+      "_note": "HabitCue has no data items of its own to declare (no photos, no user text beyond the habit name, which is app functionality, not personal data about the user). Only the standard Petal Ads block applies; factory/tools/privacy_tags.py adds it automatically.",
+      "App functionality": {}
+    }
+  },
+  "ai": {
+    "enabled": false,
+    "provider": "",
+    "backend_required": false,
+    "features": [],
+    "user_content_sent_to_ai": false,
+    "requirements": [
+      "No AI-generated habit suggestions or coaching claims anywhere in the app or store copy."
+    ]
+  },
+  "offline_behavior": {
+    "requirements": [
+      "Every feature except ads works with no network.",
+      "First launch works offline.",
+      "Reminders fire without network.",
+      "Ad failures are silent and leave no empty space."
+    ]
+  },
+  "qa": {
+    "unit_tests_required": true,
+    "ui_tests_required": true,
+    "lint_required": true,
+    "release_build_required": true,
+    "apk_required": true,
+    "aab_required": true,
+    "test_permissions": true,
+    "test_localization": true,
+    "test_dark_mode": true,
+    "test_ads": true,
+    "test_offline_behavior": true,
+    "test_accessibility": true,
+    "additional_tests": [
+      "Unit: streak computation for DAILY and SPECIFIC_WEEKDAYS habits (consecutive scheduled days, non-scheduled days do not break the streak), including month boundaries.",
+      "Unit: streak computation for TIMES_PER_WEEK habits (consecutive weeks meeting the target count), including week boundaries (Monday start) and partial weeks.",
+      "Unit: overall completion rate and best-streak-across-habits computation.",
+      "Unit: marking done twice for the same date is idempotent; Undo removes exactly that date.",
+      "UI/screenshot: Today with due habits; Habits list with several habits; Habit detail with a populated calendar; Stats; Settings.",
+      "Manual: deny notifications, airplane mode, RTL, large font, process death on Add/Edit."
+    ]
+  },
+  "release": {
+    "build_type": "release",
+    "minify_enabled": false,
+    "shrink_resources": false,
+    "signed_release_required": true,
+    "generate_apk": true,
+    "generate_aab": true,
+    "submit_to_appgallery": true,
+    "requirements": [
+      "Same signing keystore as ReceiptLens/PlantCue (factory RELEASE_* secrets).",
+      "versionCode increases every release.",
+      "No secrets in git."
+    ]
+  },
+  "appgallery": {
+    "default_language": "en",
+    "supported_languages": [
+      "en",
+      "es",
+      "pt",
+      "fr",
+      "de",
+      "it",
+      "tr",
+      "ar",
+      "zh"
+    ],
+    "distribution_regions": [
+      "Set by the owner in the console before the first upload (same as ReceiptLens/PlantCue); exclude Russia/Belarus -- AGC blocks settlement there for ad-monetised apps."
+    ],
+    "content_rating_required": true,
+    "free_app": true,
+    "appgallery_description": {
+      "short": {},
+      "full": {},
+      "new_features": {}
+    },
+    "keywords": {},
+    "screenshots_required": true,
+    "icon_required": true,
+    "requirements": [
+      "Real screenshots from the tested build only.",
+      "Store copy discloses ads and makes no AI/coaching claims.",
+      "App name availability ('HabitCue') verified when the app is created; fallbacks 'DailyCue', 'HabitPing', 'CueUp' -- avoid any name resembling 'Loop Habit Tracker' (a real competitor)."
+    ]
+  },
+  "assets": {
+    "icon": {
+      "required": true,
+      "description": "A looping arrow forming a circle with a checkmark inside, symbolising the cue-routine-reward habit loop; indigo/violet primary on a soft cream or deep-indigo ground; 512x512 PNG rendered from the launcher vector."
+    },
+    "screenshots": {
+      "required": true,
+      "source": "Real screenshots from the tested application build",
+      "minimum_required": 4,
+      "recommended_screens": [
+        "Today",
+        "Habits",
+        "Habit detail (with calendar)",
+        "Add habit",
+        "Stats"
+      ]
+    }
+  },
+  "security": {
+    "requirements": [
+      "No hard-coded ad unit IDs, keys or credentials.",
+      "No exported components beyond the launcher activity and the notification receiver/worker.",
+      "Do not declare CAMERA, storage or location permissions -- this app has no use for any of them."
+    ]
+  },
+  "performance": {
+    "requirements": [
+      "Lazy lists for habits and history.",
+      "Daily worker completes in under 2 seconds.",
+      "Streak computation for a habit with years of history stays under 100ms."
+    ]
+  },
+  "error_handling": {
+    "requirements": [
+      "Notification permission denied: app keeps working and Settings explains how to enable.",
+      "Ad failures never block the UI.",
+      "Database failures never silently lose data."
+    ]
+  },
+  "acceptance_criteria": [
+    "Release APK and AAB build in Factory Build with the quality gate in --strict mode passing.",
+    "A habit can be created with each of the three schedule types.",
+    "Marking a habit done for today records exactly one completion for today's date; tapping Done again is a no-op; Undo removes it.",
+    "Today lists habits due today per their schedule type and hides them once done.",
+    "Streak and longest-streak numbers match a known fixture for all three schedule types, including a week boundary and a month boundary.",
+    "A daily notification fires at the configured hour only when at least one habit is still undone (verified with a device clock change or WorkManager test).",
+    "Deleting a habit removes its full completion history from the database.",
+    "Stats numbers match the completion events in the database for a known fixture.",
+    "All strings exist in all 9 languages; Arabic renders RTL.",
+    "Banners appear only on Habits and Stats; no ad on Today, Add/Edit, Detail; interstitial never fires in a session started from a notification.",
+    "Airplane mode: every screen works, no empty ad boxes.",
+    "android:allowBackup is false.",
+    "No CAMERA, storage or location permission is declared.",
+    "No Firebase, GMS, Google AI or reflection SDK stubs (quality gate)."
+  ]
+}
