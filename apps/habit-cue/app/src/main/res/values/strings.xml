@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">HabitCue</string>
+
+    <!-- Navigation -->
+    <string name="nav_today">Today</string>
+    <string name="nav_habits">Habits</string>
+    <string name="nav_stats">Stats</string>
+    <string name="nav_settings">Settings</string>
+
+    <!-- Common actions -->
+    <string name="action_done">Done</string>
+    <string name="action_undo">Undo</string>
+    <string name="action_add_habit">Add habit</string>
+    <string name="action_open_habit">Open habit</string>
+    <string name="action_save">Save</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="action_delete">Delete</string>
+    <string name="action_edit">Edit</string>
+    <string name="cd_back">Back</string>
+
+    <!-- Schedules -->
+    <string name="schedule_daily">Every day</string>
+    <string name="schedule_times_per_week">%1$d× a week</string>
+    <string name="schedule_option_daily">Daily</string>
+    <string name="schedule_option_weekdays">Weekdays</string>
+    <string name="schedule_option_times_per_week">Weekly</string>
+
+    <!-- Today -->
+    <string name="today_title">Today</string>
+    <string name="today_marked_done">Marked done</string>
+    <string name="today_empty_title">Nothing left today</string>
+    <string name="today_empty_body">Every scheduled habit is done. Come back tomorrow.</string>
+    <string name="today_no_habits_title">No habits yet</string>
+    <string name="today_no_habits_body">Add your first habit and HabitCue will remind you every day.</string>
+
+    <!-- Habits -->
+    <string name="habits_title">My habits</string>
+    <string name="habits_sort_streak">Sort by streak</string>
+    <string name="habits_sort_name">Sort by name</string>
+    <string name="habits_empty_title">No habits yet</string>
+    <string name="habits_empty_body">Tap + to add your first habit.</string>
+
+    <!-- Add / Edit -->
+    <string name="edit_title_new">Add habit</string>
+    <string name="edit_title_edit">Edit habit</string>
+    <string name="edit_name">Name</string>
+    <string name="edit_name_required">Give your habit a name</string>
+    <string name="edit_colour">Colour</string>
+    <string name="edit_schedule">Repeats</string>
+    <string name="edit_weekdays_required">Pick at least one day</string>
+    <string name="edit_times_per_week">Times per week</string>
+
+    <!-- Notifications -->
+    <string name="notif_intro_title">Turn on reminders?</string>
+    <string name="notif_intro_body">HabitCue sends one notification a day, and only when a habit is still undone.</string>
+    <string name="notif_intro_allow">Allow</string>
+    <string name="notif_intro_later">Not now</string>
+    <string name="notif_channel_name">Habit reminders</string>
+    <string name="notif_channel_desc">Daily summary of habits still due</string>
+    <plurals name="notif_title_habits_due">
+        <item quantity="one">%d habit still due</item>
+        <item quantity="other">%d habits still due</item>
+    </plurals>
+    <string name="notif_action_done_all">Done, all caught up</string>
+
+    <!-- Habit detail -->
+    <string name="detail_current_streak">Current streak</string>
+    <string name="detail_longest_streak">Longest streak</string>
+    <string name="detail_undo_today">Undo today</string>
+    <string name="detail_previous_month">Previous month</string>
+    <string name="detail_next_month">Next month</string>
+    <string name="detail_history">History</string>
+    <string name="detail_history_empty">No completions recorded yet.</string>
+    <string name="detail_delete_title">Delete %1$s?</string>
+    <string name="detail_delete_body">Its full completion history will be removed from this device.</string>
+
+    <!-- Stats -->
+    <string name="stats_title">Stats</string>
+    <string name="stats_habits">Habits</string>
+    <string name="stats_best_streak">Best streak</string>
+    <string name="stats_completions_month">Completions this month</string>
+    <string name="stats_completion_rate">Completion rate</string>
+    <string name="stats_no_data">–</string>
+    <string name="stats_empty">No completions recorded this month yet. Mark a habit done and the numbers appear here.</string>
+
+    <!-- Settings -->
+    <string name="settings_title">Settings</string>
+    <string name="settings_reminders">Reminders</string>
+    <string name="settings_reminder_hour">Daily reminder</string>
+    <string name="settings_reminder_hour_desc">One notification a day, only when something is still due. Tap to change the hour.</string>
+    <string name="settings_battery_title">Reliable reminders on Huawei devices</string>
+    <string name="settings_battery_desc">Some phones stop background apps to save battery. If reminders arrive late, allow HabitCue to run in the background.</string>
+    <string name="settings_battery_open">Open battery settings</string>
+    <string name="settings_appearance">Appearance</string>
+    <string name="settings_theme">Theme</string>
+    <string name="settings_theme_system">System</string>
+    <string name="settings_theme_light">Light</string>
+    <string name="settings_theme_dark">Dark</string>
+    <string name="settings_privacy">Privacy</string>
+    <string name="settings_privacy_title">Your habits stay on your phone</string>
+    <string name="settings_privacy_desc">Habits and completion history are stored only in this app\'s private storage on your device. No account, no cloud, no tracking by us. Ads use the network; nothing about your habits is ever uploaded.</string>
+    <string name="settings_ads">Huawei Petal Ads</string>
+    <string name="settings_ads_desc">HabitCue is free and supported by Huawei Petal Ads. Ads appear only on the Habits and Stats screens, never on Today and never while you add or edit a habit.</string>
+    <string name="settings_about">About</string>
+    <string name="settings_about_version">Version 1.0.0 (Huawei AppGallery Edition)</string>
+    <string name="settings_about_desc">A daily habit tracker that stays free.</string>
+</resources>

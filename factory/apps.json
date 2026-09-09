@@ -198,13 +198,15 @@
       "store_dir": "apps/habit-cue/store",
       "privacy_path": "docs/habit-cue/privacy",
       "privacy_tags_configured": "",
-      "status": "planned",
+      "status": "generated",
       "current_version": {
         "versionCode": 1,
         "versionName": "1.0.0",
-        "status": "planned"
+        "status": "generated"
       },
-      "known_gaps": {},
+      "known_gaps": {
+        "ad_unit_ids": "Petal Ads console needs the app's package/SHA-256 before unit IDs can be created; the build carries Huawei TEST ad units until a human creates the AppGallery Connect app and the Petal Ads units and pastes the real IDs here."
+      },
       "ads": {
         "banner_ad_id": "",
         "interstitial_ad_id": "",
