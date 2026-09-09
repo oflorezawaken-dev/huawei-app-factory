@@ -280,7 +280,49 @@ def clear_screenshot_set(set_id: str, token: str) -> int:
     return len(rows)
 
 
-def upload_screenshot(set_id: str, path: str, token: str) -> None:
+# Apple accepts the bytes and validates the image afterwards, asynchronously.
+# A 201 from the reservation and a 200 from the PATCH therefore say nothing
+# about whether the screenshot is usable: a rejected image sits in the console
+# as an empty frame with a red warning, while this tool reported "uploaded".
+# That is exactly what shipped -- five iPhone screenshots reported as pushed
+# and none of them visible on the version page.
+ASSET_STATE_KEYS = ("assetDeliveryState", "assetState")
+ASSET_PENDING = ("AWAITING_UPLOAD", "UPLOAD_COMPLETE")
+
+
+def asset_delivery_state(attrs: dict) -> dict:
+    for key in ASSET_STATE_KEYS:
+        if key in attrs:
+            return attrs[key] or {}
+    raise ASCError(
+        f"none of {ASSET_STATE_KEYS} found on the appScreenshot. Apple returned: "
+        f"{sorted(attrs)}. Check Apple's current appScreenshots schema before "
+        "renaming this, rather than guessing another key.")
+
+
+def wait_for_asset(shot_id: str, filename: str, token: str, timeout: int = 120) -> None:
+    """Block until Apple has actually accepted the image, or say why it did not."""
+    deadline = time.time() + timeout
+    state = "unknown"
+    while time.time() < deadline:
+        data = api_call("GET", f"/v1/appScreenshots/{shot_id}", token=token)
+        delivery = asset_delivery_state((data.get("data") or {}).get("attributes") or {})
+        state = delivery.get("state", "unknown")
+        errors = delivery.get("errors") or []
+        if errors:
+            detail = "; ".join(
+                f"{e.get('code')}: {e.get('description')}" if isinstance(e, dict) else str(e)
+                for e in errors)
+            raise ASCError(f"{filename}: Apple rejected the image ({state}): {detail}")
+        if state not in ASSET_PENDING:
+            if state == "COMPLETE":
+                return
+            raise ASCError(f"{filename}: Apple left the image in state {state}")
+        time.sleep(2)
+    raise ASCError(f"{filename}: still {state} after {timeout}s; Apple never finished processing it")
+
+
+def upload_screenshot(set_id: str, path: str, token: str, asset_timeout: int = 120) -> None:
     filename, size = os.path.basename(path), os.path.getsize(path)
     reservation = api_call("POST", "/v1/appScreenshots", {
         "data": {"type": "appScreenshots",
@@ -307,10 +349,12 @@ def upload_screenshot(set_id: str, path: str, token: str) -> None:
     api_call("PATCH", f"/v1/appScreenshots/{shot_id}", {
         "data": {"type": "appScreenshots", "id": shot_id,
                  "attributes": {"uploaded": True, "sourceFileChecksum": md5_of(path)}}}, token)
+    wait_for_asset(shot_id, filename, token, asset_timeout)
     log(f"  uploaded {filename}")
 
 
-def push_screenshots(app: dict, asc_app_id: str, token: str, dry_run: bool) -> None:
+def push_screenshots(app: dict, asc_app_id: str, token: str, dry_run: bool,
+                     asset_timeout: int = 120) -> None:
     ios = load()["defaults"]["ios"]
     version_id = "dry-run" if dry_run else find_editable_version(
         asc_app_id, str((app.get("current_version") or {}).get("marketing_version") or ""), token)
@@ -354,7 +398,7 @@ def push_screenshots(app: dict, asc_app_id: str, token: str, dry_run: bool) -> N
                 removed = clear_screenshot_set(sets[display_type], token)
                 if removed:
                     log(f"  {locale} {display_type}: replaced {removed} existing screenshot(s)")
-            upload_screenshot(sets[display_type], path, token)
+            upload_screenshot(sets[display_type], path, token, asset_timeout)
             log(f"    -> {display_type}")
 
 
@@ -362,6 +406,8 @@ def main(argv: list[str]) -> int:
     p = argparse.ArgumentParser(description="Push iOS store metadata and screenshots", add_help=True)
     p.add_argument("slug")
     p.add_argument("--what", choices=["text", "screenshots", "all"], default="all")
+    p.add_argument("--asset-timeout", type=int, default=120,
+                   help="seconds to wait for Apple to finish validating each screenshot")
     p.add_argument("--dry-run", action="store_true")
     a = p.parse_args(argv)
 
@@ -376,7 +422,7 @@ def main(argv: list[str]) -> int:
             push_text(app, asc_app_id, listing, token, a.dry_run)
         if a.what in ("screenshots", "all"):
             log(f"{a.slug}: pushing screenshots" + (" (dry run)" if a.dry_run else ""))
-            push_screenshots(app, asc_app_id, token, a.dry_run)
+            push_screenshots(app, asc_app_id, token, a.dry_run, a.asset_timeout)
         return 0
     except ASCError as exc:
         log(f"error: {exc}")

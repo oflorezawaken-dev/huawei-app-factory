@@ -58,6 +58,8 @@ STATE = {
         "contactFirstName": "Ada", "contactLastName": "Byron",
         "contactEmail": "ada@example.com", "contactPhone": "+1000000000"}},
     "build_encryption": False,
+    # What Apple reports once it has looked at the uploaded image.
+    "asset_state": {"state": "COMPLETE", "errors": []},
 }
 
 
@@ -124,6 +126,12 @@ class Handler(BaseHTTPRequestHandler):
                 rows = [{"id": r["id"], "attributes": {"locale": loc}}
                         for loc, r in STATE["version_locs"].items()]
                 self._json(200, {"data": rows[:1]})
+        elif path.startswith("/v1/appScreenshots/"):
+            # Apple validates the image asynchronously: the reservation and the
+            # PATCH both succeed even for an image it goes on to reject.
+            shot_id = path.rsplit("/", 1)[-1]
+            self._json(200, {"data": {"type": "appScreenshots", "id": shot_id,
+                                      "attributes": {"assetDeliveryState": STATE["asset_state"]}}})
         elif "/appScreenshotSets/" in path and path.endswith("/appScreenshots"):
             set_id = path.split("/appScreenshotSets/")[1].split("/")[0]
             rows = [{"id": sid} for sid, shot in STATE["screenshots"].items()
@@ -411,6 +419,24 @@ def main() -> int:
           str(len(STATE["screenshots"])))
     check("the previous three were deleted", STATE.get("deleted_screenshots") == 3,
           str(STATE.get("deleted_screenshots")))
+
+    # Apple validates the image after the PATCH. Reporting "uploaded" off a
+    # 200 is how five screenshots were declared pushed while the version page
+    # showed five empty frames with a red warning.
+    STATE["asset_state"] = {"state": "FAILED", "errors": [
+        {"code": "IMAGE_WRONG_DIMENSIONS", "description": "Image dimensions are wrong"}]}
+    code, out = run(METADATA, [SLUG, "--what", "screenshots"])
+    check("a rejected image fails the push instead of reporting success", code != 0, out)
+    check("and repeats Apple's reason for rejecting it",
+          "IMAGE_WRONG_DIMENSIONS" in out and "Image dimensions are wrong" in out, out)
+    check("the failure names the file Apple rejected", ".png" in out, out)
+
+    STATE["asset_state"] = {"state": "AWAITING_UPLOAD", "errors": []}
+    code, out = run(METADATA, [SLUG, "--what", "screenshots", "--asset-timeout", "1"])
+    check("an image Apple never finishes processing is a failure, not a success",
+          code != 0 and "never finished processing" in out, out)
+
+    STATE["asset_state"] = {"state": "COMPLETE", "errors": []}
 
     print("\nasc_publish.py --attach:")
     code, out = run(PUBLISH, [SLUG, "--ipa", os.path.join(root, "fake.ipa"), "--attach", "--dry-run"])
