@@ -331,7 +331,7 @@ def fixture_root() -> str:
     # which proves the routing sends them to different sets.
     shots_dir = os.path.join(store, "screenshots", "en")
     for name, (w, h) in (("01.png", (1320, 2868)), ("02.png", (1320, 2868)),
-                         ("ipad-01.png", (2048, 2732))):
+                         ("ipad-01.png", (2064, 2752))):
         write_png(os.path.join(shots_dir, name), w, h)
     return root
 
