@@ -247,12 +247,19 @@ def find_or_create_screenshot_set(localization_id: str, display_type: str, token
     with 409 "Screenshot Set Already Exists!", which is an exception, not an
     empty id -- so the second screenshot of every locale aborted the run. It is
     also one API call per locale instead of one per image.
+
+    The match is made here rather than in filter[screenshotDisplayType],
+    because Apple ignores that filter and returns every set for the
+    localization. Taking rows[0] therefore handed back the iPhone set for
+    every device: the iPad images were uploaded into it, Apple rejected them
+    as IMAGE_INCORRECT_DIMENSIONS, and clearing "the iPad set" first wiped
+    the iPhone screenshots that were already there.
     """
-    existing = api_call("GET", f"/v1/appStoreVersionLocalizations/{localization_id}/appScreenshotSets"
-                        f"?filter[screenshotDisplayType]={display_type}", token)
-    rows = existing.get("data", [])
-    if rows:
-        return rows[0]["id"]
+    existing = api_call(
+        "GET", f"/v1/appStoreVersionLocalizations/{localization_id}/appScreenshotSets?limit=50", token)
+    for row in existing.get("data", []):
+        if (row.get("attributes") or {}).get("screenshotDisplayType") == display_type:
+            return row["id"]
 
     created = api_call("POST", "/v1/appScreenshotSets", {
         "data": {"type": "appScreenshotSets", "attributes": {"screenshotDisplayType": display_type},
