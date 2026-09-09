@@ -126,6 +126,17 @@ rather than a generic error:
    `asc_publish.py` probes pricing, contact details and export compliance and
    names the ones that look unmet. Age rating and App Privacy come back as `?`:
    those two probe URLs are wrong and 404. See the retrospective.
+7. **Create the in-app purchase**, when the spec declares one: Monetization >
+   In-App Purchases, type Non-Consumable, product ID identical to the
+   registry's `iap.remove_ads_product_id`, plus price, localisations, and the
+   review screenshot Apple requires for the product's own review. On a first
+   release it is submitted together with the version.
+
+   This one does **not** block the submission, which is what makes it worse
+   than the five above: the version goes to review and the reviewer finds a
+   purchase button that does nothing, because `Product.products(for:)` returns
+   nothing for a product that was never created. The `iap_configured` gate rule
+   does not catch it -- it only checks the registry and the Swift source.
 
 The API key used for signing needs the **Admin** role, not App Manager, or the
 IPA export fails with a cloud signing permission error. A key's role cannot be
