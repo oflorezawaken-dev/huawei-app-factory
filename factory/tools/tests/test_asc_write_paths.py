@@ -138,9 +138,13 @@ class Handler(BaseHTTPRequestHandler):
                     if shot.get("set") == set_id]
             self._json(200, {"data": rows})
         elif path.endswith("/appScreenshotSets"):
-            display_type = params.get("filter[screenshotDisplayType]")
-            set_id = STATE["screenshot_sets"].get(display_type)
-            self._json(200, {"data": [{"id": set_id}] if set_id else []})
+            # Apple IGNORES filter[screenshotDisplayType] and returns every set
+            # for the localization. Honouring it here is what hid the bug that
+            # sent the iPad images into the iPhone set, so the mock must be as
+            # unhelpful as Apple is and always return the lot.
+            rows = [{"id": sid, "attributes": {"screenshotDisplayType": dt}}
+                    for dt, sid in STATE["screenshot_sets"].items()]
+            self._json(200, {"data": rows})
         elif path == f"/v1/apps/{ASC_APP_ID}/reviewSubmissions":
             rows = [{"type": "reviewSubmissions", "id": sid, "attributes": sub["attributes"]}
                     for sid, sub in STATE["submissions"].items()]

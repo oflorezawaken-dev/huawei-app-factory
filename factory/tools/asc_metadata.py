@@ -43,7 +43,7 @@ from registry import ROOT, load  # noqa: E402
 # Reused rather than reimplemented: the gate validates screenshot sizes with
 # this exact reader, so routing and validation can never disagree about what
 # an image measures.
-from check_ios_app import image_size  # noqa: E402
+from check_ios_app import image_size, png_info  # noqa: E402
 
 # App info fields live on the app record, editable regardless of version state.
 APP_INFO_FIELDS = {"name": "name", "subtitle": "subtitle", "privacy_policy_url": "privacyPolicyUrl"}
@@ -247,12 +247,19 @@ def find_or_create_screenshot_set(localization_id: str, display_type: str, token
     with 409 "Screenshot Set Already Exists!", which is an exception, not an
     empty id -- so the second screenshot of every locale aborted the run. It is
     also one API call per locale instead of one per image.
+
+    The match is made here rather than in filter[screenshotDisplayType],
+    because Apple ignores that filter and returns every set for the
+    localization. Taking rows[0] therefore handed back the iPhone set for
+    every device: the iPad images were uploaded into it, Apple rejected them
+    as IMAGE_INCORRECT_DIMENSIONS, and clearing "the iPad set" first wiped
+    the iPhone screenshots that were already there.
     """
-    existing = api_call("GET", f"/v1/appStoreVersionLocalizations/{localization_id}/appScreenshotSets"
-                        f"?filter[screenshotDisplayType]={display_type}", token)
-    rows = existing.get("data", [])
-    if rows:
-        return rows[0]["id"]
+    existing = api_call(
+        "GET", f"/v1/appStoreVersionLocalizations/{localization_id}/appScreenshotSets?limit=50", token)
+    for row in existing.get("data", []):
+        if (row.get("attributes") or {}).get("screenshotDisplayType") == display_type:
+            return row["id"]
 
     created = api_call("POST", "/v1/appScreenshotSets", {
         "data": {"type": "appScreenshotSets", "attributes": {"screenshotDisplayType": display_type},
@@ -286,6 +293,20 @@ def clear_screenshot_set(set_id: str, token: str) -> int:
 # as an empty frame with a red warning, while this tool reported "uploaded".
 # That is exactly what shipped -- five iPhone screenshots reported as pushed
 # and none of them visible on the version page.
+def png_dimensions(path: str) -> str:
+    info = png_info(path)
+    return f"{info[0]}x{info[1]}" if info else "not a PNG"
+
+
+def describe_set(set_id: str, token: str) -> dict:
+    """What Apple says this set is -- the display type it recorded, not ours."""
+    try:
+        data = api_call("GET", f"/v1/appScreenshotSets/{set_id}", token=token)
+        return (data.get("data") or {}).get("attributes") or {}
+    except ASCError as exc:
+        return {"error": str(exc)}
+
+
 ASSET_STATE_KEYS = ("assetDeliveryState", "assetState")
 ASSET_PENDING = ("AWAITING_UPLOAD", "UPLOAD_COMPLETE")
 
@@ -300,8 +321,9 @@ def asset_delivery_state(attrs: dict) -> dict:
         "renaming this, rather than guessing another key.")
 
 
-def wait_for_asset(shot_id: str, filename: str, token: str, timeout: int = 120) -> None:
+def wait_for_asset(shot_id: str, path: str, set_id: str, token: str, timeout: int = 120) -> None:
     """Block until Apple has actually accepted the image, or say why it did not."""
+    filename = os.path.basename(path)
     deadline = time.time() + timeout
     state = "unknown"
     while time.time() < deadline:
@@ -313,7 +335,15 @@ def wait_for_asset(shot_id: str, filename: str, token: str, timeout: int = 120) 
             detail = "; ".join(
                 f"{e.get('code')}: {e.get('description')}" if isinstance(e, dict) else str(e)
                 for e in errors)
-            raise ASCError(f"{filename}: Apple rejected the image ({state}): {detail}")
+            # Apple's error codes carry no detail -- IMAGE_INCORRECT_DIMENSIONS
+            # arrived with its own name as the description, and says nothing
+            # about what size it wanted. Dump what Apple actually holds so the
+            # next step is a fact rather than another guess at the spec.
+            raise ASCError(
+                f"{filename}: Apple rejected the image ({state}): {detail}\n"
+                f"  what we sent: {png_dimensions(path)} px, {os.path.getsize(path)} bytes\n"
+                f"  what Apple holds: {json.dumps((data.get('data') or {}).get('attributes') or {}, sort_keys=True)}\n"
+                f"  set: {json.dumps(describe_set(set_id, token), sort_keys=True)}")
         if state not in ASSET_PENDING:
             if state == "COMPLETE":
                 return
@@ -349,7 +379,7 @@ def upload_screenshot(set_id: str, path: str, token: str, asset_timeout: int = 1
     api_call("PATCH", f"/v1/appScreenshots/{shot_id}", {
         "data": {"type": "appScreenshots", "id": shot_id,
                  "attributes": {"uploaded": True, "sourceFileChecksum": md5_of(path)}}}, token)
-    wait_for_asset(shot_id, filename, token, asset_timeout)
+    wait_for_asset(shot_id, path, set_id, token, asset_timeout)
     log(f"  uploaded {filename}")
 
 

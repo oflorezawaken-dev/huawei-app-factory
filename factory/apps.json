@@ -92,13 +92,9 @@
             [
               2064,
               2752
-            ],
-            [
-              2048,
-              2732
             ]
           ],
-          "_note": "13-inch iPad. Required whenever the app declares iPad support in TARGETED_DEVICE_FAMILY; Apple refuses to accept the version for review without it."
+          "_note": "13-inch iPad. Required whenever the app declares iPad support in TARGETED_DEVICE_FAMILY; Apple refuses to accept the version for review without it. Apple's screenshot specifications give 2064x2752 for the 13-inch slot, and APP_IPAD_PRO_3GEN_129 is the display type the console maps it to, even though the API docs still describe that type as 12.9-inch."
         }
       },
       "screenshot_count": {
