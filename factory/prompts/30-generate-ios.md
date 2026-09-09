@@ -68,19 +68,28 @@ detached is not.
    Address tabs through a helper that tries the tab bar and falls back to a plain
    button match, the way the PriceJar template's `tabButton(_:)` does.
 
-6. **One `.sheet` per view.** SwiftUI honours a single `.sheet` modifier per view; a
+6. **Never let a UI test reach a system alert, and never `await` one.** The ATT
+   prompt is the case that bites: nothing dismisses a system alert during an
+   XCUITest run, so `await ATTrackingManager.requestTrackingAuthorization()`
+   never returns and every line after it in that function never runs. In PriceJar
+   the line after it dismissed a sheet, so saving a price left the form open and
+   the screenshot test failed 20s later at an unrelated assertion, intermittently.
+   The template's `TrackingAuthorization.requestIfNeeded()` guards on
+   `UITestMode.isActive`; keep that guard at the call site, not only in a comment.
+
+7. **One `.sheet` per view.** SwiftUI honours a single `.sheet` modifier per view; a
    second one is silently ignored and the button appears dead. If a screen presents
    more than one sheet, drive them from one `Identifiable` enum.
 
-7. **Strings.** Every user-visible string goes in `Sources/Localizable.xcstrings`,
+8. **Strings.** Every user-visible string goes in `Sources/Localizable.xcstrings`,
    translated into all nine registry languages. Arabic must lay out RTL.
 
-8. **Tests.** XCTest for the pure logic the spec calls out as critical — for a
+9. **Tests.** XCTest for the pure logic the spec calls out as critical — for a
    calculation the app's premise depends on, cover the conversion table exhaustively,
    including both measurement systems and locale decimal separators. Fix a timezone in
    date tests (`Calendar.timeZone = UTC`) or they pass locally and fail in CI.
 
-9. **Verify — actually run it, do not assume.**
+10. **Verify — actually run it, do not assume.**
    ```bash
    cd apps-ios/<slug>
    xcodegen generate
@@ -105,14 +114,14 @@ detached is not.
    Use `xcrun simctl list devices available` if those simulator names are absent, and
    look at the screenshots before continuing — they are the only way to see the app.
 
-10. **Store scaffolding.** A 1024x1024 app icon in the asset catalog, PNG, **no alpha
+11. **Store scaffolding.** A 1024x1024 app icon in the asset catalog, PNG, **no alpha
     channel** (Apple rejects transparency); its own visual identity, not the template's
     green. `store/listing.json` with the English entry complete and within Apple's
     limits. `docs/<slug>/privacy/index.html` and `docs/<slug>/support/index.html` —
     write them honestly for this app, disclosing AdMob and IDFA, and matching the
     spec's privacy section. Do not copy another app's page without rewriting it.
 
-11. **Gate.**
+12. **Gate.**
     ```bash
     python factory/tools/check_ios_app.py <slug>
     ```
@@ -121,7 +130,7 @@ detached is not.
     `"known_gaps": {"admob_unit_ids": "AdMob console pending; step 6 of the iOS flow."}`
     Never hide a failure by deleting a test or loosening a rule.
 
-12. **PR.** Branch `app/<slug>`, small commits, then `gh pr create` with a body that
+13. **PR.** Branch `app/<slug>`, small commits, then `gh pr create` with a body that
     lists: features implemented, what was left out and why, unit and screenshot test
     results, the gate output, the screenshots, and anything a human must decide. Attach
     or reference the screenshots — they are what the human reviews.
