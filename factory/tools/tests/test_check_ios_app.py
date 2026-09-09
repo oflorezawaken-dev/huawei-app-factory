@@ -181,9 +181,12 @@ final class MonetisationTests: XCTestCase {
     write_png(os.path.join(app_dir, "Sources", "Assets.xcassets", "AppIcon.appiconset", "icon-1024.png"),
               1024, 1024, alpha=False)
 
+    # One image per required set, in the same folder: the gate routes by pixel
+    # size, so iPhone and iPad screenshots live side by side per locale.
     shots = os.path.join(app_dir, "store", "screenshots", "en")
     for i in range(1, 4):
         write_png(os.path.join(shots, f"{i:02d}.png"), 1320, 2868, alpha=False)
+        write_png(os.path.join(shots, f"ipad-{i:02d}.png"), 2064, 2752, alpha=False)
 
     write(os.path.join(app_dir, "store", "listing.json"), json.dumps({
         "languages": [{
@@ -285,7 +288,7 @@ def main() -> int:
         build_fixture(root)
         shots = os.path.join(root, "apps-ios", SLUG, "store", "screenshots", "en")
         for name in os.listdir(shots):
-            write_png(os.path.join(shots, name), 828, 1792)
+            write_png(os.path.join(shots, name), 828, 1792)  # accepted by no set
 
     def with_long_subtitle(root: str) -> None:
         build_fixture(root)

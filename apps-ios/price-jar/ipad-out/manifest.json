@@ -1,0 +1,53 @@
+[
+  {
+    "attachments" : [
+      {
+        "configurationName" : "Test Scheme Action",
+        "deviceId" : "B19D78F5-5B0B-4136-9DF2-FD19564BA782",
+        "deviceName" : "iPad Pro 13-inch (M5)",
+        "exportedFileName" : "027FEEE3-A4F3-45C9-8C09-E04AD6290D98.png",
+        "isAssociatedWithFailure" : false,
+        "suggestedHumanReadableName" : "05-stats_0_ABA1DA0B-43FC-4694-A7DB-FFAA40569154.png",
+        "timestamp" : 1788916780.327
+      },
+      {
+        "configurationName" : "Test Scheme Action",
+        "deviceId" : "B19D78F5-5B0B-4136-9DF2-FD19564BA782",
+        "deviceName" : "iPad Pro 13-inch (M5)",
+        "exportedFileName" : "5EF17F6E-1E0F-4692-92FD-87403BB99C9C.png",
+        "isAssociatedWithFailure" : false,
+        "suggestedHumanReadableName" : "04-shoppingList_0_5518B1D7-F1BB-4FA5-9FEE-D5C4BBA9D141.png",
+        "timestamp" : 1788916776.652
+      },
+      {
+        "configurationName" : "Test Scheme Action",
+        "deviceId" : "B19D78F5-5B0B-4136-9DF2-FD19564BA782",
+        "deviceName" : "iPad Pro 13-inch (M5)",
+        "exportedFileName" : "18206764-A193-42E2-87DA-FD394A0AB7AC.png",
+        "isAssociatedWithFailure" : false,
+        "suggestedHumanReadableName" : "03-verdict_0_8CC36282-AC01-4761-A1A8-413BC7633D7A.png",
+        "timestamp" : 1788916761.16
+      },
+      {
+        "configurationName" : "Test Scheme Action",
+        "deviceId" : "B19D78F5-5B0B-4136-9DF2-FD19564BA782",
+        "deviceName" : "iPad Pro 13-inch (M5)",
+        "exportedFileName" : "D1D4E00C-1F4F-4B8E-B984-77A143DFEC75.png",
+        "isAssociatedWithFailure" : false,
+        "suggestedHumanReadableName" : "02-itemHistory_0_8F2130ED-1853-443E-8280-000107EFAE0A.png",
+        "timestamp" : 1788916749.303
+      },
+      {
+        "configurationName" : "Test Scheme Action",
+        "deviceId" : "B19D78F5-5B0B-4136-9DF2-FD19564BA782",
+        "deviceName" : "iPad Pro 13-inch (M5)",
+        "exportedFileName" : "E7D1A200-CBEA-49ED-B1D8-89D945577F94.png",
+        "isAssociatedWithFailure" : false,
+        "suggestedHumanReadableName" : "01-priceBook_0_30FAC90D-C738-4261-9CD3-98F35E9BB7FF.png",
+        "timestamp" : 1788916742.884
+      }
+    ],
+    "testIdentifier" : "ScreenshotTests/testCaptureMainScreens()",
+    "testIdentifierURL" : "test://com.apple.xcode/PriceJar/PriceJarScreenshots/ScreenshotTests/testCaptureMainScreens"
+  }
+]

@@ -21,7 +21,9 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import struct
 import threading
+import zlib
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -213,6 +215,20 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
 
 
+def write_png(path: str, width: int, height: int) -> None:
+    """A real, valid PNG of solid black at the requested size."""
+    raw = (b"\x00" + b"\x00" * (width * 3)) * height
+
+    def chunk(tag: bytes, payload: bytes) -> bytes:
+        return (struct.pack(">I", len(payload)) + tag + payload
+                + struct.pack(">I", zlib.crc32(tag + payload) & 0xFFFFFFFF))
+
+    ihdr = struct.pack(">IIBBBBB", width, height, 8, 2, 0, 0, 0)
+    with open(path, "wb") as fh:
+        fh.write(b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", ihdr)
+                 + chunk(b"IDAT", zlib.compress(raw, 1)) + chunk(b"IEND", b""))
+
+
 def fixture_root() -> str:
     root = tempfile.mkdtemp(prefix="asc-write-")
     with open(os.path.join(REAL_ROOT, "factory", "apps.json"), encoding="utf-8") as fh:
@@ -236,16 +252,14 @@ def fixture_root() -> str:
              "keywords": "a,b,c", "promotional_text": "Promo", "release_notes": "Notes",
              "privacy_policy_url": "https://example.com/privacy", "support_url": "https://example.com/support"},
         ]}, fh)
-    # A tiny valid PNG, content does not matter for these tests.
-    png = bytes.fromhex(
-        "89504e470d0a1a0a0000000d49484452000000010000000108020000009077"
-        "53de0000000c4944415478da6360606060000000050001a5f645400000000049454e44ae426082")
-    # Two files, not one: with a single screenshot the set is only ever created
-    # once and the "already exists" path -- the one that actually broke -- is
-    # never exercised.
-    for name in ("01.png", "02.png"):
-        with open(os.path.join(store, "screenshots", "en", name), "wb") as fh:
-            fh.write(png)
+    # Real dimensions, because asc_metadata routes each image to a screenshot
+    # set by its pixel size. Two iPhone-sized files (one alone would never reach
+    # the "set already exists" path that actually broke) plus one iPad-sized,
+    # which proves the routing sends them to different sets.
+    shots_dir = os.path.join(store, "screenshots", "en")
+    for name, (w, h) in (("01.png", (1320, 2868)), ("02.png", (1320, 2868)),
+                         ("ipad-01.png", (2064, 2752))):
+        write_png(os.path.join(shots_dir, name), w, h)
     return root
 
 
@@ -311,12 +325,17 @@ def main() -> int:
     print("\nasc_metadata.py --what screenshots:")
     code, out = run(METADATA, [SLUG, "--what", "screenshots"])
     check("exits 0", code == 0, out)
-    check("a screenshot set was created for the registry display type",
-          "APP_IPHONE_67" in STATE["screenshot_sets"], out)
+    check("a set was created for each device, routed by the image's pixel size",
+          "APP_IPHONE_67" in STATE["screenshot_sets"]
+          and "APP_IPAD_PRO_3GEN_129" in STATE["screenshot_sets"],
+          str(sorted(STATE["screenshot_sets"])))
+    check("the two iPhone images share one set -- the second is what proves the "
+          "set is reused rather than re-created",
+          STATE["screenshot_sets"]["APP_IPHONE_67"] != STATE["screenshot_sets"]["APP_IPAD_PRO_3GEN_129"],
+          str(STATE["screenshot_sets"]))
     uploaded = [s for s in STATE["screenshots"].values() if s["uploaded"]]
-    check("both screenshots uploaded, each with a checksum -- the second one is "
-          "what proves the set is reused instead of re-created",
-          len(uploaded) == 2 and all(s["checksum"] for s in uploaded), out)
+    check("all three screenshots uploaded, each with a checksum",
+          len(uploaded) == 3 and all(s["checksum"] for s in uploaded), out)
 
     print("\nasc_publish.py --attach:")
     code, out = run(PUBLISH, [SLUG, "--ipa", os.path.join(root, "fake.ipa"), "--attach", "--dry-run"])

@@ -34,7 +34,8 @@
     "persistence": "SwiftData",
     "min_ios": "17.0",
     "devices": [
-      "iPhone"
+      "iPhone",
+      "iPad"
     ],
     "project_generator": "XcodeGen",
     "offline_first": true

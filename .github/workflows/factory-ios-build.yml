@@ -106,10 +106,14 @@ jobs:
                    | sed -E 's/^ *([^(]+) \(.*/\1/' | sed 's/ *$//')"
           shots="$(xcrun simctl list devices available | grep -m1 -E 'iPhone 1[6-9] Pro Max' \
                    | sed -E 's/^ *([^(]+) \(.*/\1/' | sed 's/ *$//')"
+          ipad="$(xcrun simctl list devices available | grep -m1 -E 'iPad Pro 13-inch' \
+                   | sed -E 's/^ *([^(]+) \(.*/\1/' | sed 's/ *$//')"
           [[ -n "$unit" ]] || { echo "::error::no iPhone 16/17-class simulator available"; exit 1; }
           [[ -n "$shots" ]] || { echo "::error::no iPhone *Pro Max simulator (6.9in) available"; exit 1; }
+          [[ -n "$ipad" ]] || { echo "::error::no 13-inch iPad simulator available"; exit 1; }
           echo "UNIT_SIMULATOR=$unit" >> "$GITHUB_ENV"
           echo "SHOTS_SIMULATOR=$shots" >> "$GITHUB_ENV"
+          echo "IPAD_SIMULATOR=$ipad" >> "$GITHUB_ENV"
 
       - name: Unit tests
         run: |
@@ -126,16 +130,27 @@ jobs:
             -destination "platform=iOS Simulator,name=$SHOTS_SIMULATOR" \
             -resultBundlePath shots.xcresult CODE_SIGNING_ALLOWED=NO
 
+      - name: Screenshot capture (iPad 13-inch)
+        run: |
+          cd "$APP_PATH"
+          rm -rf shots-ipad.xcresult
+          xcodebuild test -project "$(find . -maxdepth 1 -name '*.xcodeproj')" -scheme "${APP_SCHEME}Screenshots" \
+            -destination "platform=iOS Simulator,name=$IPAD_SIMULATOR" \
+            -resultBundlePath shots-ipad.xcresult CODE_SIGNING_ALLOWED=NO
+
       - name: Extract screenshots
         run: |
           cd "$APP_PATH"
-          mkdir -p screenshots-out
+          mkdir -p screenshots-out screenshots-out-ipad
           xcrun xcresulttool export attachments --path shots.xcresult --output-path screenshots-out
+          xcrun xcresulttool export attachments --path shots-ipad.xcresult --output-path screenshots-out-ipad
 
       - uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.app }}-screenshots
-          path: ${{ env.APP_PATH }}/screenshots-out/*.png
+          path: |
+            ${{ env.APP_PATH }}/screenshots-out/*.png
+            ${{ env.APP_PATH }}/screenshots-out-ipad/*.png
           if-no-files-found: error
 
   release:
