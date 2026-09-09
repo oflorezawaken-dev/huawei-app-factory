@@ -5,13 +5,8 @@ Console path: **AppGallery Connect > Apps and atomic services > PlantCue > Versi
 Generated from `apps/plant-cue/store/privacy-tags.json`. Labels are the official English console names; a localized console translates them but keeps the same order and grouping.
 
 1. **Collect personal data** -> **Yes**
-2. Select these service scenarios: **App functionality**, **Advertising and marketing**, **Disclosure to third parties**
+2. Select these service scenarios: **Advertising and marketing**, **Disclosure to third parties**
 3. On each scenario tab, tick exactly these data items:
-
-## App functionality
-
-| Data category | Data item | Why |
-|---|---|---|
 
 ## Advertising and marketing
 
@@ -44,6 +39,7 @@ Generated from `apps/plant-cue/store/privacy-tags.json`. Labels are the official
 
 ## Scenarios left unselected
 
+- **App functionality**: This app has no data items of its own for this scenario beyond the mandatory Petal Ads block, which is declared under Advertising and marketing / Disclosure to third parties instead.
 - **Product personalization**: No user profiling; ad personalisation belongs to the Petal Ads scenario.
 - **Analytics**: No analytics or crash-reporting SDK.
 - **Cross-border transfer**: Scenario means data sent outside the Chinese mainland; the app is not distributed in the Chinese mainland.

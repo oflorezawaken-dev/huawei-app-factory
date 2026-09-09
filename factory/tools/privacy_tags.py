@@ -226,6 +226,11 @@ def render(app: dict) -> str:
     scenarios = data.get("scenarios") or {}
     notes = {**DEFAULT_NOTES, **(data.get("item_notes") or {})}
     rel = os.path.relpath(path, ROOT).replace(os.sep, "/")
+    # A scenario with zero items (e.g. "App functionality" for an app with no data
+    # items of its own beyond Petal Ads) must not be selected in the console --
+    # selecting it with nothing ticked is meaningless and confusing.
+    populated = [s for s in SCENARIOS if s in scenarios and any(scenarios[s].values())]
+    empty_selected = [s for s in SCENARIOS if s in scenarios and s not in populated]
     lines = [
         f"# AppGallery privacy tags checklist: {app['name']} ({app['slug']})",
         "",
@@ -236,12 +241,12 @@ def render(app: dict) -> str:
         "translates them but keeps the same order and grouping.",
         "",
         f"1. **Collect personal data** -> **{'Yes' if data.get('collect_personal_data') else 'No'}**",
-        "2. Select these service scenarios: " + ", ".join(f"**{s}**" for s in SCENARIOS if s in scenarios),
+        "2. Select these service scenarios: " + ", ".join(f"**{s}**" for s in populated),
         "3. On each scenario tab, tick exactly these data items:",
         "",
     ]
     for scen in SCENARIOS:
-        if scen not in scenarios:
+        if scen not in populated:
             continue
         lines.append(f"## {scen}")
         lines.append("")
@@ -251,12 +256,15 @@ def render(app: dict) -> str:
             for item in scenarios[scen].get(cat, []):
                 lines.append(f"| {cat} | {item} | {notes.get(item, '')} |")
         lines.append("")
-    na = {k: v for k, v in (data.get("not_applicable") or {}).items() if k not in scenarios}
+    na = {k: v for k, v in (data.get("not_applicable") or {}).items() if k not in populated}
+    for scen in empty_selected:
+        na.setdefault(scen, "This app has no data items of its own for this scenario beyond the mandatory Petal Ads block, which is declared under Advertising and marketing / Disclosure to third parties instead.")
     if na:
         lines.append("## Scenarios left unselected")
         lines.append("")
-        for scen, why in na.items():
-            lines.append(f"- **{scen}**: {why or 'not applicable'}")
+        for scen in SCENARIOS:
+            if scen in na:
+                lines.append(f"- **{scen}**: {na[scen] or 'not applicable'}")
         lines.append("")
     lines.append("4. Open the **Summary** tab and compare it with the tables above, then save.")
     lines.append(f"5. Record the date in `factory/apps.json` -> `{app['slug']}.privacy_tags_configured` "
