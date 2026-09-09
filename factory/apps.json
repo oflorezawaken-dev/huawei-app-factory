@@ -86,7 +86,7 @@
           "_note": "Largest iPhone set. Apple's screenshotDisplayType enum has no APP_IPHONE_69 -- it kept the APP_IPHONE_67 name and accepts 6.9-inch resolutions there. Apple scales this set down to every smaller iPhone, so it is the only required iPhone set."
         },
         "APP_IPAD_PRO_3GEN_129": {
-          "required": false,
+          "required": true,
           "display_type": "APP_IPAD_PRO_3GEN_129",
           "sizes": [
             [
@@ -98,7 +98,7 @@
               2732
             ]
           ],
-          "_note": "13-inch iPad. Only required when the app declares iPad support; keep apps iPhone-only at first."
+          "_note": "13-inch iPad. Required whenever the app declares iPad support in TARGETED_DEVICE_FAMILY; Apple refuses to accept the version for review without it."
         }
       },
       "screenshot_count": {
@@ -207,7 +207,7 @@
       "status": "in_console",
       "current_version": {
         "marketing_version": "1.0.0",
-        "build": 3,
+        "build": 4,
         "status": "planned"
       },
       "admob": {

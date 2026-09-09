@@ -397,18 +397,28 @@ def main(argv: list[str]) -> int:
     shots = sorted(f for f in os.listdir(shots_dir)) if os.path.isdir(shots_dir) else []
     shots = [f for f in shots if f.lower().endswith((".png", ".jpg", ".jpeg"))]
     lo, hi = ios["screenshot_count"]["min"], ios["screenshot_count"]["max"]
+    # Sizes claimed by any required set: an image matching one of those belongs
+    # to another device's set, not to this one, and calling it "wrong size" here
+    # would send someone hunting for a problem that does not exist.
+    all_accepted = {tuple(size) for cfg in required_sets.values() for size in cfg["sizes"]}
     for set_name, cfg in required_sets.items():
         accepted = {tuple(s) for s in cfg["sizes"]}
-        matching, wrong = [], []
+        matching, other_set, unusable = [], [], []
         for f in shots:
             size = image_size(os.path.join(shots_dir, f))
-            (matching if size in accepted else wrong).append((f, size))
-        transparent = [f for f, _ in matching if f.lower().endswith(".png")
+            if size in accepted:
+                matching.append(f)
+            elif size in all_accepted:
+                other_set.append(f)
+            else:
+                unusable.append((f, size))
+        transparent = [f for f in matching if f.lower().endswith(".png")
                        and (png_info(os.path.join(shots_dir, f)) or (0, 0, False))[2]]
-        ok = lo <= len(matching) <= hi and not transparent
+        ok = lo <= len(matching) <= hi and not transparent and not unusable
         report("screenshots", ok,
-               f"{set_name}: {len(matching)} of {len(shots)} images match {sorted(accepted)} "
-               f"(need {lo}-{hi}); wrong size: {[f for f, _ in wrong] or 'none'}; "
+               f"{set_name}: {len(matching)} images match {sorted(accepted)} (need {lo}-{hi}); "
+               f"{len(other_set)} belong to another required set; "
+               f"no set accepts: {[f for f, _ in unusable] or 'none'}; "
                f"with alpha: {transparent or 'none'}", gap_key="screenshots")
 
     # --- listing ------------------------------------------------------------

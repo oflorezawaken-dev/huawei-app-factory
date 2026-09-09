@@ -21,11 +21,12 @@ settings:
     # Xcode leaves PRODUCT_NAME empty unless something sets it, and three
     # targets producing ".app" collide with "Multiple commands produce".
     PRODUCT_NAME: $(TARGET_NAME)
-    # 1 = iPhone only. Without this Xcode builds universal, and Apple then
-    # requires 13-inch iPad screenshots and reviews an iPad layout nobody
-    # designed or tested. The spec's technical.devices is the contract;
-    # check_ios_app.py's device_family rule holds this to it.
-    TARGETED_DEVICE_FAMILY: "1"
+    # 1,2 = iPhone and iPad. Set explicitly rather than left to Xcode's
+    # default so it stays in step with the spec's technical.devices, which
+    # check_ios_app.py's device_family rule enforces. Declaring iPad means
+    # Apple requires 13-inch iPad screenshots and will review the iPad
+    # layout, so both are part of the flow rather than an afterthought.
+    TARGETED_DEVICE_FAMILY: "1,2"
     SWIFT_VERSION: "5.0"
     DEVELOPMENT_TEAM: $(APPLE_TEAM_ID)
     CODE_SIGN_STYLE: Automatic

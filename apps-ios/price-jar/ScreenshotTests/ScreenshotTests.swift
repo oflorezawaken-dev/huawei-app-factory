@@ -74,9 +74,14 @@ final class ScreenshotTests: XCTestCase {
 
     private func tabButton(_ label: String) -> XCUIElement {
         // A TabView's tab buttons do not inherit an accessibility identifier
-        // from their tab content, so they must be addressed by their label
-        // text through the tab bar itself.
-        app.tabBars.buttons[label]
+        // from their tab content, so they are addressed by their visible label.
+        // Which element holds them differs by device: iPhone renders a tab bar,
+        // iPad renders the tabs as plain buttons in a top bar with no tabBars
+        // element at all, and their identifiers there are the SF Symbol names.
+        // The label is the only thing common to both.
+        let inTabBar = app.tabBars.buttons[label]
+        if inTabBar.exists { return inTabBar }
+        return app.buttons.matching(NSPredicate(format: "label == %@", label)).firstMatch
     }
 
     /// Wait for the screen to stop moving before capturing; a screenshot

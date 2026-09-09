@@ -40,6 +40,10 @@ import urllib.request
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from asc_client import API_BASE, ASCError, log, make_token, resolve_app, version_state  # noqa: E402
 from registry import ROOT, load  # noqa: E402
+# Reused rather than reimplemented: the gate validates screenshot sizes with
+# this exact reader, so routing and validation can never disagree about what
+# an image measures.
+from check_ios_app import image_size  # noqa: E402
 
 # App info fields live on the app record, editable regardless of version state.
 APP_INFO_FIELDS = {"name": "name", "subtitle": "subtitle", "privacy_policy_url": "privacyPolicyUrl"}
@@ -303,7 +307,12 @@ def push_screenshots(app: dict, asc_app_id: str, token: str, dry_run: bool) -> N
     required = [cfg for cfg in ios["screenshot_sets"].values() if cfg.get("required")]
     if not required:
         raise ASCError("defaults.ios.screenshot_sets declares no required set")
-    display_type = required[0]["display_type"]
+    # An image goes to the set whose accepted sizes it matches. Routing by
+    # pixel size rather than by folder means iPhone and iPad screenshots can
+    # live side by side per locale, and it is the same rule check_ios_app.py
+    # validates them with -- so the gate and the uploader cannot disagree.
+    size_to_display = {tuple(size): cfg["display_type"]
+                       for cfg in required for size in cfg["sizes"]}
 
     mapping = ios["screenshot_dir_to_asc_lang"]
     for folder, locale in mapping.items():
@@ -317,9 +326,18 @@ def push_screenshots(app: dict, asc_app_id: str, token: str, dry_run: bool) -> N
             log(f"  [dry-run] {locale}: would upload {len(files)} screenshot(s)")
             continue
         loc_id = find_version_localization_id(version_id, locale, token)
-        set_id = find_or_create_screenshot_set(loc_id, display_type, token)
+        sets: dict[str, str] = {}
         for name in files:
-            upload_screenshot(set_id, os.path.join(shots_dir, name), token)
+            path = os.path.join(shots_dir, name)
+            display_type = size_to_display.get(image_size(path) or ())
+            if not display_type:
+                raise ASCError(
+                    f"{folder}/{name} is {image_size(path)}, which matches no required "
+                    f"screenshot set. Accepted: {sorted(size_to_display)}")
+            if display_type not in sets:
+                sets[display_type] = find_or_create_screenshot_set(loc_id, display_type, token)
+            upload_screenshot(sets[display_type], path, token)
+            log(f"    -> {display_type}")
 
 
 def main(argv: list[str]) -> int:
