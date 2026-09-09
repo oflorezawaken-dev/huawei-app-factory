@@ -35,6 +35,10 @@ detached is not.
      the committed one, taking the ad app ID and usage strings with it.
    - `excludes: [Info.plist]` on the sources entry, so the plist is not also copied as
      a resource.
+   - `TARGETED_DEVICE_FAMILY` set from the spec's `devices`: `"1"` for iPhone only,
+     `"1,2"` for iPhone and iPad. XcodeGen does not set it and Xcode's default is
+     universal, so an iPhone-only app shipped to Apple as universal — and Apple then
+     demanded iPad screenshots for it. The gate's `device_family` rule checks this.
    - `UIRequiresFullScreen: true` in Info.plist. Without it Apple's upload servers reject an iPhone-only, portrait-only app with error 90474 ("iPad Multitasking support requires these orientations"), because a single-orientation app must either declare all four orientations or opt out of iPad multitasking entirely. The first PriceJar upload found this after Archive and Export both succeeded.
    Add targets or dependencies if the spec needs them; do not rewrite what is there.
 
@@ -56,10 +60,13 @@ detached is not.
 
 5. **Accessibility identifiers on every control, from the first line.** The screenshot
    test addresses controls by identifier; automating by coordinates is what made the
-   Android lane's screenshot capture unreliable. Two traps found while building the
+   Android lane's screenshot capture unreliable. Three traps found while building the
    template: a `TabView`'s tab buttons do **not** inherit an identifier from the tab
-   content (reach them through `app.tabBars.buttons["<label>"]`), and
-   `app.staticTexts["X"]` matches an *identifier*, not a label.
+   content; `app.staticTexts["X"]` matches an *identifier*, not a label; and **an iPad
+   has no tab bar at all** — the same tabs are plain buttons there, so
+   `app.tabBars.buttons["<label>"]` finds nothing and the iPad screenshot run fails.
+   Address tabs through a helper that tries the tab bar and falls back to a plain
+   button match, the way the PriceJar template's `tabButton(_:)` does.
 
 6. **One `.sheet` per view.** SwiftUI honours a single `.sheet` modifier per view; a
    second one is silently ignored and the button appears dead. If a screen presents

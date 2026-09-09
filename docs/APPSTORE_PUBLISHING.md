@@ -114,6 +114,22 @@ rather than a generic error:
 5. Upload a build; it must finish **processing** (5-30 minutes) before it can
    be attached to a version. `asc_client.py wait-build <slug> --build <n>`
    polls for it.
+6. **Fill in the five console-only forms before launching the submission.**
+   Apple refuses the whole submission if any is missing and does not say which
+   one over the API. On the first run this cost four submission attempts:
+   - Pricing and Availability
+   - Age rating questionnaire (App Information)
+   - App Privacy questionnaire -- answered **and published**
+   - App Review contact details: first name, last name, email and phone, all four
+   - Content rights
+
+   `asc_publish.py` probes pricing, contact details and export compliance and
+   names the ones that look unmet. Age rating and App Privacy come back as `?`:
+   those two probe URLs are wrong and 404. See the retrospective.
+
+The API key used for signing needs the **Admin** role, not App Manager, or the
+IPA export fails with a cloud signing permission error. A key's role cannot be
+edited after creation -- you have to revoke it and make a new one.
 
 ---
 
@@ -129,7 +145,7 @@ trusting them in a year.
 | Description / What's New | 4000 characters |
 | Keywords | 100 characters total, comma separated |
 | Screenshots | 3 to 10 per set; 6.9" iPhone at 1320x2868 (1290x2796 and 1260x2736 also accepted) |
-| iPad screenshots | Only when the app declares iPad support: 13" at 2064x2752 or 2048x2732 |
+| iPad screenshots | Only when the app declares iPad support: 13" at 2064x2752. Apple documents 2048x2732 as well, but only 2064x2752 is proven against the live API, so the registry lists just that one |
 | App icon | 1024x1024 PNG, **no alpha channel** |
 | Locale codes | `en-US`, `es-ES`, `pt-PT`, `fr-FR`, `de-DE`, `it`, `tr`, `ar-SA`, `zh-Hans` |
 
@@ -140,3 +156,17 @@ maps the shared screenshot folders to Apple's codes; never reuse
 
 Apple scales the 6.9" iPhone set down to every smaller iPhone, so that is the
 only iPhone set the gate requires.
+
+---
+
+## 6. What the first end-to-end run cost
+
+PriceJar 1.0.0 was the first app through this lane. Thirteen real failures came
+out of it, and the ones worth knowing before starting another app -- including
+the traps that are still open -- are in
+[IOS_FIRST_RUN_RETROSPECTIVE.md](IOS_FIRST_RUN_RETROSPECTIVE.md).
+
+The short version: **do not trust a `filter[...]` query parameter on Apple's
+API**, and **do not trust a mock that was written without checking the real
+behaviour** -- four separate bugs shipped past a green test suite because the
+mock was more forgiving than Apple is.
