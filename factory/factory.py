@@ -13,7 +13,7 @@ remembering gh/claude invocations. Standard library only.
   python factory/factory.py build <slug>                      # gh: Factory Build
   python factory/factory.py store <slug> [--what all|listing|icon|screenshots|app-info|privacy-tags] [--lang X] [--dry-run]
   python factory/factory.py privacy-tags <slug> [--init]     # local: validate + write store/privacy-tags.md (console checklist)
-  python factory/factory.py publish <slug> [--aab] [--submit --notes "..."] [--run-id N]
+  python factory/factory.py publish <slug> [--aab] [--submit --notes "..."] [--run-id N] [--allow-test-ad-units]
   python factory/factory.py research [--ios]                  # claude: propose an app (App Store lane with --ios)
   python factory/factory.py spec <slug> --proposal proposals/<file>.md [--ios]
   python factory/factory.py generate <slug> [--ios]           # claude: build the app from its spec
@@ -110,6 +110,7 @@ def main(argv: list[str]) -> int:
     p.add_argument("--submit", action="store_true")
     p.add_argument("--notes", default="")
     p.add_argument("--run-id", default="")
+    p.add_argument("--allow-test-ad-units", dest="allow_test_ad_units", action="store_true")
     p.add_argument("--proposal", default="")
     p.add_argument("--init", action="store_true")
     p.add_argument("--ios", action="store_true")
@@ -152,7 +153,8 @@ def main(argv: list[str]) -> int:
             "app": a.slug, "release_run_id": a.run_id,
             "package_type": "aab" if a.aab else "apk",
             "submit_for_review": "true" if a.submit else "false",
-            "release_notes": a.notes}, a.print_only)
+            "release_notes": a.notes,
+            "allow_test_ad_units": "true" if a.allow_test_ad_units else "false"}, a.print_only)
     if a.command == "research":
         # The iOS lane researches the App Store market on its own terms; it
         # never ports the AppGallery apps (owner's decision, 2026-09-07).
