@@ -186,7 +186,7 @@ final class MonetisationTests: XCTestCase {
     shots = os.path.join(app_dir, "store", "screenshots", "en")
     for i in range(1, 4):
         write_png(os.path.join(shots, f"{i:02d}.png"), 1320, 2868, alpha=False)
-        write_png(os.path.join(shots, f"ipad-{i:02d}.png"), 2064, 2752, alpha=False)
+        write_png(os.path.join(shots, f"ipad-{i:02d}.png"), 2048, 2732, alpha=False)
 
     write(os.path.join(app_dir, "store", "listing.json"), json.dumps({
         "languages": [{

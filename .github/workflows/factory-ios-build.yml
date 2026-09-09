@@ -157,10 +157,23 @@ jobs:
 
       - name: Extract screenshots
         run: |
+          set -euo pipefail
           cd "$APP_PATH"
           mkdir -p screenshots-out screenshots-out-ipad
           xcrun xcresulttool export attachments --path shots.xcresult --output-path screenshots-out
           xcrun xcresulttool export attachments --path shots-ipad.xcresult --output-path screenshots-out-ipad
+          # The 13-inch iPad simulator renders 2064x2752, and Apple rejects that
+          # for APP_IPAD_PRO_3GEN_129 with IMAGE_INCORRECT_DIMENSIONS -- only
+          # 2048x2732 is accepted, and Xcode 26 ships no 12.9-inch simulator to
+          # capture it natively. Resample to the size the registry declares.
+          read -r want_w want_h < <(python3 -c "import json; \
+            s=json.load(open('$GITHUB_WORKSPACE/factory/apps.json'))['defaults']['ios']['screenshot_sets']['APP_IPAD_PRO_3GEN_129']['sizes'][0]; \
+            print(s[0], s[1])")
+          for f in screenshots-out-ipad/*.png; do
+            [[ -e "$f" ]] || continue
+            sips --resampleHeightWidth "$want_h" "$want_w" "$f" --out "$f" >/dev/null
+          done
+          echo "iPad screenshots normalised to ${want_w}x${want_h}"
 
       - uses: actions/upload-artifact@v4
         with:

@@ -90,15 +90,11 @@
           "display_type": "APP_IPAD_PRO_3GEN_129",
           "sizes": [
             [
-              2064,
-              2752
-            ],
-            [
               2048,
               2732
             ]
           ],
-          "_note": "13-inch iPad. Required whenever the app declares iPad support in TARGETED_DEVICE_FAMILY; Apple refuses to accept the version for review without it."
+          "_note": "13-inch iPad. Required whenever the app declares iPad support in TARGETED_DEVICE_FAMILY; Apple refuses to accept the version for review without it. Only 2048x2732 is accepted: Apple rejected 2064x2752 -- the native size of the 13-inch iPad Pro simulator -- with IMAGE_INCORRECT_DIMENSIONS, so the capture is resampled to this size."
         }
       },
       "screenshot_count": {
