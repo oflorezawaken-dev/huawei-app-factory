@@ -140,7 +140,92 @@ def set_release_notes(version_id: str, notes: str, token: str) -> None:
     log(f"release notes set on locale {rows[0].get('attributes', {}).get('locale', loc_id)}")
 
 
+# Each probe answers one console-only requirement. They are best effort by
+# design: these endpoints are not exercised by any earlier step, so a probe
+# that fails tells us nothing about the app and must never replace Apple's own
+# error. A failed probe reports "could not check" and the diagnosis continues.
+def _probe(label: str, fn) -> str:
+    try:
+        ok, note = fn()
+    except ASCError as exc:
+        return f"  ?  {label}: could not check ({exc})"
+    except Exception as exc:  # noqa: BLE001 - a probe must never break the report
+        return f"  ?  {label}: could not check ({type(exc).__name__}: {exc})"
+    mark = "ok " if ok else "!! "
+    return f"  {mark} {label}" + (f": {note}" if note else "")
+
+
+def diagnose_submission_blockers(asc_app_id: str, version_id: str, token: str) -> list[str]:
+    """Report which console-only requirements look unmet.
+
+    Apple refuses the submission without saying which requirement is missing,
+    so these probes turn a static checklist into an actual answer wherever the
+    API exposes one. Lines marked !! are the ones to go fix.
+    """
+    def pricing():
+        data = api_call("GET", f"/v1/apps/{asc_app_id}/appPriceSchedule", token=token)
+        return bool(data.get("data")), "" if data.get("data") else "no price schedule set"
+
+    def age_rating():
+        data = api_call("GET", f"/v1/appStoreVersions/{version_id}/ageRatingDeclaration", token=token)
+        return bool(data.get("data")), "" if data.get("data") else "questionnaire not completed"
+
+    def privacy():
+        data = api_call("GET", f"/v1/apps/{asc_app_id}/appDataUsages?limit=1", token=token)
+        rows = data.get("data") or []
+        return bool(rows), "" if rows else "App Privacy questionnaire has no answers"
+
+    def review_detail():
+        data = api_call("GET", f"/v1/appStoreVersions/{version_id}/appStoreReviewDetail", token=token)
+        attrs = (data.get("data") or {}).get("attributes") or {}
+        missing = [k for k in ("contactFirstName", "contactLastName", "contactEmail", "contactPhone")
+                   if not attrs.get(k)]
+        return not missing, f"missing {', '.join(missing)}" if missing else ""
+
+    def export_compliance():
+        rows = api_call("GET", f"/v1/apps/{asc_app_id}/builds?limit=1", token=token).get("data") or []
+        if not rows:
+            return False, "no build to check"
+        attrs = rows[0].get("attributes") or {}
+        if "usesNonExemptEncryption" not in attrs:
+            return False, "build does not report usesNonExemptEncryption"
+        answered = attrs["usesNonExemptEncryption"] is not None
+        return answered, "" if answered else "unanswered on the newest build"
+
+    return [
+        _probe("Pricing and Availability", pricing),
+        _probe("Age rating (App Information)", age_rating),
+        _probe("App Privacy questionnaire", privacy),
+        _probe("App Review contact details", review_detail),
+        _probe("Export compliance", export_compliance),
+    ]
+
+
+def clear_open_review_submission(asc_app_id: str, token: str) -> None:
+    """Delete any review submission still sitting unsubmitted on the app.
+
+    Apple allows one open submission per app and platform, so a run that
+    created a submission and then failed to add the version leaves the next
+    run unable to create one at all. That is exactly what a failed submit
+    used to do here.
+    """
+    data = api_call("GET", f"/v1/apps/{asc_app_id}/reviewSubmissions?limit=50", token=token)
+    for row in data.get("data", []):
+        attrs = row.get("attributes") or {}
+        if attrs.get("submitted"):
+            continue
+        try:
+            api_call("DELETE", f"/v1/reviewSubmissions/{row['id']}", token=token)
+            log(f"removed the open, unsubmitted reviewSubmission {row['id']}")
+        except ASCError as exc:
+            log(f"warning: could not remove open reviewSubmission {row['id']}: {exc}")
+
+
 def submit_for_review(asc_app_id: str, token: str) -> None:
+    # A previous failed run may have left one behind, and Apple allows only one
+    # open submission per app.
+    clear_open_review_submission(asc_app_id, token)
+
     submission = api_call("POST", "/v1/reviewSubmissions", {
         "data": {"type": "reviewSubmissions", "attributes": {"platform": "IOS"},
                  "relationships": {"app": {"data": {"type": "apps", "id": asc_app_id}}}}}, token)
@@ -172,18 +257,15 @@ def submit_for_review(asc_app_id: str, token: str) -> None:
         if "not in valid state" not in str(exc):
             raise
         # Apple says the version cannot be reviewed but will not say which
-        # requirement is unmet over the API -- only the console lists them.
-        # These are the ones that are not part of anything the factory pushes,
-        # so they are the ones a run like this leaves outstanding.
+        # requirement is unmet. Ask the API what it will answer, then leave the
+        # app as we found it -- an abandoned submission would block the retry.
+        findings = diagnose_submission_blockers(asc_app_id, version_id, token)
+        clear_open_review_submission(asc_app_id, token)
         raise ASCError(
-            f"Apple will not accept version {version_id} for review yet. It does not report "
-            "which requirement is missing over the API; App Store Connect shows them on the "
-            "version page, marked in red. The ones the factory cannot fill in for you:\n"
-            "  - App Privacy questionnaire answered and published\n"
-            "  - Age rating questionnaire completed (App Information)\n"
-            "  - Pricing and Availability set\n"
-            "  - Export compliance answered, unless ITSAppUsesNonExemptEncryption settles it\n"
-            "  - App Review contact details, and a demo account if any feature needs sign-in\n"
+            f"Apple will not accept version {version_id} for review yet, and does not report "
+            "which requirement is missing. Probing the ones the factory cannot fill in:\n"
+            + "\n".join(findings) + "\n"
+            "  (!! = looks unmet, ? = the API would not answer; the version page marks them in red)\n"
             f"Open https://appstoreconnect.apple.com/apps/{asc_app_id}/distribution and fix "
             "whatever it flags, then re-run this workflow.") from exc
     log(f"added appStoreVersion {version_id} to the submission")
