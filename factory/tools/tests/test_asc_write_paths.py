@@ -100,6 +100,11 @@ class Handler(BaseHTTPRequestHandler):
                 rows = [{"id": r["id"], "attributes": {"locale": loc}}
                         for loc, r in STATE["version_locs"].items()]
                 self._json(200, {"data": rows[:1]})
+        elif "/appScreenshotSets/" in path and path.endswith("/appScreenshots"):
+            set_id = path.split("/appScreenshotSets/")[1].split("/")[0]
+            rows = [{"id": sid} for sid, shot in STATE["screenshots"].items()
+                    if shot.get("set") == set_id]
+            self._json(200, {"data": rows})
         elif path.endswith("/appScreenshotSets"):
             display_type = params.get("filter[screenshotDisplayType]")
             set_id = STATE["screenshot_sets"].get(display_type)
@@ -142,7 +147,8 @@ class Handler(BaseHTTPRequestHandler):
             self._json(201, {"data": {"type": rtype, "id": set_id}})
         elif rtype == "appScreenshots":
             shot_id = new_id()
-            STATE["screenshots"][shot_id] = {"uploaded": False, "checksum": None}
+            set_id = data["relationships"]["appScreenshotSet"]["data"]["id"]
+            STATE["screenshots"][shot_id] = {"uploaded": False, "checksum": None, "set": set_id}
             port = self.server.server_address[1]
             self._json(201, {"data": {"type": rtype, "id": shot_id, "attributes": {
                 "uploadOperations": [{"method": "PUT", "url": f"http://127.0.0.1:{port}/upload/{shot_id}",
@@ -206,6 +212,16 @@ class Handler(BaseHTTPRequestHandler):
             self._json(200, {"data": {"type": rtype, "id": rid}})
         else:
             self._json(404, {"errors": [{"title": "NOT_FOUND"}]})
+
+    def do_DELETE(self) -> None:
+        if not self._authed():
+            self._json(401, {"errors": [{"title": "NOT_AUTHORIZED"}]})
+            return
+        shot_id = self.path.rsplit("/", 1)[-1]
+        STATE["screenshots"].pop(shot_id, None)
+        STATE["deleted_screenshots"] = STATE.get("deleted_screenshots", 0) + 1
+        self.send_response(204)
+        self.end_headers()
 
     def do_PUT(self) -> None:
         # Screenshot byte upload: any body, any auth (Apple's asset URLs are pre-signed).
@@ -336,6 +352,16 @@ def main() -> int:
     uploaded = [s for s in STATE["screenshots"].values() if s["uploaded"]]
     check("all three screenshots uploaded, each with a checksum",
           len(uploaded) == 3 and all(s["checksum"] for s in uploaded), out)
+
+    # Apple caps a set at 10. Without replacement a third push of five images
+    # fails with "Too many screenshots", which is how PriceJar's set filled up.
+    code, out = run(METADATA, [SLUG, "--what", "screenshots"])
+    check("a second push replaces rather than accumulates", code == 0, out)
+    check("still exactly three screenshots after the second push",
+          len([s for s in STATE["screenshots"].values() if s["uploaded"]]) == 3,
+          str(len(STATE["screenshots"])))
+    check("the previous three were deleted", STATE.get("deleted_screenshots") == 3,
+          str(STATE.get("deleted_screenshots")))
 
     print("\nasc_publish.py --attach:")
     code, out = run(PUBLISH, [SLUG, "--ipa", os.path.join(root, "fake.ipa"), "--attach", "--dry-run"])
