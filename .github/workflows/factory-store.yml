@@ -70,8 +70,10 @@ jobs:
         if: inputs.what == 'all' || inputs.what == 'icon'
         run: |
           set -euo pipefail
-          # AGC requires a lang even for the icon; use the default language.
-          lang="$(python3 -c "import json;print(json.load(open('factory/apps.json'))['defaults']['languages'][0])")"
+          # AGC requires a lang even for the icon (the icon file itself is the same for
+          # every language). Use the given AGC code, or the default language when empty.
+          lang="${{ inputs.lang }}"
+          [[ -n "$lang" ]] || lang="$(python3 -c "import json;print(json.load(open('factory/apps.json'))['defaults']['languages'][0])")"
           args=(--app-id "$AGC_APP_ID" --file-type icon --lang "$lang" --file "$APP_STORE_DIR/icon/icon-512.png")
           [[ "$DRY" == "true" ]] && args+=(--dry-run)
           python3 factory/tools/agc_upload_assets.py "${args[@]}"
