@@ -29,7 +29,7 @@ automatizar: son formularios de consola de Apple o decisiones tuyas.
 | 7 | Generación (`30-generate-ios`) | Sonnet | |
 | 8 | Build + tests + capturas (`factory-ios-build`) | CI | Cuenta con **1–2 reintentos** por el test inestable |
 | 9 | Ficha y capturas (`factory-ios-store`, `what=all`) | CI | |
-| 10 | **Rellenar los 5 formularios de consola** | **[humano]** | Ver §2 — es donde más vueltas se perdieron |
+| 10 | **Los 6 pasos de consola** (5 formularios + el IAP) | **[humano]** | Ver §2 — es donde más vueltas se perdieron |
 | 11 | Subida + envío (`factory-ios-publish`, `submit_for_review=true`) | CI | |
 
 **Puertas humanas reales: 4** (aprobar propuesta, crear app+Bundle ID, AdMob, formularios de
@@ -37,10 +37,11 @@ consola). El resto es automático.
 
 ---
 
-## 2. Los cinco formularios de consola — hazlos ANTES de lanzar el envío
+## 2. Los seis pasos de consola — hazlos ANTES de lanzar el envío
 
-Apple rechaza el envío entero si falta cualquiera, y **no dice cuál falta** por la API. En este
-recorrido esto costó cuatro intentos de envío. Rellénalos todos de una vez, en el paso 10:
+Los cinco primeros son formularios: Apple rechaza el envío entero si falta cualquiera, y **no
+dice cuál falta** por la API. En este recorrido eso costó cuatro intentos de envío. Rellénalos
+todos de una vez, en el paso 10:
 
 1. **Pricing and Availability** — precio y territorios.
 2. **Clasificación por edad** (App Information) — cuestionario.
@@ -51,6 +52,32 @@ recorrido esto costó cuatro intentos de envío. Rellénalos todos de una vez, e
 `asc_publish.py` sondea Pricing, contacto y export compliance y te dice cuáles fallan. Los otros
 dos (clasificación por edad y privacidad) los reporta como `?` — **mis URLs de sonda están mal**
 y devuelven 404; ver deuda abierta §5.
+
+### 6. La compra integrada, si la app la tiene
+
+Este no bloquea el envío, y por eso es más peligroso que los otros cinco: **el envío sale
+adelante sin él y el problema aparece en la revisión**.
+
+Si el spec declara `remove_ads_iap`, hay que crear el producto en **Monetization → In-App
+Purchases**:
+
+- Tipo **No consumible** (compra única y permanente; ni suscripción ni consumible).
+- **Product ID** idéntico carácter por carácter a `iap.remove_ads_product_id` del registro.
+  StoreKit busca por esa cadena exacta.
+- Precio, y localizaciones (nombre y descripción visibles en la hoja de compra) al menos en el
+  idioma principal.
+- **Captura de revisión y notas**: Apple revisa el producto aparte de la app y exige una captura
+  de la pantalla donde se ofrece la compra.
+- En una primera publicación, el producto **se envía junto con la versión**.
+
+Si el producto no existe, `Product.products(for:)` devuelve vacío, `product` queda `nil` y
+`purchase()` marca `purchaseFailed` sin abrir siquiera la hoja de compra: el revisor toca el
+botón y no ocurre nada. Eso es rechazo por directriz 2.1.
+
+**El gate no detecta esto.** `iap_configured` comprueba que el `product_id` esté en el registro y
+referenciado en Swift — nada más. Pasa en verde con el producto sin crear, que es exactamente lo
+que ocurrió con PriceJar: el paso nunca se ejecutó en este recorrido y salió a la luz cuando el
+usuario preguntó por él, con la app ya en revisión.
 
 ---
 
@@ -122,6 +149,7 @@ Honestamente, la fábrica está más afinada, pero no está limpia:
 | **Limpieza de `reviewSubmission` no funciona** | Apple devuelve `403` al `DELETE`. Hoy hay **4 submissions abiertas** acumuladas en PriceJar | Hay que cambiarlo a `PATCH {canceled: true}` |
 | **Sondas de diagnóstico con URL mal** | Clasificación por edad y App Privacy salen `?` en vez de `!!`/`ok` | `ageRatingDeclaration` cuelga de `appInfos`, no de `appStoreVersions`; `appDataUsages` no es relación de `apps` |
 | **PR #30 sin mergear** | **La trampa 13 sigue viva en `main`**. La app nº2 volvería a mandar las capturas de iPad al set de iPhone | Mergear antes de empezar |
+| **El gate no ve el IAP de consola** | `iap_configured` pasa en verde aunque el producto no exista en App Store Connect. La app llega a revisión con el botón de compra muerto | Sin arreglar. Se detectaría con `GET /v1/apps/{id}/inAppPurchases` — verificar el nombre del endpoint antes de usarlo |
 | **`apps-ios/price-jar/ipad-out/`** | 5 PNG crudos commiteados por error; basura de trabajo | Borrar |
 | **Registro con un solo tamaño de iPad** | Solo `2064x2752`. Apple documenta también `2048x2732`, pero no está probado: el único intento estuvo contaminado por la trampa 13 | Dejarlo así hasta comprobarlo |
 
