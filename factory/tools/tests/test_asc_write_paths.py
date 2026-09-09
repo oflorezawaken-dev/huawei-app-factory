@@ -46,6 +46,18 @@ STATE = {
     "attached_build": None,
     "copyright": None,
     "next_id": 100,
+    # Set to simulate Apple refusing the version: the reviewSubmissionItems
+    # POST is the only place that failure surfaces.
+    "reject_review_item": False,
+    # What the diagnosis probes find. None means the endpoint 404s, which is
+    # how a requirement the console has never touched behaves.
+    "price_schedule": {"id": "ps1"},
+    "age_rating": {"id": "ar1"},
+    "data_usages": [{"id": "du1"}],
+    "review_detail": {"id": "rd1", "attributes": {
+        "contactFirstName": "Ada", "contactLastName": "Byron",
+        "contactEmail": "ada@example.com", "contactPhone": "+1000000000"}},
+    "build_encryption": False,
 }
 
 
@@ -70,6 +82,18 @@ class Handler(BaseHTTPRequestHandler):
         length = int(self.headers.get("Content-Length", 0))
         raw = self.rfile.read(length) if length else b""
         return json.loads(raw) if raw else {}
+
+    def _maybe(self, row) -> None:
+        """A to-one relationship: None = set up but empty, "404" = no such path.
+
+        The two are different answers and the diagnosis must not conflate them:
+        an empty relationship means the requirement is unmet, while a 404 might
+        just mean this probe's URL is wrong, which says nothing about the app.
+        """
+        if row == "404":
+            self._json(404, {"errors": [{"title": "NOT_FOUND"}]})
+        else:
+            self._json(200, {"data": row})
 
     def _authed(self) -> bool:
         return self.headers.get("Authorization", "").startswith("Bearer ey")
@@ -109,6 +133,22 @@ class Handler(BaseHTTPRequestHandler):
             display_type = params.get("filter[screenshotDisplayType]")
             set_id = STATE["screenshot_sets"].get(display_type)
             self._json(200, {"data": [{"id": set_id}] if set_id else []})
+        elif path == f"/v1/apps/{ASC_APP_ID}/reviewSubmissions":
+            rows = [{"type": "reviewSubmissions", "id": sid, "attributes": sub["attributes"]}
+                    for sid, sub in STATE["submissions"].items()]
+            self._json(200, {"data": rows})
+        elif path == f"/v1/apps/{ASC_APP_ID}/appPriceSchedule":
+            self._maybe(STATE["price_schedule"])
+        elif path == f"/v1/appStoreVersions/{VERSION_ID}/ageRatingDeclaration":
+            self._maybe(STATE["age_rating"])
+        elif path == f"/v1/apps/{ASC_APP_ID}/appDataUsages":
+            self._json(200, {"data": STATE["data_usages"]})
+        elif path == f"/v1/appStoreVersions/{VERSION_ID}/appStoreReviewDetail":
+            self._maybe(STATE["review_detail"])
+        elif path == f"/v1/apps/{ASC_APP_ID}/builds":
+            self._json(200, {"data": [{"type": "builds", "id": "b1", "attributes": {
+                "version": "3", "processingState": "VALID",
+                "usesNonExemptEncryption": STATE["build_encryption"]}}]})
         elif path == "/v1/builds":
             self._json(200, {"data": [{"type": "builds", "id": "b1",
                                        "attributes": {"version": "3", "processingState": "VALID"}}]})
@@ -158,6 +198,11 @@ class Handler(BaseHTTPRequestHandler):
             STATE["submissions"][sub_id] = {"attributes": {"submitted": False}, "items": []}
             self._json(201, {"data": {"type": rtype, "id": sub_id}})
         elif rtype == "reviewSubmissionItems":
+            if STATE["reject_review_item"]:
+                self._json(409, {"errors": [{
+                    "title": "The request cannot be fulfilled because of the state of another resource.",
+                    "detail": "The specified resource is not in valid state to be submitted."}]})
+                return
             sub_id = data["relationships"]["reviewSubmission"]["data"]["id"]
             version_id = data["relationships"]["appStoreVersion"]["data"]["id"]
             STATE["submissions"][sub_id]["items"].append(version_id)
@@ -217,9 +262,13 @@ class Handler(BaseHTTPRequestHandler):
         if not self._authed():
             self._json(401, {"errors": [{"title": "NOT_AUTHORIZED"}]})
             return
-        shot_id = self.path.rsplit("/", 1)[-1]
-        STATE["screenshots"].pop(shot_id, None)
-        STATE["deleted_screenshots"] = STATE.get("deleted_screenshots", 0) + 1
+        rid = self.path.rsplit("/", 1)[-1]
+        if "/reviewSubmissions/" in self.path:
+            STATE["submissions"].pop(rid, None)
+            STATE["deleted_submissions"] = STATE.get("deleted_submissions", 0) + 1
+        else:
+            STATE["screenshots"].pop(rid, None)
+            STATE["deleted_screenshots"] = STATE.get("deleted_screenshots", 0) + 1
         self.send_response(204)
         self.end_headers()
 
@@ -390,6 +439,57 @@ def main() -> int:
     check("exactly one submission ended up submitted:true", len(submitted) == 1)
     check("that submission has the version attached as an item",
           bool(submitted) and VERSION_ID in submitted[0]["items"])
+
+    print("\nApple refuses the version -- diagnose it, and leave nothing behind:")
+    # Apple's own error says only "not in valid state", so the run has to ask
+    # the API which console-only requirements are unmet. Half are set here and
+    # half are not, so a diagnosis that just prints the whole checklist fails.
+    STATE["reject_review_item"] = True
+    STATE["price_schedule"] = None                             # never set
+    STATE["data_usages"] = []                                  # unanswered
+    STATE["review_detail"]["attributes"]["contactPhone"] = ""   # half filled
+    STATE["build_encryption"] = None                           # unanswered
+    before = len(STATE["submissions"])
+    try:
+        asc_publish.submit_for_review(ASC_APP_ID, None)
+        check("raises when Apple refuses the version", False)
+        msg = ""
+    except asc_publish.ASCError as exc:
+        msg = str(exc)
+        check("raises when Apple refuses the version", True)
+    check("reports Pricing as unmet", "!!  Pricing" in msg, msg)
+    check("reports the App Privacy questionnaire as unmet", "!!  App Privacy" in msg, msg)
+    check("names the contact field that is actually blank", "contactPhone" in msg, msg)
+    check("reports export compliance as unmet", "!!  Export compliance" in msg, msg)
+    check("does NOT flag the age rating, which is set -- the diagnosis has to "
+          "distinguish, not list the whole checklist", "!!  Age rating" not in msg, msg)
+    check("leaves no open submission behind to block the retry",
+          len(STATE["submissions"]) == before,
+          f"{before} before, {len(STATE['submissions'])} after")
+
+    print("\na probe whose endpoint 404s must not accuse the app:")
+    # These probe URLs are not exercised anywhere else, so one of them being
+    # wrong is a live risk. A wrong URL must degrade to "I could not check",
+    # never to "this requirement is unmet" -- otherwise the report sends you
+    # to fix something in the console that was never broken.
+    STATE["age_rating"] = "404"
+    try:
+        asc_publish.submit_for_review(ASC_APP_ID, None)
+        msg = ""
+    except asc_publish.ASCError as exc:
+        msg = str(exc)
+    check("a 404 reports 'could not check', not 'unmet'",
+          "?  Age rating" in msg and "!!  Age rating" not in msg, msg)
+    STATE["age_rating"] = {"id": "ar1"}
+
+    print("\na stale open submission from an earlier failed run:")
+    STATE["reject_review_item"] = False
+    stale = new_id()
+    STATE["submissions"][stale] = {"attributes": {"submitted": False}, "items": []}
+    asc_publish.submit_for_review(ASC_APP_ID, None)
+    check("is cleared instead of blocking a new one -- Apple allows only one "
+          "open submission per app", stale not in STATE["submissions"],
+          str(sorted(STATE["submissions"])))
 
     print("\na first version rejects whatsNew; the rest of the listing still lands:")
     STATE["reject_whats_new"] = True
