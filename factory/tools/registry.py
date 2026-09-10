@@ -130,7 +130,23 @@ def env_ios(app: dict, defaults: dict, slug: str, slug_upper: str) -> dict:
         "CURRENT_PROJECT_VERSION": str(version.get("build") or ""),
         "FACTORY_MIN_IOS": str(app.get("min_ios") or ios_defaults["min_ios"]),
         "ARTIFACT_IPA": f"{slug}-release-ipa",
+        # What the spec says the app runs on, so CI can skip work for a device
+        # the app does not ship: an iPhone-only app has no iPad layout to
+        # capture and Apple wants no iPad screenshots for it.
+        "APP_DEVICES": ",".join(spec_devices(app)),
     }
+
+
+def spec_devices(app: dict) -> list[str]:
+    """technical.devices from the app's spec, or [] when there is no spec yet."""
+    path = os.path.join(ROOT, app.get("spec") or "")
+    if not app.get("spec") or not os.path.isfile(path):
+        return []
+    try:
+        with open(path, encoding="utf-8") as fh:
+            return list((json.load(fh).get("technical") or {}).get("devices") or [])
+    except (json.JSONDecodeError, OSError):
+        return []
 
 
 def cmd_env(slug: str) -> None:
