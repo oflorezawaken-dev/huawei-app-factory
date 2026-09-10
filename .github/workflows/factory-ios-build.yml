@@ -109,7 +109,12 @@ jobs:
           available="$(xcrun simctl list devices available)"
           pick() {
             local pattern="$1" label="$2" line udid
-            line="$(printf '%s\n' "$available" | grep -m1 -E "$pattern")"
+            # LAST match, not the first: simctl groups devices by runtime in
+            # ascending order, so the first "iPhone 17 Pro Max" is the one on the
+            # OLDEST installed runtime. Pinning to that is what booted a device
+            # that never came up (bootstatus ended Status=4294967295) -- picking
+            # by name had left the choice to xcodebuild, which took a newer one.
+            line="$(printf '%s\n' "$available" | grep -E "$pattern" | tail -1)"
             [[ -n "$line" ]] || { echo "::error::no $label simulator available"; return 1; }
             udid="$(printf '%s' "$line" | sed -E 's/.*\(([0-9A-Fa-f-]{36})\).*/\1/')"
             [[ "$udid" =~ ^[0-9A-Fa-f-]{36}$ ]] || {
@@ -131,15 +136,13 @@ jobs:
       - name: Unit tests
         run: |
           set -euo pipefail
-          # Wait for the device to finish booting HERE, in the shell, rather than
-          # letting xcodebuild start the run against a half-booted simulator.
-          # XCUIApplication.launch() has a fixed timeout with no public knob, and
-          # a cold device spends it on springboard and services coming up: the
-          # screenshot test failed with "Timed out while launching application
-          # via Xcode" for exactly that reason. Measured locally, a cold device
-          # costs ~17s more than a warm one (56s vs 39s), and a CI runner is
-          # slower still -- enough to cross the launch timeout.
-          xcrun simctl bootstatus "$UNIT_SIMULATOR" -b
+          # Boot HERE, in the shell, rather than letting xcodebuild start against
+          # a half-booted simulator: XCUIApplication.launch() has a fixed timeout
+          # with no public knob, and a cold device spends it on springboard and
+          # services coming up -- that is the "Timed out while launching
+          # application via Xcode" failure. Measured locally, a cold device costs
+          # ~17s more than a warm one (56s vs 39s), and a CI runner is slower.
+          "$GITHUB_WORKSPACE/factory/tools/boot_simulator.sh" "$UNIT_SIMULATOR"
           cd "$APP_PATH"
           xcodebuild test -project "$(find . -maxdepth 1 -name '*.xcodeproj')" -scheme "$APP_SCHEME" \
             -destination "platform=iOS Simulator,id=$UNIT_SIMULATOR" \
@@ -148,7 +151,7 @@ jobs:
       - name: Screenshot capture
         run: |
           set -euo pipefail
-          xcrun simctl bootstatus "$SHOTS_SIMULATOR" -b
+          "$GITHUB_WORKSPACE/factory/tools/boot_simulator.sh" "$SHOTS_SIMULATOR"
           cd "$APP_PATH"
           rm -rf shots.xcresult
           xcodebuild test -project "$(find . -maxdepth 1 -name '*.xcodeproj')" -scheme "${APP_SCHEME}Screenshots" \
@@ -158,7 +161,7 @@ jobs:
       - name: Screenshot capture (iPad 13-inch)
         run: |
           set -euo pipefail
-          xcrun simctl bootstatus "$IPAD_SIMULATOR" -b
+          "$GITHUB_WORKSPACE/factory/tools/boot_simulator.sh" "$IPAD_SIMULATOR"
           cd "$APP_PATH"
           rm -rf shots-ipad.xcresult
           xcodebuild test -project "$(find . -maxdepth 1 -name '*.xcodeproj')" -scheme "${APP_SCHEME}Screenshots" \
