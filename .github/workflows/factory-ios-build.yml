@@ -138,12 +138,19 @@ jobs:
           # `set -e`, and would write an empty UDID to the environment.
           unit="$(pick 'iPhone 1[6-9]( Pro)?( Max)?' 'iPhone 16/17-class')"
           shots="$(pick 'iPhone 1[6-9] Pro Max' 'iPhone Pro Max (6.9in)')"
-          ipad="$(pick 'iPad Pro 13-inch' '13-inch iPad')"
           {
             echo "UNIT_SIMULATOR=$unit"
             echo "SHOTS_SIMULATOR=$shots"
-            echo "IPAD_SIMULATOR=$ipad"
           } >> "$GITHUB_ENV"
+          # Only when the spec ships iPad. An iPhone-only app has no iPad layout
+          # to capture, Apple wants no iPad screenshots for it, and the gate no
+          # longer asks for them -- this step was the last place still assuming
+          # every app is universal.
+          if [[ "$APP_DEVICES" == *iPad* ]]; then
+            echo "IPAD_SIMULATOR=$(pick 'iPad Pro 13-inch' '13-inch iPad')" >> "$GITHUB_ENV"
+          else
+            echo "iPhone-only ($APP_DEVICES): skipping the iPad capture"
+          fi
 
       - name: Unit tests
         run: |
@@ -171,6 +178,7 @@ jobs:
             -resultBundlePath shots.xcresult CODE_SIGNING_ALLOWED=NO
 
       - name: Screenshot capture (iPad 13-inch)
+        if: contains(env.APP_DEVICES, 'iPad')
         run: |
           set -euo pipefail
           "$GITHUB_WORKSPACE/factory/tools/boot_simulator.sh" "$IPAD_SIMULATOR"
@@ -182,10 +190,13 @@ jobs:
 
       - name: Extract screenshots
         run: |
+          set -euo pipefail
           cd "$APP_PATH"
           mkdir -p screenshots-out screenshots-out-ipad
           xcrun xcresulttool export attachments --path shots.xcresult --output-path screenshots-out
-          xcrun xcresulttool export attachments --path shots-ipad.xcresult --output-path screenshots-out-ipad
+          if [[ -d shots-ipad.xcresult ]]; then
+            xcrun xcresulttool export attachments --path shots-ipad.xcresult --output-path screenshots-out-ipad
+          fi
 
       - uses: actions/upload-artifact@v4
         with:
