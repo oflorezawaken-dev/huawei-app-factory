@@ -79,11 +79,10 @@ def registry(**app_overrides) -> dict:
         "support_path": f"docs/{SLUG}/support",
         "status": "planned",
         "current_version": {"marketing_version": "1.0.0", "build": 1},
-        "admob": {
-            "app_id": "ca-app-pub-1111111111111111~2222222222",
-            "banner_unit_id": "ca-app-pub-1111111111111111/3333333333",
-            "interstitial_unit_id": "ca-app-pub-1111111111111111/4444444444",
-        },
+        # Empty here on purpose: factory rule 5 keeps ad unit IDs out of git, so
+        # the real values reach the gate through FACTORY_VARS the way the build
+        # gets them. run_gate supplies them unless a case overrides.
+        "admob": {"app_id": "", "banner_unit_id": "", "interstitial_unit_id": ""},
         "iap": {"remove_ads_product_id": PRODUCT_ID},
         "known_gaps": {},
     }
@@ -213,8 +212,15 @@ final class MonetisationTests: XCTestCase {
     write(os.path.join(root, "specifications", f"{SLUG}.json"), json.dumps(spec))
 
 
-def run_gate(root: str, strict: bool = True) -> tuple[int, dict[str, str], str]:
-    env = dict(os.environ, FACTORY_ROOT=root)
+FIXTURE_VARS = json.dumps({
+    "ADMOB_FIXTURE_APP_APP_ID": "ca-app-pub-1111111111111111~2222222222",
+    "ADMOB_FIXTURE_APP_BANNER_UNIT_ID": "ca-app-pub-1111111111111111/3333333333",
+    "ADMOB_FIXTURE_APP_INTERSTITIAL_UNIT_ID": "ca-app-pub-1111111111111111/4444444444",
+})
+
+
+def run_gate(root: str, strict: bool = True, factory_vars: str = FIXTURE_VARS) -> tuple[int, dict[str, str], str]:
+    env = dict(os.environ, FACTORY_ROOT=root, FACTORY_VARS=factory_vars)
     cmd = [sys.executable, CHECKER, SLUG] + (["--strict"] if strict else [])
     proc = subprocess.run(cmd, capture_output=True, text=True, env=env)
     statuses = dict((rule, status) for status, rule in
@@ -272,12 +278,12 @@ def main() -> int:
         shutil.rmtree(root, ignore_errors=True)
 
     # --- each break trips exactly its own rule ------------------------------
-    def broken(label: str, expect_rule: str, mutate) -> None:
+    def broken(label: str, expect_rule: str, mutate, factory_vars: str = FIXTURE_VARS) -> None:
         print(f"\n{label}:")
         root = tempfile.mkdtemp(prefix="factory-ios-")
         try:
             mutate(root)
-            code, statuses, out = run_gate(root)
+            code, statuses, out = run_gate(root, factory_vars=factory_vars)
             check(f"{expect_rule} is FAIL", statuses.get(expect_rule) == "FAIL",
                   f"got {statuses.get(expect_rule)}\n{out}")
             check("exit code 1", code == 1)
@@ -286,12 +292,14 @@ def main() -> int:
         finally:
             shutil.rmtree(root, ignore_errors=True)
 
+    TEST_ID_VARS = json.dumps({
+        "ADMOB_FIXTURE_APP_APP_ID": "ca-app-pub-3940256099942544~1458002511",
+        "ADMOB_FIXTURE_APP_BANNER_UNIT_ID": "ca-app-pub-3940256099942544/2934735716",
+        "ADMOB_FIXTURE_APP_INTERSTITIAL_UNIT_ID": "ca-app-pub-3940256099942544/4411468910",
+    })
+
     def with_test_admob_ids(root: str) -> None:
-        build_fixture(root, admob={
-            "app_id": "ca-app-pub-3940256099942544~1458002511",
-            "banner_unit_id": "ca-app-pub-3940256099942544/2934735716",
-            "interstitial_unit_id": "ca-app-pub-3940256099942544/4411468910",
-        })
+        build_fixture(root)
 
     def with_alpha_icon(root: str) -> None:
         build_fixture(root)
@@ -340,7 +348,8 @@ def main() -> int:
         path = os.path.join(root, "apps-ios", SLUG, "project.yml")
         write(path, open(path, encoding="utf-8").read() + "\n  # FirebaseAnalytics\n")
 
-    broken("Google's test ad unit IDs", "admob_unit_ids", with_test_admob_ids)
+    broken("Google's test ad unit IDs", "admob_unit_ids", with_test_admob_ids,
+           factory_vars=TEST_ID_VARS)
     broken("icon with an alpha channel", "icon", with_alpha_icon)
     broken("vague permission string", "usage_descriptions", with_vague_permission)
     broken("fatalError stub", "no_stubs", with_stub)
@@ -350,16 +359,28 @@ def main() -> int:
     broken("subtitle over 30 characters", "listing", with_long_subtitle)
     broken("analytics SDK in the project", "forbidden_deps", with_firebase)
 
+    def with_committed_ad_ids(root: str) -> None:
+        build_fixture(root, admob={
+            "app_id": "ca-app-pub-1111111111111111~2222222222",
+            "banner_unit_id": "ca-app-pub-1111111111111111/3333333333",
+            "interstitial_unit_id": "ca-app-pub-1111111111111111/4444444444",
+        })
+
+    # Factory rule 5. PriceJar shipped a whole release with its ad unit IDs in a
+    # public repo because the rule was written down and nothing checked it.
+    broken("production ad IDs committed to the registry", "ad_ids_not_in_git",
+           with_committed_ad_ids)
+
     # --- known_gaps excuse a failure unless --strict ------------------------
     print("\nknown_gaps excuses the gap without --strict:")
     root = tempfile.mkdtemp(prefix="factory-ios-")
     try:
-        build_fixture(root, admob={"app_id": "", "banner_unit_id": "", "interstitial_unit_id": ""},
-                      known_gaps={"admob_unit_ids": "AdMob console pending; step 6 of the flow."})
-        code, statuses, out = run_gate(root, strict=False)
+        build_fixture(root, known_gaps={"admob_unit_ids": "AdMob console pending; step 6 of the flow."})
+        # No variables yet either -- that is what "console pending" means now.
+        code, statuses, out = run_gate(root, strict=False, factory_vars="{}")
         check("admob_unit_ids is EXCUSED", statuses.get("admob_unit_ids") == "EXCUSED", out)
         check("exit code 0", code == 0)
-        code, statuses, _ = run_gate(root, strict=True)
+        code, statuses, _ = run_gate(root, strict=True, factory_vars="{}")
         check("--strict turns it into FAIL", statuses.get("admob_unit_ids") == "FAIL")
         check("exit code 1 under --strict", code == 1)
     finally:

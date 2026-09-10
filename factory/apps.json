@@ -235,9 +235,10 @@
         "status": "planned"
       },
       "admob": {
-        "app_id": "ca-app-pub-9018069817306473~9402543373",
-        "banner_unit_id": "ca-app-pub-9018069817306473/8752796364",
-        "interstitial_unit_id": "ca-app-pub-9018069817306473/5635678437"
+        "app_id": "",
+        "banner_unit_id": "",
+        "interstitial_unit_id": "",
+        "_note": "Set as GitHub Actions repository variables, not here: factory rule 5 keeps ad unit IDs out of git. ADMOB_<SLUG>_APP_ID / _BANNER_UNIT_ID / _INTERSTITIAL_UNIT_ID, slug upper-cased with - as _. Workflows pass them in as FACTORY_VARS. Left empty so a pull request, which cannot read variables, falls back to the template's Google test IDs -- which is exactly what the quality gate expects on a PR."
       },
       "iap": {
         "remove_ads_product_id": "com.proapps.pricejar.removeads"
@@ -251,7 +252,7 @@
       "platform": "ios",
       "path": "apps-ios/shift-slip",
       "bundle_id": "com.proapps.shiftslip",
-      "asc_app_id": "",
+      "asc_app_id": "6810790853",
       "sku": "shift-slip",
       "spec": "specifications/shift-slip.json",
       "store_dir": "apps-ios/shift-slip/store",
@@ -266,7 +267,8 @@
       "admob": {
         "app_id": "",
         "banner_unit_id": "",
-        "interstitial_unit_id": ""
+        "interstitial_unit_id": "",
+        "_note": "Set as GitHub Actions repository variables, not here: factory rule 5 keeps ad unit IDs out of git. ADMOB_<SLUG>_APP_ID / _BANNER_UNIT_ID / _INTERSTITIAL_UNIT_ID, slug upper-cased with - as _. Workflows pass them in as FACTORY_VARS. Left empty so a pull request, which cannot read variables, falls back to the template's Google test IDs -- which is exactly what the quality gate expects on a PR."
       },
       "iap": {
         "remove_ads_product_id": "com.proapps.shiftslip.removeads"
