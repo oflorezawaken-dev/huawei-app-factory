@@ -242,6 +242,35 @@
       },
       "known_gaps": {},
       "proposal": "proposals/2026-09-08-price-jar-ios.md"
+    },
+    {
+      "slug": "shift-slip",
+      "name": "ShiftSlip",
+      "platform": "ios",
+      "path": "apps-ios/shift-slip",
+      "bundle_id": "com.proapps.shiftslip",
+      "asc_app_id": "",
+      "sku": "shift-slip",
+      "spec": "specifications/shift-slip.json",
+      "store_dir": "apps-ios/shift-slip/store",
+      "privacy_path": "docs/shift-slip/privacy",
+      "support_path": "docs/shift-slip/support",
+      "status": "planned",
+      "current_version": {
+        "marketing_version": "1.0.0",
+        "build": 1,
+        "status": "planned"
+      },
+      "admob": {
+        "app_id": "",
+        "banner_unit_id": "",
+        "interstitial_unit_id": ""
+      },
+      "iap": {
+        "remove_ads_product_id": "com.proapps.shiftslip.removeads"
+      },
+      "known_gaps": {},
+      "proposal": "proposals/2026-09-09-shift-slip-ios.md"
     }
   ]
 }

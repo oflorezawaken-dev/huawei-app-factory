@@ -1,0 +1,646 @@
+{
+  "spec_version": "1.0.0",
+  "app": {
+    "name": "ShiftSlip",
+    "bundle_id": "com.proapps.shiftslip",
+    "sku": "shift-slip",
+    "marketing_version": "1.0.0",
+    "build": 1,
+    "category_primary": "Finance",
+    "category_secondary": "Productivity",
+    "description": "ShiftSlip is the end-of-shift notebook for people paid in tips. After a shift you record four things - hours, cash tips, charge tips and what you tipped out - and ShiftSlip tells you what that shift really paid you per hour once the tip-out came off. Over a week it shows which shifts are worth picking up; over a month it produces the daily tip record IRS Publication 531 asks tipped employees to keep, in the fields the publication names, exportable as CSV or a printable PDF for the employer report or a tax preparer. Multiple jobs, four tip-out rule types, four pay-period cycles, and a split between voluntary tips and service charges. Everything is stored on the iPhone in SwiftData: no account, no sign-in, no cloud, no server, and it works in the back of house with no signal. Free with an AdMob banner on the review screens and a one-time purchase to remove it; no ad ever appears while a shift is being entered, split or reported. ShiftSlip keeps records and does arithmetic on them. It is not tax advice and computes no tax, deduction or refund figure.",
+    "target_audience": "Tipped and commission workers with variable income and often more than one income source: servers, bartenders, baristas, delivery drivers, hairdressers and barbers, nail techs, massage therapists, valets, caddies, hotel staff and tattoo artists. Skews toward people working doubles or two jobs who currently track this in the Notes app, a paper closeout slip or a spreadsheet, and who need the numbers twice - weekly, to decide whether a schedule is worth it, and annually, at filing time.",
+    "problem_solved": "A tipped worker cannot tell what a shift actually paid, because the answer is hours against cash tips plus charge tips minus a tip-out that is itself a rule, and nobody does that arithmetic at 1am. The same numbers are also a record the IRS already requires them to keep daily and report to their employer monthly. The apps at scale either paywall the arithmetic, rent out ad removal by the month, or demand an email account for a notebook that never leaves the phone. ShiftSlip does the arithmetic for free, offline, with no account, and lays the result out in the fields Publication 531 names."
+  },
+  "product_strategy": {
+    "market_opportunity": "Demand in this category is measured, not hypothetical: ServerLife reports 750,000+ users and 65 million logged income entries at 4.0 stars over ~2,145 reviews, and Just the Tips holds 4.5 stars over 3,000+ ratings (both checked 2026-09-09). A federal change keeps the record salient through 2028 - the OBBB tip deduction covers tax years 2025-2028 and its final regulations name over 70 qualifying occupations - and it turns on a distinction (voluntary tips versus service charges and mandatory auto-gratuities) that no shipped app in the category tags. Publication 531 supplies the data model and a monthly deadline for free. Separately, a record 5.8 million workers were paid below minimum wage last year, and a worker who has logged their own hours and tips is the only person able to check that.",
+    "competitive_advantage": "Four things the incumbents cannot copy without giving up revenue. (1) The arithmetic is free: effective hourly after tip-out, tips per hour, period roll-ups and charts, all of which ServerLife charges $4.99/month for. (2) Export is free forever, in CSV and printable PDF, because it is also the backup story for an app with no cloud. (3) A tip-out rules engine with four rule types and named recipients - the feature TipSee removed and never restored. (4) The Daily Tip Record screen in Pub 531's exact fields, which no competitor ships. Plus: no account and no email wall (the closest competitor by rating makes you register to use a notebook), a one-time purchase against TipSee's $0.99 per month for the same ad removal, and a hard rule that no ad appears between the user and a recorded number - the exact failure that drove reviewers off both TipSee and ServerLife.",
+    "main_competitors": [
+      "ServerLife - Tip Tracker (MZBApps) - 4.0 stars, ~2,145 reviews, 750K+ users; free tier logs tips but hourly wage calculation, advanced graphs and data export are premium at $4.99/month; recent updates added ad pop-ups and split a single weekly/monthly/yearly view into one metric at a time",
+      "TipSee Tip Tracker (Webcoast Design) - 3.1 stars, 266 ratings; sells Remove Ads by the month at $0.99 alongside $4.99/month and $24.99/year; reviewers report ads firing on every keystroke inside the entry loop, and tip-out and hourly-pay tracking disappearing in an update",
+      "Just the Tips (Twin Oaks Technologies) - 4.5 stars, 3,000+ ratings; requires email registration to use a local notebook, discloses identifiers and device IDs for third-party advertising, and reviewers call out six years without a substantive update",
+      "TipKeepr - 2025 entrant, premium $5.39/month or $53.90/year; its own comparison page concedes the business dashboard is still coming soon",
+      "The 2025-26 entrant flood - TipManager, Tips45, Tip Tally Tracker, Waiter Pal, Waiter's Tip Tracker, Server44 - many, small, mostly months old; the strongest demand signal in the category and also the main guideline 4.3 risk"
+    ],
+    "estimated_development_complexity": 4,
+    "estimated_market_potential": 5,
+    "monetization_strategy": "Free app funded by Google AdMob: one adaptive anchored banner on the four tab-root review screens (Dashboard, Shift History, Reports, Jobs) and exactly one interstitial placement, on the shift summary after the shift has already been written to disk. A one-time non-consumable Remove Ads purchase (target tier ~$3.99) removes all advertising forever and unlocks nothing - no feature, no report, no export sits behind it. The purchase is an easy decision because this is a three-to-six-times-a-week app for its target user, opened at the end of a shift when patience is lowest, on screens where the number they came for sits directly above the banner; and the comparison is TipSee's $0.99 per month for the same ad removal and ServerLife's $4.99 per month for arithmetic ShiftSlip gives away."
+  },
+  "technical": {
+    "platform": "iOS",
+    "language": "Swift",
+    "ui": "SwiftUI",
+    "architecture": "MVVM with @Observable",
+    "persistence": "SwiftData",
+    "min_ios": "17.0",
+    "devices": [
+      "iPhone"
+    ],
+    "project_generator": "XcodeGen",
+    "offline_first": true
+  },
+  "features": [
+    {
+      "id": "F001",
+      "name": "Jobs",
+      "description": "User-defined income sources. A job has a name, a pay type (hourly, hourly plus tips, commission, tips only), a base rate, an optional employer and business name (Publication 531 asks for both on the record), a currency symbol and code, a pay-period cycle (weekly with a start weekday, biweekly with a start date, semimonthly, or monthly) and an optional default tip-out rule. An optional occupation label can be set on the job, because from 2026 employers report a Treasury Tipped Occupation Code in W-2 Box 14b and a worker checking their own W-2 needs to know which job it belongs to; ShiftSlip stores the label and does nothing else with it. Multiple jobs are a first-class case, not an edge case: doubles and second jobs are the target user. Deleting a job requires a confirmation naming how many shifts will be deleted with it.",
+      "priority": "P0",
+      "requires_internet": false,
+      "requires_permission": false,
+      "permission": ""
+    },
+    {
+      "id": "F002",
+      "name": "Shift entry in fifteen seconds",
+      "description": "The core loop and the screen the app is judged on. One screen, no modal chains: date (defaults to today), job (defaults to the last used), either start and end times or plain hours (whichever the user used last), cash tips, charge tips, noncash tip value, sales (optional, only if the job's tip-out rule needs it or the user wants tip percentage), and the tip-out. Number fields use the decimal keypad and accept both the locale's decimal separator and the other one. The tip-out field is pre-filled by the job's default rule and stays editable; tapping it opens the split screen (F003). Typical shift length and the last-used entry mode are remembered per job. The live readout at the bottom shows what the shift is paying so far. Saving writes to SwiftData first and only then navigates to the summary - an ad can never sit between the user and a recorded number.",
+      "priority": "P0",
+      "requires_internet": false,
+      "requires_permission": false,
+      "permission": ""
+    },
+    {
+      "id": "F003",
+      "name": "Tip-out rules engine",
+      "description": "Per-job rules resolving a tip-out four ways: a percentage of tips, a percentage of sales, a flat amount, or a manual figure the user types. A rule can be split across named recipients (bar, busser, host, food runner, or any name the user enters), each with its own rule type and value. Pure Swift, no I/O, exhaustively unit-tested; this and F005 are the parts that must never be wrong. All arithmetic uses Decimal, never Double or Float. Each recipient's share is rounded half-up to the currency's minor unit and the total tip-out is the sum of the rounded shares, so the figure on screen is the money actually handed out. Worked examples the tests must reproduce: with cash tips 60.00 and charge tips 180.00 (tips 240.00) and sales 1450.00 - bar at 5% of tips = 12.00; busser at 3% of tips = 7.20; support staff at 2.5% of sales = 36.25; food runner flat 10.00; a manual entry of 22.50 overrides the rule for that shift and is stored as manual. Percentages apply to gross voluntary tips before any other tip-out, never to a running remainder, and never to service charges unless the job's rule explicitly includes them.",
+      "priority": "P0",
+      "requires_internet": false,
+      "requires_permission": false,
+      "permission": ""
+    },
+    {
+      "id": "F004",
+      "name": "Qualified and non-qualified tip tagging",
+      "description": "Each shift separates voluntary cash and charge tips from service charges and mandatory auto-gratuities, in two columns that never mix. Noncash tip value (tickets, passes, goods) is a third field, kept because Publication 531 names it, shown on the daily tip record, and excluded from cash earnings and from effective hourly so those figures stay honest about money received. ShiftSlip totals the columns and labels them; it states plainly that it is producing records and not a deduction figure, and it never computes tax, a deduction amount, a refund or an eligibility determination. The distinction is stored so the user can hand a preparer two totals instead of one, which is the entire claim.",
+      "priority": "P0",
+      "requires_internet": false,
+      "requires_permission": false,
+      "permission": ""
+    },
+    {
+      "id": "F005",
+      "name": "What that shift really paid",
+      "description": "The earnings maths, pure Swift and Decimal throughout. Per shift: tips kept (cash + charge - tip-out), base pay (hours x base rate), total shift pay, effective hourly rate after tip-out, tips per hour, and tip percentage where sales were entered. Worked example the tests must reproduce: 5.5 hours at a 2.13 base rate, cash 60.00, charge 180.00, tip-out 19.20, sales 1450.00 gives tips kept 220.80, base pay 11.72, total 232.52, effective hourly 42.28, tips per hour 40.15, tip percentage 16.55%. Hours come from start and end times or from a typed figure; a shift crossing midnight (21:45 to 02:30 = 4.75 hours) belongs to the date it started, in every roll-up and on the daily tip record, and daylight-saving transitions are computed from the calendar, not by assuming 24-hour days. A zero-hour shift shows a dash for the hourly figures rather than dividing by zero. Roll-ups by day, week, pay period (all four cycles, each shift landing in exactly one window) and month use the same functions as the per-shift figures, so a total can never disagree with its parts.",
+      "priority": "P0",
+      "requires_internet": false,
+      "requires_permission": false,
+      "permission": ""
+    },
+    {
+      "id": "F006",
+      "name": "Daily tip record",
+      "description": "A chronological view in exactly the fields IRS Publication 531 (rev. 12/2024) tells the employee to write down each workday: the date, the employee's name if entered, the employer and business name from the job, cash tips received directly from customers or other employees, tips from credit and debit card charge customers paid by the employer, the value of noncash tips, and the amount of tips paid out through tip pools or tip splitting. Service charges and auto-gratuities are shown in their own column and clearly outside the tip fields. One line per date per job; a day with several shifts at one job sums into that day's line. The month's total sits at the foot, with a marker for the closing month reading that the report is due to the employer by the 10th of the following month - shown from the 1st to the 10th, naming the date. A footer states that ShiftSlip keeps records and gives no tax advice. No competitor ships this screen, and no ad is ever drawn on it.",
+      "priority": "P0",
+      "requires_internet": false,
+      "requires_permission": false,
+      "permission": ""
+    },
+    {
+      "id": "F007",
+      "name": "Reports and charts",
+      "description": "Swift Charts over the user's own shifts: earnings by week, by day of week and by job; best and worst shifts in a range; average effective hourly by day of week, which is the 'is Tuesday lunch worth it' question; and pay-period totals showing hours, base pay, tips kept and effective hourly against the hours-times-rate expectation the user can compare to their actual paycheque. Every figure derives from entered shifts. There are no benchmarks, no predictions, no external data and no comparison with other users. Each card has a not-enough-data state that says what is missing rather than drawing an empty axis.",
+      "priority": "P1",
+      "requires_internet": false,
+      "requires_permission": false,
+      "permission": ""
+    },
+    {
+      "id": "F008",
+      "name": "Minimum-wage check (informational)",
+      "description": "An optional flag on a pay period whose average hourly pay falls below a minimum wage the user types into Settings themselves. It is off until that figure is entered. The wording is 'worth asking about', it shows only the user's own arithmetic - hours, total pay, average hourly, and the figure they entered - and it names no state, cites no law, alleges nothing and suggests no action. No wage database is bundled: state minimums change, and shipping a stale table in an offline app would be worse than asking the user. If this reads at all like a legal claim during review preparation, it is cut; the effective-hourly number carries most of the value on its own.",
+      "priority": "P1",
+      "requires_internet": false,
+      "requires_permission": false,
+      "permission": ""
+    },
+    {
+      "id": "F009",
+      "name": "Free export, CSV and PDF",
+      "description": "Any date range exported through the system share sheet, free forever and behind no purchase, because a tax filer cannot be held hostage over their own records and because with no cloud sync in V1 the export is also the backup story. CSV is RFC 4180, UTF-8 with a BOM so spreadsheets open it correctly, ISO 8601 dates, a period as the decimal separator regardless of locale, one row per shift with date, job, employer, business name, hours, base rate, base pay, cash tips, charge tips, noncash tips, service charges and auto-gratuities, tip-out total, each named recipient's share, tips kept, total pay, effective hourly, sales, and a sample-data flag. The PDF is a printable rendering of the daily tip record for the same range, laid out in Publication 531's fields with the monthly totals and the 'records, not tax advice' footer. Settings offers a monthly nudge to export - a static reminder in the app, not a notification, since V1 requests no notification permission.",
+      "priority": "P0",
+      "requires_internet": false,
+      "requires_permission": false,
+      "permission": ""
+    },
+    {
+      "id": "F010",
+      "name": "Closeout photo",
+      "description": "An optional photo of the paper closeout slip attached to a shift, chosen with PhotosPicker, which needs no photo-library permission and gives the app access to nothing but the picked image. The image is stored in the app's own container, shown on the shift detail, and never uploaded. Deleting the shift deletes the photo. There is no camera capture and no receipt OCR in V1.",
+      "priority": "P1",
+      "requires_internet": false,
+      "requires_permission": false,
+      "permission": ""
+    },
+    {
+      "id": "F011",
+      "name": "Sample data on first run",
+      "description": "First launch offers two example jobs and three weeks of shifts so the app is a populated tool in ten seconds instead of four empty tabs - which is also what an App Store reviewer sees. The offer can be declined. Sample rows are flagged in the model and badged 'Sample' wherever they appear; while any sample row exists, the Dashboard and Reports carry a persistent notice saying so, and the CSV export marks each row's sample flag in its own column, so no total is ever silently inflated by demo data. A single 'Remove sample data' action in Settings deletes exactly those rows and never touches a user-entered one.",
+      "priority": "P0",
+      "requires_internet": false,
+      "requires_permission": false,
+      "permission": ""
+    },
+    {
+      "id": "F012",
+      "name": "Remove Ads purchase",
+      "description": "A StoreKit 2 non-consumable, com.proapps.shiftslip.removeads, that permanently removes the banner and the interstitial. Entitlement is read from Transaction.currentEntitlements at launch and observed through Transaction.updates, so it survives reinstall without an account. Restore Purchases is present in Settings and on the purchase sheet. The purchase unlocks no feature and hides no content - export, reports, the daily tip record and the tip-out engine are free with or without it. Failure and cancellation are reported plainly and never leave the UI in a bought-but-not-applied state.",
+      "priority": "P0",
+      "requires_internet": false,
+      "requires_permission": false,
+      "permission": ""
+    },
+    {
+      "id": "F013",
+      "name": "Advertising",
+      "description": "Google AdMob through the GoogleMobileAds Swift package. One adaptive anchored banner, inset above the tab bar inside the safe area so it can never cover navigation, on the Dashboard, Shift History, Reports and Jobs screens only, collapsing to nothing when Remove Ads is owned. One interstitial placement, on the shift summary after the shift has already been written to disk, capped at one per app session, never within four minutes of another ad, never on a cold start, and never until the user has saved at least three shifts. Unit IDs and the AdMob app ID come from Config/AdMob.xcconfig, whose values CI overrides from the registry at build time; GADApplicationIdentifier in Info.plist is $(ADMOB_APP_ID) and no ID is ever a literal in tracked source. AdMob is the only component in the app that touches the network, and it never receives shift, tip or earnings data.",
+      "priority": "P0",
+      "requires_internet": true,
+      "requires_permission": false,
+      "permission": ""
+    },
+    {
+      "id": "F014",
+      "name": "Settings",
+      "description": "Employee name for the record (optional, local only), currency symbol and code defaulting from the device locale with no conversion between currencies, the user's own minimum-wage figure for F008 (blank by default), first day of the week, default entry mode, Remove Ads and Restore Purchases, export CSV and PDF, the monthly export reminder toggle, remove sample data, delete all data behind a typed confirmation, a plain-language statement of what leaves the device and what does not, an explanation of why ads exist, links to the privacy policy and support pages, a 'records, not tax advice' statement, and the version and build.",
+      "priority": "P0",
+      "requires_internet": false,
+      "requires_permission": false,
+      "permission": ""
+    },
+    {
+      "id": "F015",
+      "name": "Accessibility and localisation",
+      "description": "Light and dark appearance, Dynamic Type up to the accessibility sizes, VoiceOver labels and hints on every control including chart summaries and the daily tip record table, a minimum 44x44 point tap target on the entry form, and an accessibility identifier on every control from the first commit because the screenshot UI test addresses controls by identifier and never by coordinates. Nine languages in a Localizable.xcstrings catalogue, with a mirrored right-to-left layout for Arabic and locale-correct number, currency, time and date formatting. Currency and hour figures are set in a monospaced-digit font so columns line up.",
+      "priority": "P0",
+      "requires_internet": false,
+      "requires_permission": false,
+      "permission": ""
+    }
+  ],
+  "screens": [
+    {
+      "id": "S001",
+      "name": "Dashboard",
+      "purpose": "The home tab: this week and this pay period at a glance, and the one button that starts the whole loop.",
+      "components": [
+        "This week card: hours, tips kept, total pay, effective hourly",
+        "Current pay period card with the cycle name and its date window",
+        "Last shift row with its effective hourly",
+        "Log a shift button, prominent and reachable one-handed",
+        "Sample data notice while sample rows exist",
+        "Monthly export nudge for the closing month",
+        "Settings toolbar button",
+        "Empty state offering sample data or a first job",
+        "AdMob adaptive anchored banner above the tab bar",
+        "Tab bar"
+      ],
+      "navigation_to": [
+        "S002",
+        "S005",
+        "S006",
+        "S011"
+      ]
+    },
+    {
+      "id": "S002",
+      "name": "Log Shift",
+      "purpose": "The fifteen-second entry form; the screen the whole app is judged on.",
+      "components": [
+        "Date picker defaulting to today",
+        "Job picker pre-filled with the last job used",
+        "Hours control: start and end times, or a plain hours field, in whichever mode the job was last entered",
+        "Cash tips field with decimal keypad, focused on open",
+        "Charge tips field",
+        "Noncash tip value field",
+        "Service charges and auto-gratuities field, labelled as not voluntary tips",
+        "Sales field, shown when the job's tip-out rule needs it or the user opts in",
+        "Tip-out field pre-filled from the job's rule, tapping opens the split screen",
+        "Optional closeout photo (PhotosPicker, no permission prompt)",
+        "Live readout of tips kept and effective hourly so far",
+        "Save button, which writes to disk before navigating",
+        "No advertising of any kind"
+      ],
+      "navigation_to": [
+        "S003",
+        "S004"
+      ]
+    },
+    {
+      "id": "S003",
+      "name": "Tip-Out Split",
+      "purpose": "Show and adjust how the tip-out was resolved, recipient by recipient.",
+      "components": [
+        "Recipient rows with name, rule type, rule value and resolved amount",
+        "Rule type picker per recipient: percent of tips, percent of sales, flat, manual",
+        "Add and remove recipient",
+        "Total tip-out equal to the sum of the displayed shares",
+        "Save as this job's default rule toggle",
+        "Explanation of what the percentages were applied to",
+        "No advertising of any kind"
+      ],
+      "navigation_to": [
+        "S002"
+      ]
+    },
+    {
+      "id": "S004",
+      "name": "Shift Summary",
+      "purpose": "Close the loop after the shift is already saved and answer what it really paid.",
+      "components": [
+        "Effective hourly after tip-out, in the largest type on the screen",
+        "Tips kept, base pay and total pay",
+        "Tips per hour and tip percentage where sales were entered",
+        "Comparison with the user's average for that job and that day of week",
+        "Edit shift and Done buttons",
+        "AdMob interstitial, only after the shift is written to disk, at most once per session, never within four minutes of another ad, never on cold start, and never before the third saved shift"
+      ],
+      "navigation_to": [
+        "S001",
+        "S005"
+      ]
+    },
+    {
+      "id": "S005",
+      "name": "Shift History",
+      "purpose": "Every shift, newest first, grouped the way the user gets paid.",
+      "components": [
+        "Grouping control: week, pay period or month",
+        "Section headers with hours, tips kept, total pay and effective hourly for the group",
+        "Shift rows with date, job, hours, tips kept and effective hourly",
+        "Job filter and date-range filter",
+        "Sample badges on sample rows",
+        "Swipe to edit or delete a shift",
+        "Open the daily tip record for the visible range",
+        "Empty state",
+        "AdMob adaptive anchored banner",
+        "Tab bar"
+      ],
+      "navigation_to": [
+        "S002",
+        "S004",
+        "S006"
+      ]
+    },
+    {
+      "id": "S006",
+      "name": "Daily Tip Record",
+      "purpose": "The statutory record: Publication 531's fields, day by day, ready to hand to an employer or a preparer.",
+      "components": [
+        "Date range control defaulting to the current month",
+        "One row per date per job: date, employer and business name, cash tips, charge tips, noncash tip value, tips paid out",
+        "Service charges and auto-gratuities in a separate column, outside the tip fields",
+        "Employee name from Settings when entered",
+        "Month total row",
+        "Due to your employer by the 10th marker for the closing month, shown from the 1st to the 10th and naming the date",
+        "Export this range button (CSV and PDF)",
+        "Footer: ShiftSlip keeps records and gives no tax advice",
+        "No advertising of any kind"
+      ],
+      "navigation_to": [
+        "S010"
+      ]
+    },
+    {
+      "id": "S007",
+      "name": "Reports",
+      "purpose": "Show which shifts are worth picking up and which are worth trading away.",
+      "components": [
+        "Earnings by week chart",
+        "Average effective hourly by day of week chart",
+        "Earnings by job chart when more than one job exists",
+        "Best and worst shift in the selected range",
+        "Pay-period totals with hours, base pay, tips kept, effective hourly and the hours-times-rate expectation",
+        "Informational minimum-wage flag, only when the user has entered a figure",
+        "Voluntary tips and service charges shown as two separate totals",
+        "Not-enough-data state per card",
+        "Sample data notice while sample rows exist",
+        "AdMob adaptive anchored banner",
+        "Tab bar"
+      ],
+      "navigation_to": [
+        "S005",
+        "S006",
+        "S008"
+      ]
+    },
+    {
+      "id": "S008",
+      "name": "Minimum-Wage Check",
+      "purpose": "Show the user their own arithmetic against the figure they typed, and nothing more.",
+      "components": [
+        "The pay period, its hours and its total pay",
+        "Average hourly for the period",
+        "The minimum wage the user entered in Settings, labelled as theirs",
+        "The difference, stated as arithmetic",
+        "Wording limited to 'worth asking about', with no state, no statute, no allegation and no suggested action",
+        "Link to edit the entered figure",
+        "No advertising of any kind"
+      ],
+      "navigation_to": [
+        "S007",
+        "S011"
+      ]
+    },
+    {
+      "id": "S009",
+      "name": "Jobs",
+      "purpose": "Manage income sources and their pay and tip-out rules.",
+      "components": [
+        "Job rows with name, pay type, base rate and shift count",
+        "Add job button",
+        "Add or edit job form: name, pay type, base rate, employer and business name, occupation label, currency, pay-period cycle and start date, default tip-out rule",
+        "Delete with a confirmation naming how many shifts go with it",
+        "Empty state",
+        "AdMob adaptive anchored banner on the list",
+        "Tab bar"
+      ],
+      "navigation_to": [
+        "S003",
+        "S005"
+      ]
+    },
+    {
+      "id": "S010",
+      "name": "Export",
+      "purpose": "Get the records out, in CSV for a spreadsheet and PDF for a person.",
+      "components": [
+        "Date range picker",
+        "Job selection",
+        "Format choice: CSV, PDF, or both",
+        "Preview of the row and date count being exported",
+        "Share sheet presentation",
+        "Statement that export is free and always will be",
+        "No advertising of any kind"
+      ],
+      "navigation_to": [
+        "S006"
+      ]
+    },
+    {
+      "id": "S011",
+      "name": "Settings",
+      "purpose": "The user's own defaults, the purchase, the data, and the honest explanation of what the app does.",
+      "components": [
+        "Employee name for the record, optional",
+        "Currency symbol and code picker",
+        "Minimum-wage figure, blank by default",
+        "First day of the week and default entry mode",
+        "Remove Ads row with price and owned state",
+        "Restore Purchases",
+        "Export CSV and PDF",
+        "Monthly export reminder toggle",
+        "Remove sample data",
+        "Delete all data with a typed confirmation",
+        "What stays on this iPhone explanation",
+        "Why you see ads explanation",
+        "Records, not tax advice statement",
+        "Privacy policy and support links",
+        "Version and build",
+        "No advertising of any kind"
+      ],
+      "navigation_to": [
+        "S001",
+        "S010"
+      ]
+    },
+    {
+      "id": "S012",
+      "name": "First Run",
+      "purpose": "Explain the app in three lines, take the one setting that matters, and offer the sample data.",
+      "components": [
+        "Three-line explanation: log a shift, see what it really paid, keep the record",
+        "Honest note that everything stays on this iPhone and there is no account",
+        "Currency confirmation prefilled from the device locale",
+        "Create your first job, or load sample data",
+        "Start empty button",
+        "No advertising and no tracking prompt of any kind"
+      ],
+      "navigation_to": [
+        "S001",
+        "S009"
+      ]
+    }
+  ],
+  "permissions": [
+    {
+      "key": "NSUserTrackingUsageDescription",
+      "usage_description": "Allow tracking so the ads that keep ShiftSlip free can be more relevant. Your shifts, tips, tip-outs and earnings never leave your iPhone either way.",
+      "requested_when": "Once, immediately after the user saves their first shift and the summary is on screen, so the prompt arrives from an app the user has already seen work. Never at launch, never during first run, and never while the entry form is open.",
+      "works_if_denied": "The whole app. Nothing is gated on the answer; ads simply become non-personalised, which lowers revenue and changes nothing the user sees except relevance."
+    }
+  ],
+  "integrations": {
+    "swift_packages": [
+      "GoogleMobileAds"
+    ],
+    "apple_frameworks": [
+      "SwiftUI",
+      "SwiftData",
+      "Charts",
+      "PhotosUI",
+      "PDFKit",
+      "StoreKit",
+      "AppTrackingTransparency",
+      "AdSupport",
+      "UniformTypeIdentifiers",
+      "Foundation"
+    ],
+    "analytics": false,
+    "crash_reporting": false,
+    "ads": true
+  },
+  "monetization": {
+    "enabled": true,
+    "provider": "Google AdMob",
+    "banner": true,
+    "interstitial": true,
+    "rewarded": false,
+    "remove_ads_iap": true,
+    "iap_product_id": "com.proapps.shiftslip.removeads",
+    "banner_screens": [
+      "S001 Dashboard",
+      "S005 Shift History",
+      "S007 Reports",
+      "S009 Jobs"
+    ],
+    "interstitial_moments": [
+      "S004 Shift Summary, shown only after the shift has already been written to disk and the summary is on screen; at most one per app session, never within four minutes of any other ad, never on a cold start, and never until the user has saved at least three shifts"
+    ],
+    "ads_never_on": [
+      "S002 Log Shift - the entry form, in any state; TipSee's reviewers were driven off by an ad arriving on every keystroke in exactly this place",
+      "S003 Tip-Out Split",
+      "S006 Daily Tip Record - the statutory record screen carries no advertising at all",
+      "S010 Export and the share flow",
+      "S008 Minimum-Wage Check",
+      "S012 First Run and onboarding",
+      "S011 Settings",
+      "The Remove Ads purchase and restore flow",
+      "Cold start, before any screen has been drawn",
+      "Any moment before a shift has been written to disk - the save always completes first",
+      "Anywhere at all once the Remove Ads purchase is owned"
+    ],
+    "att_requested_when": "Immediately after the first shift is saved, on the shift summary, so the user has already seen the app work before being asked. Never at launch, never during first run, never on the entry form, and never more than once."
+  },
+  "localization": {
+    "default_language": "en-US",
+    "supported_languages": [
+      "en-US",
+      "es-ES",
+      "pt-PT",
+      "fr-FR",
+      "de-DE",
+      "it",
+      "tr",
+      "ar-SA",
+      "zh-Hans"
+    ],
+    "string_catalog": "Localizable.xcstrings",
+    "rtl_languages": [
+      "ar-SA"
+    ]
+  },
+  "design": {
+    "theme": "Deep navy and brass - a work log at the end of a night shift, not a finance dashboard",
+    "style": "Plain SwiftUI with system materials and large numerals; money and hours are set in a monospaced-digit font so columns line up. The effective hourly figure is the largest thing on the summary because it is the answer the user opened the app for. Colour never carries meaning alone: the qualified and non-qualified tip columns, and the informational minimum-wage flag, each carry a word and a shape as well as a tint. Deliberately unlike PriceJar's green and amber shopping identity - different palette, different icon language, different screens, because a reviewer comparing two apps on one account must not see a reskin.",
+    "primary_color": "#12263F",
+    "secondary_color": "#C8963E",
+    "supports_light_mode": true,
+    "supports_dark_mode": true,
+    "supports_dynamic_type": true,
+    "accessibility_required": true
+  },
+  "privacy": {
+    "collects_personal_data": true,
+    "collects_sensitive_data": false,
+    "stores_data_locally": true,
+    "uploads_user_content": false,
+    "requires_privacy_policy": true,
+    "privacy_policy_url": "https://oflorezawaken-dev.github.io/huawei-app-factory/shift-slip/privacy/",
+    "support_url": "https://oflorezawaken-dev.github.io/huawei-app-factory/shift-slip/support/",
+    "privacy_manifest": {
+      "collected_data_types": [
+        {
+          "NSPrivacyCollectedDataType": "NSPrivacyCollectedDataTypeDeviceID",
+          "NSPrivacyCollectedDataTypeLinked": false,
+          "NSPrivacyCollectedDataTypeTracking": true,
+          "NSPrivacyCollectedDataTypePurposes": [
+            "NSPrivacyCollectedDataTypePurposeThirdPartyAdvertising"
+          ],
+          "why": "The AdMob SDK reads the advertising identifier when ATT is granted, and a vendor identifier otherwise."
+        },
+        {
+          "NSPrivacyCollectedDataType": "NSPrivacyCollectedDataTypeAdvertisingData",
+          "NSPrivacyCollectedDataTypeLinked": false,
+          "NSPrivacyCollectedDataTypeTracking": true,
+          "NSPrivacyCollectedDataTypePurposes": [
+            "NSPrivacyCollectedDataTypePurposeThirdPartyAdvertising"
+          ],
+          "why": "Ad impressions, clicks and the placement they occurred in are reported to AdMob."
+        },
+        {
+          "NSPrivacyCollectedDataType": "NSPrivacyCollectedDataTypeProductInteraction",
+          "NSPrivacyCollectedDataTypeLinked": false,
+          "NSPrivacyCollectedDataTypeTracking": true,
+          "NSPrivacyCollectedDataTypePurposes": [
+            "NSPrivacyCollectedDataTypePurposeThirdPartyAdvertising"
+          ],
+          "why": "AdMob records interaction with the ad units it serves. ShiftSlip itself sends no product-interaction data anywhere."
+        }
+      ],
+      "accessed_api_types": [
+        {
+          "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryUserDefaults",
+          "NSPrivacyAccessedAPITypeReasons": [
+            "CA92.1"
+          ],
+          "why": "Settings, the first-run flag, the ad frequency-cap timestamps, the saved-shift counter that gates the interstitial and the cached Remove Ads entitlement are stored in this app's own UserDefaults and read back by the same app."
+        },
+        {
+          "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryFileTimestamp",
+          "NSPrivacyAccessedAPITypeReasons": [
+            "C617.1"
+          ],
+          "why": "The CSV and PDF export writes a file into the app container and shows its creation timestamp to the user in the share sheet."
+        }
+      ],
+      "tracking": true,
+      "tracking_domains": [
+        "googleads.g.doubleclick.net",
+        "pagead2.googlesyndication.com"
+      ],
+      "note": "Only the AdMob SDK reaches the network. Jobs, shifts, tips, tip-out recipients, closeout photos and reports live in the app's SwiftData store and are never uploaded; no earnings figure is ever passed to an ad request. The final tracking-domain list must match what the shipped GoogleMobileAds version declares in its own privacy manifest; verify against the SDK bundle at build time rather than copying this list blindly."
+    },
+    "app_privacy_answers": {
+      "data_used_to_track_you": [
+        "Identifiers > Device ID - YES. Tick 'Used to Track You'. Reason: the AdMob SDK reads the IDFA when ATT is granted and uses it for cross-app advertising.",
+        "Usage Data > Advertising Data - YES. Tick 'Used to Track You'. Reason: ad impressions and clicks are reported to Google and used to select future ads.",
+        "Usage Data > Product Interaction - YES. Tick 'Used to Track You'. Reason: AdMob records interaction with its own ad units."
+      ],
+      "data_linked_to_you": [
+        "Nothing. Leave every 'Linked to You' box unticked. ShiftSlip has no account, no sign-in, no email capture and no server, so no data point can be tied to an identity."
+      ],
+      "data_not_linked_to_you": [
+        "Identifiers > Device ID - tick, purpose 'Third-Party Advertising'.",
+        "Usage Data > Advertising Data - tick, purpose 'Third-Party Advertising'.",
+        "Usage Data > Product Interaction - tick, purpose 'Third-Party Advertising'.",
+        "Do NOT tick Financial Info. This is the answer to get right for a Finance-category app: the hours, tips, tip-outs and earnings the user records are written only to this iPhone's SwiftData store, are never transmitted to the developer or to any third party, and are therefore not collected in Apple's sense. Ticking it would contradict PrivacyInfo.xcprivacy and the privacy policy page.",
+        "Do NOT tick Contact Info. The optional employee name, employer name and business name are typed by the user for their own record and stay on the device.",
+        "Do NOT tick Health & Fitness, Location, Sensitive Info, Contacts, Search History, Browsing History, Diagnostics or Other Data.",
+        "User Content: not collected. The optional closeout-slip photo is picked with PhotosPicker, stored in the app's own container and never uploaded.",
+        "Purchases: not collected. The Remove Ads purchase is processed by Apple; the app receives only an entitlement and stores no purchase data."
+      ],
+      "console_checklist": [
+        "1. App Store Connect > App Privacy > Get Started (or Edit).",
+        "2. Answer 'Do you or your third-party partners collect data from this app?' with YES - the AdMob SDK does, even though ShiftSlip itself does not.",
+        "3. Under Identifiers, tick 'Device ID'. Purpose: Third-Party Advertising. Linked to the user: NO. Used for tracking: YES.",
+        "4. Under Usage Data, tick 'Advertising Data' and 'Product Interaction'. Purpose for both: Third-Party Advertising. Linked to the user: NO. Used for tracking: YES.",
+        "5. Tick nothing else. In particular do not tick Financial Info for the recorded tips and earnings, and do not tick Contact Info for the employee or employer name.",
+        "6. Confirm the Privacy Policy URL is https://oflorezawaken-dev.github.io/huawei-app-factory/shift-slip/privacy/ and the Support URL is https://oflorezawaken-dev.github.io/huawei-app-factory/shift-slip/support/.",
+        "7. Publish the answers, then re-read them against PrivacyInfo.xcprivacy and the privacy policy page. All three must say the same thing; a contradiction is a rejection.",
+        "8. Re-check this questionnaire before every release that adds an SDK, a permission or a data-writing feature - and before any release that adds sync, which would change every answer here."
+      ]
+    }
+  },
+  "qa": {
+    "unit_tests_required": true,
+    "screenshot_ui_test_required": true,
+    "release_build_required": true,
+    "ipa_required": true,
+    "test_permissions": true,
+    "test_localization": true,
+    "test_dark_mode": true,
+    "test_ads": true,
+    "test_offline_behavior": true,
+    "test_accessibility": true,
+    "acceptance_criteria": [
+      "Logging a shift for the last-used job takes at most 3 taps plus the typed numbers, counted from the Dashboard, and a UI test that types hours, cash tips, charge tips and tip-out completes the save in under 15 seconds on an iPhone 12; the test asserts both the tap count and the elapsed time.",
+      "The entry form is a single screen: a UI test asserts that saving a shift presents at most one sheet (the optional tip-out split) and that job, date, entry mode and typical shift length are pre-filled from the last shift saved for that job.",
+      "The tip-out engine is exact: at least 40 unit tests across the four rule types, single and multiple recipients, reproducing the worked examples in F003 (5% of 240.00 = 12.00, 3% of 240.00 = 7.20, 2.5% of 1450.00 = 36.25, flat 10.00, manual 22.50) to the currency's minor unit. All arithmetic uses Decimal; a test fails the build if Double or Float appears in the tip-out, earnings or pay-period modules.",
+      "Rounding never leaks cents: each recipient's share is rounded half-up to the minor unit and the displayed total tip-out equals the sum of the displayed shares in 100% of a 1,000-case generated fixture.",
+      "Percentages apply to gross voluntary tips, never to a running remainder and never to service charges unless the rule includes them; a unit test with four recipients on one shift proves each share is computed from the same base.",
+      "Effective hourly matches the worked example in F005 exactly: 5.5 hours at 2.13 with 60.00 cash, 180.00 charge, 19.20 tip-out and 1450.00 sales gives tips kept 220.80, base pay 11.72, total 232.52, effective hourly 42.28, tips per hour 40.15, tip percentage 16.55%.",
+      "A zero-hour shift shows a dash for effective hourly and tips per hour instead of dividing by zero, and a shift with zero tips still reports base pay; both unit-tested.",
+      "Overnight shifts count correctly and stay on their start date: 21:45 to 02:30 is 4.75 hours and appears on the start date in every roll-up and on the daily tip record. Unit tests cover a spring-forward night (23 clock hours) and a fall-back night (25 clock hours) and assert the elapsed hours are computed from the calendar, not by assuming 24-hour days.",
+      "Split shifts sum correctly: a date with 3 shifts across 2 jobs produces one daily tip record line per job and a correct day total, unit-tested.",
+      "Pay-period assignment loses nothing and double-counts nothing: over a 2-year, 400-shift fixture spanning a leap day, every shift lands in exactly one window for each of the four cycles (weekly from a chosen weekday, biweekly from a chosen start date, semimonthly 1-15 and 16-end, monthly), and the sum of the period totals equals the fixture total for all four.",
+      "Number entry accepts both ',' and '.' as the decimal separator and produces the same Decimal in en-US, de-DE, fr-FR, tr and ar-SA; unit tests cover all five locales for tips, hours, rates and sales.",
+      "The Daily Tip Record shows exactly Publication 531's fields and no others in its tip columns - date, employee name when entered, employer and business name, cash tips, charge tips, noncash tip value, tips paid out - with service charges and auto-gratuities in a separate column; a test asserts the column set field by field, and that noncash tips are excluded from cash earnings and from effective hourly.",
+      "The 'due to your employer by the 10th' marker appears for the closing month only between the 1st and the 10th inclusive and names the date; unit-tested with a fake clock on the 1st, the 10th and the 11th.",
+      "Voluntary tips and service charges total in two columns that never mix, in the app and in both exports; and ShiftSlip displays no tax, deduction, refund or eligibility figure anywhere. A test scans the string catalogue in all 9 languages and fails on 'IRS-approved', 'IRS-certified', 'official IRS', 'no tax on tips', 'tax free', 'your deduction', 'deduct up to', 'estimated refund', 'maximise your refund', 'maximize your refund', 'tax advice' other than in the 'not tax advice' disclaimer, 'we file', and 'guaranteed'.",
+      "The minimum-wage check stays informational: it is invisible until the user enters a figure in Settings, it shows only their own hours, pay, average hourly and entered figure, and a test scans the string catalogue in all 9 languages for 'illegal', 'wage theft', 'you are owed', 'violation', 'lawsuit' and 'claim' and fails on any hit.",
+      "No advertising object exists on the Log Shift form, the Tip-Out Split, the Daily Tip Record, Export, the Minimum-Wage Check, First Run, Settings or the purchase flow. A UI test walks all eight and asserts the ad container is absent, not merely hidden.",
+      "The interstitial appears at most once per app session, never within 240 seconds of any other ad, never on a cold start, and never before the third saved shift; unit tests drive the frequency capper with a fake clock across the 239 s and 241 s boundaries and with saved-shift counts of 2 and 3.",
+      "The shift is durable before any ad: a test that kills the app immediately after the save button is tapped finds the shift in the store on relaunch, and the interstitial is never presented before the write completes.",
+      "The ATT prompt is requested exactly once, only after the first shift is saved, and never during first run; a UI test asserts no prompt appears in the first 60 seconds of a fresh install that saves nothing.",
+      "Purchasing Remove Ads hides the banner within 1 second without a relaunch, and the app relaunches ad-free; a StoreKit test-configuration test covers purchase, relaunch and Restore Purchases, and asserts that export, reports and the daily tip record are identical before and after the purchase.",
+      "In airplane mode every feature except ad loading works with no error surfaced to the user: creating jobs, logging shifts, the tip-out split, the summary, history, the daily tip record, reports, and both exports. A UI test runs that whole sequence offline.",
+      "Export is complete and free: a CSV written for a 2-job, 3-month, 120-shift fixture parses back with an RFC 4180 parser to identical values (commas, quotes and non-ASCII job names in the fixture), and the PDF for the same range contains every date in the range and the monthly total, asserted by extracting its text. No export path checks the Remove Ads entitlement.",
+      "First run loads exactly 2 jobs and 21 days of shifts when accepted, every generated row flagged as sample and badged in the UI, with the sample notice visible on Dashboard and Reports and a sample column in the CSV; 'Remove sample data' deletes exactly those rows in one tap and a test asserts user-entered rows survive it.",
+      "Every interactive control has an accessibility identifier and a VoiceOver label; a UI test enumerates the controls on all 12 screens and fails on any control missing either, and the entry form's controls are all at least 44x44 points.",
+      "At the accessibility XXL Dynamic Type size, the four tab roots and the Log Shift form show no truncated or clipped text and no overlapping controls, verified by screenshot tests in light and dark appearance.",
+      "The string catalogue has a translation for 100% of keys in all 9 languages, no string is hardcoded in a view, and the Arabic layout mirrors; a test fails on any missing or untranslated key.",
+      "Cold start reaches an interactive Dashboard in under 2 seconds on an iPhone SE (2nd generation) with 2 jobs and 1,500 shifts, and scrolling Shift History over that data stays at 60 fps.",
+      "Line coverage of the tip-out, earnings and pay-period modules is at least 90%, and the whole unit-test suite runs in under 60 seconds.",
+      "No AdMob unit ID, app ID or IAP product ID appears as a literal in tracked Swift source; all come from Config/AdMob.xcconfig, and a check fails the build if a 'ca-app-pub-' literal is found outside that file."
+    ]
+  }
+}
