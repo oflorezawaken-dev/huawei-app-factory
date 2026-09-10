@@ -92,9 +92,15 @@ def registry(**app_overrides) -> dict:
     return {"defaults": real["defaults"], "apps": [app]}
 
 
-def build_fixture(root: str, **app_overrides) -> None:
+def build_fixture(root: str, devices=None, **app_overrides) -> None:
     reg = registry(**app_overrides)
     ios = reg["defaults"]["ios"]
+    # A fixture that declares its devices must also be a project built for them,
+    # or device_family fails and every device-related assertion drowns in it.
+    family = {"iPhone": "1", "iPad": "2"}
+    device_family_setting = (
+        f"\n        TARGETED_DEVICE_FAMILY: \"{','.join(family[d] for d in devices if d in family)}\""
+        if devices else "")
     write(os.path.join(root, "factory", "apps.json"), json.dumps(reg, indent=2))
     app_dir = os.path.join(root, "apps-ios", SLUG)
 
@@ -115,7 +121,7 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: {BUNDLE_ID}
         MARKETING_VERSION: 1.0.0
-        CURRENT_PROJECT_VERSION: 1
+        CURRENT_PROJECT_VERSION: 1{device_family_setting}
     dependencies:
       - package: GoogleMobileAds
   FixtureTests:
@@ -186,7 +192,8 @@ final class MonetisationTests: XCTestCase {
     shots = os.path.join(app_dir, "store", "screenshots", "en")
     for i in range(1, 4):
         write_png(os.path.join(shots, f"{i:02d}.png"), 1320, 2868, alpha=False)
-        write_png(os.path.join(shots, f"ipad-{i:02d}.png"), 2064, 2752, alpha=False)
+        if devices is None or "iPad" in devices:
+            write_png(os.path.join(shots, f"ipad-{i:02d}.png"), 2064, 2752, alpha=False)
 
     write(os.path.join(app_dir, "store", "listing.json"), json.dumps({
         "languages": [{
@@ -200,7 +207,10 @@ final class MonetisationTests: XCTestCase {
 
     write(os.path.join(root, "docs", SLUG, "privacy", "index.html"), "<h1>Privacy</h1>")
     write(os.path.join(root, "docs", SLUG, "support", "index.html"), "<h1>Support</h1>")
-    write(os.path.join(root, "specifications", f"{SLUG}.json"), json.dumps({"slug": SLUG}))
+    spec = {"slug": SLUG}
+    if devices is not None:
+        spec["technical"] = {"devices": devices}
+    write(os.path.join(root, "specifications", f"{SLUG}.json"), json.dumps(spec))
 
 
 def run_gate(root: str, strict: bool = True) -> tuple[int, dict[str, str], str]:
@@ -230,6 +240,34 @@ def main() -> int:
         check("no FAILs", "FAIL" not in statuses.values(),
               ", ".join(f"{r}={s}" for r, s in statuses.items() if s == "FAIL"))
         check("every rule ran", len(statuses) >= 15, f"{len(statuses)} rules")
+    finally:
+        shutil.rmtree(root, ignore_errors=True)
+
+    # --- an iPhone-only app is not asked for iPad screenshots ---------------
+    # The registry always said the iPad set was "required whenever the app
+    # declares iPad support", but `required: true` was read unconditionally, so
+    # an iPhone-only app failed on screenshots it must not ship and the capture
+    # step cannot produce.
+    print("\niPhone-only spec, no iPad screenshots:")
+    root = tempfile.mkdtemp(prefix="factory-ios-")
+    try:
+        build_fixture(root, devices=["iPhone"])
+        code, statuses, out = run_gate(root)
+        check("screenshots passes without any iPad image", statuses.get("screenshots") == "PASS", out)
+        check("exit code 0", code == 0, out)
+    finally:
+        shutil.rmtree(root, ignore_errors=True)
+
+    print("\nspec declares iPad but ships no iPad screenshots:")
+    root = tempfile.mkdtemp(prefix="factory-ios-")
+    try:
+        build_fixture(root, devices=["iPhone", "iPad"])
+        for f in os.listdir(os.path.join(root, "apps-ios", SLUG, "store", "screenshots", "en")):
+            if f.startswith("ipad-"):
+                os.remove(os.path.join(root, "apps-ios", SLUG, "store", "screenshots", "en", f))
+        code, statuses, out = run_gate(root)
+        check("screenshots FAILs -- Apple requires the set for an iPad app",
+              statuses.get("screenshots") == "FAIL", out)
     finally:
         shutil.rmtree(root, ignore_errors=True)
 
