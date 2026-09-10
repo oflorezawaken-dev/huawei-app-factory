@@ -22,8 +22,7 @@ final class ScreenshotTests: XCTestCase {
 
     func testCaptureMainScreens() throws {
         // 1. Price Book, populated by the seeded sample data.
-        XCTAssertTrue(tabButton("Price Book").waitForExistence(timeout: 20))
-        tabButton("Price Book").tap()
+        tapTab("Price Book")
         XCTAssertTrue(app.buttons["priceBook.row.Bananas"].waitForExistence(timeout: 20))
         capture(named: "01-priceBook")
 
@@ -44,12 +43,21 @@ final class ScreenshotTests: XCTestCase {
         XCTAssertTrue(app.buttons["verdict.save"].waitForExistence(timeout: 20))
         capture(named: "03-verdict")
         app.buttons["verdict.save"].tap()
-        XCTAssertTrue(app.buttons["history.recordPrice"].waitForExistence(timeout: 20),
+        // Hittable, not merely existing. A view behind a presented sheet is still
+        // in the accessibility tree, so waitForExistence here returned true while
+        // both sheets were still up -- the assertion claimed to prove the sheets
+        // had dismissed and proved nothing of the sort. The test then tapped a
+        // tab that was covered, the tap was swallowed, and the failure surfaced
+        // 20s later at an unrelated assertion.
+        let backOnHistory = app.buttons["history.recordPrice"]
+        XCTAssertTrue(backOnHistory.waitForExistence(timeout: 20),
+                      "Item History never came back after saving")
+        XCTAssertTrue(backOnHistory.wait(for: \.isHittable, toEqual: true, timeout: 20),
                       "saving should dismiss both sheets back to Item History")
 
         // 4. Shopping List, with one item added from the price book. Switching
         // tabs works regardless of how deep Price Book's own navigation stack is.
-        tabButton("Shopping List").tap()
+        tapTab("Shopping List")
         XCTAssertTrue(app.buttons["shoppingList.addFromBook"].waitForExistence(timeout: 20))
         app.buttons["shoppingList.addFromBook"].tap()
         settle()
@@ -67,9 +75,24 @@ final class ScreenshotTests: XCTestCase {
         capture(named: "04-shoppingList")
 
         // 5. Stats, evidence drawn from the seeded history.
-        tabButton("Stats").tap()
+        tapTab("Stats")
         settle()
         capture(named: "05-stats")
+    }
+
+    /// Tapping a tab the instant a sheet has dismissed is not safe: the tab
+    /// exists while it is still animating back into place, and a tap sent then is
+    /// swallowed. The screen never changes, and the next assertion spends its
+    /// whole 20s on an app that is simply still where it was -- which is how this
+    /// test failed twice on CI at `shoppingList.addFromBook`, looking like a slow
+    /// screen rather than a lost tap.
+    private func tapTab(_ label: String, file: StaticString = #filePath, line: UInt = #line) {
+        let tab = tabButton(label)
+        XCTAssertTrue(tab.waitForExistence(timeout: 20),
+                      "the \(label) tab never appeared", file: file, line: line)
+        XCTAssertTrue(tab.wait(for: \.isHittable, toEqual: true, timeout: 20),
+                      "the \(label) tab existed but never became hittable", file: file, line: line)
+        tab.tap()
     }
 
     private func tabButton(_ label: String) -> XCUIElement {
