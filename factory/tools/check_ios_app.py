@@ -45,7 +45,7 @@ import struct
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from registry import ROOT, find, load, platform_of  # noqa: E402
+from registry import ROOT, find, load, platform_of, ad_id as registry_ad_id  # noqa: E402
 
 # Apple's own boilerplate; not a factory stub.
 ALLOWED_FATAL_ERRORS = ("init(coder:)", "has not been implemented")
@@ -254,13 +254,30 @@ def main(argv: list[str]) -> int:
                gap_key="admob")
 
         admob = app.get("admob") or {}
-        ids = {k: str(admob.get(k) or "") for k in ("app_id", "banner_unit_id", "interstitial_unit_id")}
+        # Resolve exactly the way registry.py does for the build, or the gate
+        # judges different IDs from the ones that get compiled in. Real values
+        # come from repo variables; the registry entry is a fallback.
+        FIELD_ENV = {"app_id": "APP_ID", "banner_unit_id": "BANNER_UNIT_ID",
+                     "interstitial_unit_id": "INTERSTITIAL_UNIT_ID"}
+        slug_upper = slug.upper().replace("-", "_")
+        ids = {k: registry_ad_id(slug_upper, env_field, admob.get(k))
+               for k, env_field in FIELD_ENV.items()}
         missing = [k for k, v in ids.items() if not v]
         test_prefix = ios["admob_test_id_prefix"]
         using_test = [k for k, v in ids.items() if v.startswith(test_prefix)]
         report("admob_unit_ids", not missing and not using_test,
                f"missing: {missing or 'none'}; Google test IDs: {using_test or 'none'}",
                gap_key="admob_unit_ids")
+
+        # Factory rule 5: ad unit IDs never live in git. PriceJar's were
+        # committed to a public repo for a whole release before anyone noticed,
+        # because nothing checked -- the rule was written down and unenforced,
+        # the same failure shape as the ATT guard and the iPad screenshot set.
+        committed = [k for k in FIELD_ENV
+                     if str(admob.get(k) or "") and not str(admob.get(k)).startswith(test_prefix)]
+        report("ad_ids_not_in_git", not committed,
+               f"production AdMob IDs committed in factory/apps.json: {committed or 'none'}"
+               + ("; move them to repo variables ADMOB_%s_<FIELD>" % slug_upper if committed else ""))
 
     if rules.get("att_required"):
         has_att_string = "NSUserTrackingUsageDescription" in info_text
