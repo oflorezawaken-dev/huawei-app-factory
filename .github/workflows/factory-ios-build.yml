@@ -31,6 +31,12 @@ permissions:
   contents: read
 
 env:
+  # Ad unit IDs live in repository variables, never in git (factory rule 5).
+  # Workflow-level, not per step: registry.py resolves them when it writes
+  # the environment, and check_ios_app.py resolves them again for itself --
+  # setting this on only the first step left the quality gate blind and it
+  # failed shift-slip for ad IDs that were configured all along.
+  FACTORY_VARS: ${{ toJSON(vars) }}
   # Pin the toolchain: xcodebuild output is not reproducible across Xcode
   # versions, and macos-latest silently moves. Verified present on this image
   # as of 2026-09-07; bump this when Apple ships a new stable and re-verify
@@ -83,9 +89,6 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Load app from registry
-        env:
-          # Ad unit IDs live in repo variables, not in git (factory rule 5).
-          FACTORY_VARS: ${{ toJSON(vars) }}
         run: python3 factory/tools/registry.py env "${{ matrix.app }}" >> "$GITHUB_ENV"
 
       - name: Quality gate
@@ -199,9 +202,6 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Load app from registry
-        env:
-          # Ad unit IDs live in repo variables, not in git (factory rule 5).
-          FACTORY_VARS: ${{ toJSON(vars) }}
         run: python3 factory/tools/registry.py env "${{ matrix.app }}" >> "$GITHUB_ENV"
 
       - name: Select Xcode ${{ env.FACTORY_XCODE_VERSION }}

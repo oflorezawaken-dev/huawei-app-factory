@@ -33,6 +33,14 @@ on:
 permissions:
   contents: read
 
+env:
+  # Ad unit IDs live in repository variables, never in git (factory rule 5).
+  # Workflow-level, not per step: registry.py resolves them when it writes
+  # the environment, and check_ios_app.py resolves them again for itself --
+  # setting this on only the first step left the quality gate blind and it
+  # failed shift-slip for ad IDs that were configured all along.
+  FACTORY_VARS: ${{ toJSON(vars) }}
+
 jobs:
   store:
     runs-on: ubuntu-latest
@@ -45,9 +53,6 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Load app from registry
-        env:
-          # Ad unit IDs live in repo variables, not in git (factory rule 5).
-          FACTORY_VARS: ${{ toJSON(vars) }}
         run: |
           set -euo pipefail
           python3 factory/tools/registry.py env "${{ inputs.app }}" >> "$GITHUB_ENV"
