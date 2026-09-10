@@ -125,10 +125,21 @@ detached is not.
     ```bash
     python factory/tools/check_ios_app.py <slug>
     ```
-    Everything must pass except `admob_unit_ids`, which cannot pass until a human
-    creates the AdMob units. Record that honestly in the registry:
+    `admob_unit_ids` will FAIL when you run this locally, and that is expected:
+    factory rule 5 keeps ad unit IDs out of git, so the real ones live in GitHub
+    Actions repository variables (`ADMOB_<SLUG>_APP_ID` and the two unit IDs) and
+    the registry entry is empty. CI passes them in as `FACTORY_VARS`. To see what
+    CI will see:
+    ```bash
+    FACTORY_VARS="$(gh variable list --json name,value | python3 -c 'import json,sys; print(json.dumps({v["name"]: v["value"] for v in json.load(sys.stdin)}))')" \
+      python factory/tools/check_ios_app.py <slug>
+    ```
+    Do **not** paste ad unit IDs into `factory/apps.json` -- the `ad_ids_not_in_git`
+    rule fails on that. Add
     `"known_gaps": {"admob_unit_ids": "AdMob console pending; step 6 of the iOS flow."}`
-    Never hide a failure by deleting a test or loosening a rule.
+    only when the variables genuinely do not exist yet, and say so in the PR.
+    Everything else must pass. Never hide a failure by deleting a test or
+    loosening a rule.
 
 13. **PR.** Branch `app/<slug>`, small commits, then `gh pr create` with a body that
     lists: features implemented, what was left out and why, unit and screenshot test
