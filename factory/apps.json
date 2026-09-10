@@ -83,7 +83,8 @@
               2736
             ]
           ],
-          "_note": "Largest iPhone set. Apple's screenshotDisplayType enum has no APP_IPHONE_69 -- it kept the APP_IPHONE_67 name and accepts 6.9-inch resolutions there. Apple scales this set down to every smaller iPhone, so it is the only required iPhone set."
+          "_note": "Largest iPhone set. Apple's screenshotDisplayType enum has no APP_IPHONE_69 -- it kept the APP_IPHONE_67 name and accepts 6.9-inch resolutions there. Apple scales this set down to every smaller iPhone, so it is the only required iPhone set.",
+          "device": "iPhone"
         },
         "APP_IPAD_PRO_3GEN_129": {
           "required": true,
@@ -94,7 +95,8 @@
               2752
             ]
           ],
-          "_note": "13-inch iPad. Required whenever the app declares iPad support in TARGETED_DEVICE_FAMILY; Apple refuses to accept the version for review without it. Apple's screenshot specifications give 2064x2752 for the 13-inch slot, and APP_IPAD_PRO_3GEN_129 is the display type the console maps it to, even though the API docs still describe that type as 12.9-inch."
+          "_note": "13-inch iPad. Required only when the spec's technical.devices includes iPad; Apple refuses to accept such a version for review without it, and demands nothing for an iPhone-only app. Apple's screenshot specifications give 2064x2752 for the 13-inch slot, and APP_IPAD_PRO_3GEN_129 is the display type the console maps it to, even though the API docs still describe that type as 12.9-inch.",
+          "device": "iPad"
         }
       },
       "screenshot_count": {
@@ -242,6 +244,35 @@
       },
       "known_gaps": {},
       "proposal": "proposals/2026-09-08-price-jar-ios.md"
+    },
+    {
+      "slug": "shift-slip",
+      "name": "ShiftSlip",
+      "platform": "ios",
+      "path": "apps-ios/shift-slip",
+      "bundle_id": "com.proapps.shiftslip",
+      "asc_app_id": "",
+      "sku": "shift-slip",
+      "spec": "specifications/shift-slip.json",
+      "store_dir": "apps-ios/shift-slip/store",
+      "privacy_path": "docs/shift-slip/privacy",
+      "support_path": "docs/shift-slip/support",
+      "status": "planned",
+      "current_version": {
+        "marketing_version": "1.0.0",
+        "build": 1,
+        "status": "planned"
+      },
+      "admob": {
+        "app_id": "",
+        "banner_unit_id": "",
+        "interstitial_unit_id": ""
+      },
+      "iap": {
+        "remove_ads_product_id": "com.proapps.shiftslip.removeads"
+      },
+      "known_gaps": {},
+      "proposal": "proposals/2026-09-09-shift-slip-ios.md"
     }
   ]
 }

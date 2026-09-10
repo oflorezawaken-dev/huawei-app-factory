@@ -391,7 +391,16 @@ def main(argv: list[str]) -> int:
 
     # Screenshots follow the fastlane deliver layout (one folder per language);
     # the device set is inferred from the pixel size, as Apple does on upload.
-    required_sets = {name: cfg for name, cfg in ios["screenshot_sets"].items() if cfg.get("required")}
+    # A set is required only for a device the spec ships. The registry has always
+    # said the iPad set is "required whenever the app declares iPad support", but
+    # `required: true` was read unconditionally, so an iPhone-only app was asked
+    # for 13-inch iPad screenshots that Apple does not want and the capture step
+    # cannot produce. The intent lived in a note; this is the check.
+    required_sets = {
+        name: cfg for name, cfg in ios["screenshot_sets"].items()
+        if cfg.get("required") and (
+            not spec_devices or cfg.get("device") is None or cfg["device"] in spec_devices)
+    }
     default_folder = next((k for k, v in ios["screenshot_dir_to_asc_lang"].items() if v == languages[0]), "en")
     shots_dir = os.path.join(store_dir, "screenshots", default_folder)
     shots = sorted(f for f in os.listdir(shots_dir)) if os.path.isdir(shots_dir) else []
