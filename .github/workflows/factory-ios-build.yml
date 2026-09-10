@@ -20,6 +20,12 @@ on:
     paths:
       - 'apps-ios/**'
       - 'factory/**'
+      # This file too, or a CI change is first exercised on main, after the
+      # merge. Two fixes in a row needed a follow-up for exactly that: the
+      # simulator selection and FACTORY_VARS both looked right locally and
+      # failed only once merged. The Android lane has always listed its own
+      # workflow here; the iOS lane was the odd one out.
+      - '.github/workflows/factory-ios-build.yml'
   workflow_dispatch:
     inputs:
       app:
