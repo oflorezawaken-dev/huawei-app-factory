@@ -106,7 +106,13 @@ jobs:
           xcode-version: ${{ env.FACTORY_XCODE_VERSION }}
 
       - name: Install XcodeGen
-        run: brew install xcodegen
+        run: |
+          brew install xcodegen
+          # Logged on purpose: XcodeGen 2.46 resolved a project-level
+          # TARGETED_DEVICE_FAMILY differently from 2.42, which is how an
+          # iPhone-only app shipped universal while every local check agreed it
+          # was iPhone-only. When a generated project surprises you, look here.
+          xcodegen --version
 
       - name: Generate Xcode project
         run: cd "$APP_PATH" && xcodegen generate
@@ -227,7 +233,13 @@ jobs:
           xcode-version: ${{ env.FACTORY_XCODE_VERSION }}
 
       - name: Install XcodeGen
-        run: brew install xcodegen
+        run: |
+          brew install xcodegen
+          # Logged on purpose: XcodeGen 2.46 resolved a project-level
+          # TARGETED_DEVICE_FAMILY differently from 2.42, which is how an
+          # iPhone-only app shipped universal while every local check agreed it
+          # was iPhone-only. When a generated project surprises you, look here.
+          xcodegen --version
 
       - name: Generate Xcode project
         run: cd "$APP_PATH" && xcodegen generate
@@ -284,6 +296,28 @@ jobs:
           [[ -n "$ipa" ]] || { echo "::error::export produced no .ipa"; exit 1; }
           rm -rf /tmp/ipa-check && unzip -q "$ipa" -d /tmp/ipa-check
           codesign -dv --verbose=4 /tmp/ipa-check/Payload/*.app
+
+      - name: Verify the binary ships the devices the spec declares
+        run: |
+          set -euo pipefail
+          # The gate reads project.yml; this reads the thing that gets uploaded.
+          # ShiftSlip 1.0.0 (1) went to Apple as universal with project.yml
+          # saying "1" and the gate agreeing, because the build machine's
+          # XcodeGen resolved the setting differently. Intent is not evidence.
+          plist="$(echo /tmp/ipa-check/Payload/*.app/Info.plist)"
+          got="$(/usr/libexec/PlistBuddy -c 'Print :UIDeviceFamily' "$plist" \
+                  | grep -Eo '[0-9]+' | sort -u | paste -sd, -)"
+          want=""
+          [[ "$APP_DEVICES" == *iPhone* ]] && want="1"
+          [[ "$APP_DEVICES" == *iPad* ]] && want="${want:+$want,}2"
+          if [[ -z "$want" ]]; then
+            echo "spec declares no devices ($APP_DEVICES); skipping"
+          elif [[ "$got" != "$want" ]]; then
+            echo "::error::the built app declares UIDeviceFamily=$got but the spec says $APP_DEVICES (expected $want). Apple will demand screenshots for a device this app was never designed for."
+            exit 1
+          else
+            echo "UIDeviceFamily=$got matches the spec's $APP_DEVICES"
+          fi
 
       - uses: actions/upload-artifact@v4
         with:
