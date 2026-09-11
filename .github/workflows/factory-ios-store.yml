@@ -8,9 +8,12 @@ name: Factory iOS Store Setup
 # locale is cheap. Manual trigger, `appstore` environment (read/write, but no
 # binary is uploaded here -- that is factory-ios-publish.yml's job).
 #
-# Requires an appStoreVersion to already exist in App Store Connect in an
-# editable state (PREPARE_FOR_SUBMISSION, *_REJECTED); the human creates that
-# once per version (step 6.2 of the iOS handoff).
+# `setup` (also part of `all`) creates the appStoreVersion for the registry's
+# marketing version and the Remove Ads in-app purchase -- localizations, price,
+# availability and the review screenshot -- idempotently, via asc_setup.py.
+# Those used to be console clicks, and an incomplete purchase was two of
+# PriceJar's three rejections. Text and screenshots then need that version to
+# exist in an editable state (PREPARE_FOR_SUBMISSION, *_REJECTED).
 
 on:
   workflow_dispatch:
@@ -23,7 +26,7 @@ on:
         required: true
         default: 'all'
         type: choice
-        options: [all, text, screenshots]
+        options: [all, setup, text, screenshots]
       dry_run:
         description: 'Print what would be sent without calling App Store Connect'
         required: true
@@ -68,7 +71,18 @@ jobs:
             exit 1
           }
 
+      - name: Create version and in-app purchase
+        if: inputs.what == 'setup' || inputs.what == 'all'
+        env:
+          DRY: ${{ inputs.dry_run }}
+        run: |
+          set -euo pipefail
+          args=("$APP_SLUG" --what all)
+          [[ "$DRY" == "true" ]] && args+=(--dry-run)
+          python3 factory/tools/asc_setup.py "${args[@]}"
+
       - name: Push metadata
+        if: inputs.what != 'setup'
         env:
           DRY: ${{ inputs.dry_run }}
         run: |
