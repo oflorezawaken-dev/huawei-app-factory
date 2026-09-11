@@ -221,7 +221,72 @@ def clear_open_review_submission(asc_app_id: str, token: str) -> None:
             log(f"warning: could not remove open reviewSubmission {row['id']}: {exc}")
 
 
-def submit_for_review(asc_app_id: str, token: str) -> None:
+# An in-app purchase does not travel with a version by being "Ready to Submit".
+# That state means configured and waiting; it has to be added to the review
+# submission as its own item. PriceJar 1.0.0 (4) was rejected for exactly this:
+# "the app includes references to paid content but the associated In-App
+# Purchase products have not been submitted for review."
+IAP_SUBMITTABLE_STATES = ("READY_TO_SUBMIT", "DEVELOPER_ACTION_NEEDED", "REJECTED")
+
+
+def in_app_purchases(asc_app_id: str, token: str) -> list[dict]:
+    """The app's in-app purchases, or [] when Apple answers and there are none.
+
+    Raises when it cannot ask at all, rather than reporting an empty list: the
+    caller refuses to submit an app whose registry declares a purchase and whose
+    purchases it could not enumerate, and a silent [] would turn that guard off.
+    """
+    data = api_call("GET", f"/v1/apps/{asc_app_id}/inAppPurchasesV2?limit=200", token=token)
+    return data.get("data", []) or []
+
+
+def submittable_in_app_purchases(asc_app_id: str, product_id: str, token: str) -> list[dict]:
+    """The purchases ready to go in, or an explanation of why none are.
+
+    Called BEFORE the review submission is created. Failing afterwards would
+    leave an open submission behind, and Apple does not allow deleting one.
+    """
+    rows = in_app_purchases(asc_app_id, token)
+    by_state: dict[str, list[str]] = {}
+    for row in rows:
+        attrs = row.get("attributes") or {}
+        by_state.setdefault(str(attrs.get("state")), []).append(str(attrs.get("productId")))
+
+    submittable = [r for r in rows
+                   if str((r.get("attributes") or {}).get("state")) in IAP_SUBMITTABLE_STATES]
+    if not submittable:
+        raise ASCError(
+            f"{product_id} is declared in the registry but no in-app purchase of this app is in "
+            f"a submittable state {IAP_SUBMITTABLE_STATES}. Apple has: "
+            + (", ".join(f"{pid} ({state})" for state, pids in sorted(by_state.items())
+                         for pid in pids) or "no in-app purchases at all")
+            + ". Submitting now would repeat the rejection that says the paid content was never "
+              "submitted for review -- complete the product in App Store Connect first.")
+    return submittable
+
+
+def add_iap_submission_items(submission_id: str, submittable: list[dict], token: str) -> list[str]:
+    """Attach already-validated in-app purchases to the review submission."""
+    added = []
+    for row in submittable:
+        attrs = row.get("attributes") or {}
+        api_call("POST", "/v1/reviewSubmissionItems", {
+            "data": {"type": "reviewSubmissionItems",
+                     "relationships": {
+                         "reviewSubmission": {"data": {"type": "reviewSubmissions", "id": submission_id}},
+                         "inAppPurchaseV2": {"data": {"type": "inAppPurchases", "id": row["id"]}}}}}, token)
+        added.append(str(attrs.get("productId") or row["id"]))
+        log(f"added in-app purchase {added[-1]} to the submission")
+    return added
+
+
+def submit_for_review(asc_app_id: str, token: str, iap_product_id: str = "") -> None:
+    # Everything that can be checked is checked before anything is created: a
+    # failure after the POST leaves an open submission behind, and Apple refuses
+    # to delete one.
+    submittable_iaps = (submittable_in_app_purchases(asc_app_id, iap_product_id, token)
+                        if iap_product_id else [])
+
     # A previous failed run may have left one behind, and Apple allows only one
     # open submission per app.
     clear_open_review_submission(asc_app_id, token)
@@ -269,6 +334,10 @@ def submit_for_review(asc_app_id: str, token: str) -> None:
             f"Open https://appstoreconnect.apple.com/apps/{asc_app_id}/distribution and fix "
             "whatever it flags, then re-run this workflow.") from exc
     log(f"added appStoreVersion {version_id} to the submission")
+
+    # The version alone is not the submission when the app sells something.
+    if submittable_iaps:
+        add_iap_submission_items(submission_id, submittable_iaps, token)
 
     api_call("PATCH", f"/v1/reviewSubmissions/{submission_id}",
               {"data": {"type": "reviewSubmissions", "id": submission_id,
@@ -334,7 +403,8 @@ def main(argv: list[str]) -> int:
             if a.submit:
                 if a.notes:
                     set_release_notes(version_id, a.notes, token)
-                submit_for_review(asc_app_id, token)
+                submit_for_review(asc_app_id, token,
+                                  str((app.get("iap") or {}).get("remove_ads_product_id") or ""))
         return 0
     except TimeoutError as exc:
         log(f"error: {exc}")

@@ -60,6 +60,10 @@ STATE = {
     "build_encryption": False,
     # What Apple reports once it has looked at the uploaded image.
     "asset_state": {"state": "COMPLETE", "errors": []},
+    # Apple's in-app purchases for this app, and how they come back.
+    "iaps": [{"type": "inAppPurchases", "id": "iap1",
+              "attributes": {"productId": "com.example.fixture.removeads",
+                             "state": "READY_TO_SUBMIT"}}],
 }
 
 
@@ -145,6 +149,8 @@ class Handler(BaseHTTPRequestHandler):
             rows = [{"id": sid, "attributes": {"screenshotDisplayType": dt}}
                     for dt, sid in STATE["screenshot_sets"].items()]
             self._json(200, {"data": rows})
+        elif path == f"/v1/apps/{ASC_APP_ID}/inAppPurchasesV2":
+            self._json(200, {"data": STATE["iaps"]})
         elif path == f"/v1/apps/{ASC_APP_ID}/reviewSubmissions":
             rows = [{"type": "reviewSubmissions", "id": sid, "attributes": sub["attributes"]}
                     for sid, sub in STATE["submissions"].items()]
@@ -210,6 +216,12 @@ class Handler(BaseHTTPRequestHandler):
             STATE["submissions"][sub_id] = {"attributes": {"submitted": False}, "items": []}
             self._json(201, {"data": {"type": rtype, "id": sub_id}})
         elif rtype == "reviewSubmissionItems":
+            iap = data["relationships"].get("inAppPurchaseV2")
+            if iap:
+                sub_id = data["relationships"]["reviewSubmission"]["data"]["id"]
+                STATE["submissions"][sub_id].setdefault("iaps", []).append(iap["data"]["id"])
+                self._json(201, {"data": {"type": rtype, "id": new_id()}})
+                return
             if STATE["reject_review_item"]:
                 self._json(409, {"errors": [{
                     "title": "The request cannot be fulfilled because of the state of another resource.",
@@ -469,6 +481,31 @@ def main() -> int:
     check("exactly one submission ended up submitted:true", len(submitted) == 1)
     check("that submission has the version attached as an item",
           bool(submitted) and VERSION_ID in submitted[0]["items"])
+
+    print("\na version that sells something must carry the purchase:")
+    # "Ready to Submit" is configured-and-waiting, not submitted. PriceJar 1.0.0
+    # (4) was rejected because the version went in without the product.
+    asc_publish.submit_for_review(ASC_APP_ID, None, "com.example.fixture.removeads")
+    with_iap = [s for s in STATE["submissions"].values() if s.get("iaps")]
+    check("the in-app purchase is added as its own submission item",
+          len(with_iap) == 1 and with_iap[0]["iaps"] == ["iap1"],
+          str([s.get("iaps") for s in STATE["submissions"].values()]))
+
+    print("\nan unfinished purchase stops the submission instead of repeating the rejection:")
+    STATE["iaps"] = [{"type": "inAppPurchases", "id": "iap1",
+                      "attributes": {"productId": "com.example.fixture.removeads",
+                                     "state": "MISSING_METADATA"}}]
+    try:
+        asc_publish.submit_for_review(ASC_APP_ID, None, "com.example.fixture.removeads")
+        msg = ""
+    except asc_publish.ASCError as exc:
+        msg = str(exc)
+    check("raises rather than submitting without the product", bool(msg), msg)
+    check("names the product and the state Apple reports",
+          "com.example.fixture.removeads" in msg and "MISSING_METADATA" in msg, msg)
+    STATE["iaps"] = [{"type": "inAppPurchases", "id": "iap1",
+                      "attributes": {"productId": "com.example.fixture.removeads",
+                                     "state": "READY_TO_SUBMIT"}}]
 
     print("\nApple refuses the version -- diagnose it, and leave nothing behind:")
     # Apple's own error says only "not in valid state", so the run has to ask
