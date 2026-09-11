@@ -32,6 +32,11 @@ BUNDLE_ID = "com.example.fixture"
 PRODUCT_ID = "com.example.fixture.removeads"
 
 
+def read_file(path: str) -> str:
+    with open(path, encoding="utf-8") as fh:
+        return fh.read()
+
+
 def write(path: str, text: str) -> None:
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path, "w", encoding="utf-8") as fh:
@@ -201,8 +206,14 @@ final class MonetisationTests: XCTestCase {
             "description": "Fixture keeps offline plant care reminders.",
             "keywords": "plants,care,reminder,watering,garden",
             "release_notes": "First release.",
+            # The purchase's own store copy; asc_setup.py creates the
+            # localizations from it and iap_store_copy checks it first.
+            "iap": {"name": "Remove Ads", "description": "Remove ads, permanently."},
         } for lang in ios["languages"]]
     }, indent=2))
+    # Apple reviews the purchase separately and needs a shot of the screen that
+    # offers it. Two of PriceJar's three rejections were an incomplete purchase.
+    write_png(os.path.join(app_dir, "store", "iap-review-screenshot.png"), 1320, 2868, alpha=False)
 
     write(os.path.join(root, "docs", SLUG, "privacy", "index.html"), "<h1>Privacy</h1>")
     write(os.path.join(root, "docs", SLUG, "support", "index.html"), "<h1>Support</h1>")
@@ -358,6 +369,19 @@ def main() -> int:
     broken("screenshots at a size Apple rejects", "screenshots", with_small_screenshots)
     broken("subtitle over 30 characters", "listing", with_long_subtitle)
     broken("analytics SDK in the project", "forbidden_deps", with_firebase)
+
+    def with_no_iap_copy(root: str) -> None:
+        build_fixture(root)
+        path = os.path.join(root, "apps-ios", SLUG, "store", "listing.json")
+        listing = json.loads(read_file(path))
+        for e in listing["languages"]:
+            e.pop("iap", None)
+        write(path, json.dumps(listing))
+
+    # An app that sells something must ship the purchase's copy. asc_setup.py
+    # creates the App Store Connect product from these fields, so a listing
+    # without them is a purchase Apple will reject as incomplete.
+    broken("purchase declared but its store copy missing", "iap_store_copy", with_no_iap_copy)
 
     def with_committed_ad_ids(root: str) -> None:
         build_fixture(root, admob={

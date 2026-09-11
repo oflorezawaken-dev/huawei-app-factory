@@ -471,6 +471,30 @@ def main(argv: list[str]) -> int:
                f"missing languages: {missing or 'none'}; over limit: {over or 'none'}; "
                f"empty required fields: {blank or 'none'}")
 
+        # The purchase has store copy of its own, and Apple reviews it separately
+        # with a screenshot of the screen that offers it. asc_setup.py creates
+        # all of that from these inputs, so they are checked here first -- an
+        # incomplete purchase is what two of PriceJar's three rejections were.
+        if (app.get("iap") or {}).get("remove_ads_product_id"):
+            IAP_LIMITS = {"name": 30, "description": 45}
+            iap_problems = []
+            for e in entries:
+                iap = e.get("iap") or {}
+                for field, limit in IAP_LIMITS.items():
+                    value = str(iap.get(field) or "").strip()
+                    if not value:
+                        iap_problems.append(f"{e.get('lang')}.iap.{field} empty")
+                    elif len(value) > limit:
+                        iap_problems.append(f"{e.get('lang')}.iap.{field}={len(value)}>{limit}")
+            shot = os.path.join(store_dir, "iap-review-screenshot.png")
+            shot_info = png_info(shot) if os.path.isfile(shot) else None
+            if not shot_info:
+                iap_problems.append("store/iap-review-screenshot.png missing or not a PNG")
+            elif shot_info[2]:
+                iap_problems.append("store/iap-review-screenshot.png has an alpha channel")
+            report("iap_store_copy", not iap_problems,
+                   f"purchase copy and review screenshot: {iap_problems or 'complete'}")
+
         # The in-app strings have a unit test scanning them for phrases the app
         # must never use; the store listing had nothing. That is backwards --
         # the listing is the copy App Review actually reads, and it is where a

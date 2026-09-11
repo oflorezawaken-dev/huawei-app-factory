@@ -241,7 +241,9 @@
         "_note": "Set as GitHub Actions repository variables, not here: factory rule 5 keeps ad unit IDs out of git. ADMOB_<SLUG>_APP_ID / _BANNER_UNIT_ID / _INTERSTITIAL_UNIT_ID, slug upper-cased with - as _. Workflows pass them in as FACTORY_VARS. Left empty so a pull request, which cannot read variables, falls back to the template's Google test IDs -- which is exactly what the quality gate expects on a PR."
       },
       "iap": {
-        "remove_ads_product_id": "com.proapps.pricejar.removeads"
+        "remove_ads_product_id": "com.proapps.pricejar.removeads",
+        "price_usd": "2.99",
+        "_note": "USA base price for the Remove Ads non-consumable; Apple equalises the other territories. asc_setup.py resolves it to a price point and creates the schedule."
       },
       "known_gaps": {},
       "proposal": "proposals/2026-09-08-price-jar-ios.md"
@@ -271,7 +273,9 @@
         "_note": "Set as GitHub Actions repository variables, not here: factory rule 5 keeps ad unit IDs out of git. ADMOB_<SLUG>_APP_ID / _BANNER_UNIT_ID / _INTERSTITIAL_UNIT_ID, slug upper-cased with - as _. Workflows pass them in as FACTORY_VARS. Left empty so a pull request, which cannot read variables, falls back to the template's Google test IDs -- which is exactly what the quality gate expects on a PR."
       },
       "iap": {
-        "remove_ads_product_id": "com.proapps.shiftslip.removeads"
+        "remove_ads_product_id": "com.proapps.shiftslip.removeads",
+        "price_usd": "2.99",
+        "_note": "USA base price for the Remove Ads non-consumable; Apple equalises the other territories. asc_setup.py resolves it to a price point and creates the schedule."
       },
       "known_gaps": {},
       "proposal": "proposals/2026-09-09-shift-slip-ios.md"

@@ -37,7 +37,7 @@ import sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 TOOLS = os.path.dirname(HERE)
 SPEC = os.path.join(TOOLS, "spec", "asc-openapi.slim.json.gz")
-SOURCES = ["asc_metadata.py", "asc_publish.py", "asc_watch.py", "asc_client.py"]
+SOURCES = ["asc_metadata.py", "asc_publish.py", "asc_watch.py", "asc_client.py", "asc_setup.py"]
 
 # Paths built from a variable resource name cannot be checked statically.
 # They are listed so a new one is a deliberate decision, not an accident.

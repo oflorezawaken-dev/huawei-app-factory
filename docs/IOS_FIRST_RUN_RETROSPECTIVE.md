@@ -212,9 +212,13 @@ en la spec y Apple lo ignora igual. El mock sigue teniendo que ser hostil.
    (ruta, verbo, filtros, relaciones). Lo primero que cazó fue `appDataUsages`; lo segundo, que
    una clave variable en las relaciones dejaba la comprobación en blanco. Cuatro de los ocho
    fallos del patrón A habrían muerto aquí.
-2. **Siguiente, antes de la app nº3:** crear versión e IAP (con localizaciones, precio y captura
-   de revisión) **desde la fábrica**, no desde la consola. Dos de los tres rechazos de PriceJar y
-   la mayor parte de las vueltas de ShiftSlip fueron coordinación humana sobre el IAP.
+2. **Hecho:** `asc_setup.py` crea la versión y el IAP completo — localizaciones desde el bloque
+   `iap` de `listing.json`, disponibilidad en todos los territorios, precio desde `iap.price_usd`
+   resuelto a un price point de USA, y la captura de revisión (`store/iap-review-screenshot.png`)
+   esperando el `COMPLETE` de Apple. Idempotente: la segunda ejecución hace cero POSTs. Cada
+   ruta salió de la spec y la comprueba `test_asc_api_shapes.py` (46 llamadas). El gate exige
+   la copia y la captura (`iap_store_copy`) antes de que nada llegue a Apple. Es `what=setup` en
+   `factory-ios-store.yml`, y parte de `all`.
 3. **Lectura de vuelta** antes de enviar: qué build lleva la versión y qué elementos hay en el
    envío. Con eso el "diagnóstico" deja de adivinar.
 4. **Fijar XcodeGen** (hoy solo se imprime la versión) y **certificado en secrets**.
