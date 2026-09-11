@@ -358,9 +358,11 @@ def main(argv: list[str]) -> int:
     # here rather than by Apple, which is where PriceJar 1.0.0 found it.
     FAMILY_BY_DEVICE = {"iPhone": "1", "iPad": "2"}
     spec_devices = []
+    spec_data: dict = {}
     spec_path = os.path.join(ROOT, app["spec"])
     if os.path.isfile(spec_path):
-        spec_devices = (json.loads(read(spec_path)).get("technical") or {}).get("devices") or []
+        spec_data = json.loads(read(spec_path))
+        spec_devices = (spec_data.get("technical") or {}).get("devices") or []
     if spec_devices:
         want_family = ",".join(FAMILY_BY_DEVICE[d] for d in spec_devices if d in FAMILY_BY_DEVICE)
         got = resolved_settings("TARGETED_DEVICE_FAMILY")
@@ -453,14 +455,41 @@ def main(argv: list[str]) -> int:
         entries = json.loads(read(listing_path)).get("languages", [])
         have = {e.get("lang") for e in entries}
         missing = [l for l in languages if l not in have]
+        # A locale row that exists with an empty description is not a listing.
+        # "missing languages: none" used to pass on exactly that, which is how
+        # eight of nine ShiftSlip locales read as complete while holding null.
+        REQUIRED_FIELDS = ("name", "subtitle", "description", "keywords")
+        blank = [f"{e.get('lang')}.{f}" for e in entries for f in REQUIRED_FIELDS
+                 if not str(e.get(f) or "").strip()]
         over = []
         for e in entries:
             for field, limit in limits.items():
                 value = e.get(field)
                 if isinstance(value, str) and len(value) > limit:
                     over.append(f"{e.get('lang')}.{field}={len(value)}>{limit}")
-        report("listing", not (missing or over),
-               f"missing languages: {missing or 'none'}; over limit: {over or 'none'}")
+        report("listing", not (missing or over or blank),
+               f"missing languages: {missing or 'none'}; over limit: {over or 'none'}; "
+               f"empty required fields: {blank or 'none'}")
+
+        # The in-app strings have a unit test scanning them for phrases the app
+        # must never use; the store listing had nothing. That is backwards --
+        # the listing is the copy App Review actually reads, and it is where a
+        # promise about taxes or wages is most tempting to write. Both now check
+        # the same list, which lives in the spec so there is no second copy.
+        banned = (spec_data.get("qa") or {}).get("banned_phrases") or {}
+        phrases = [p for key, values in banned.items()
+                   if not key.startswith("_") for p in values]
+        if phrases:
+            hits = []
+            for e in entries:
+                for field, value in e.items():
+                    if field == "lang" or not isinstance(value, str):
+                        continue
+                    lowered = value.lower()
+                    hits += [f"{e.get('lang')}/{field}: '{ph}'" for ph in phrases if ph in lowered]
+            report("listing_copy", not hits,
+                   f"banned phrases in the store listing: {hits or 'none'} "
+                   f"({len(phrases)} from the spec, {len(entries)} locale(s))")
     else:
         report("listing", False, f"{os.path.relpath(listing_path, ROOT)} missing")
 

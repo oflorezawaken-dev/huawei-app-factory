@@ -36,16 +36,30 @@ final class StringCatalogBannedPhrasesTests: XCTestCase {
         return result
     }
 
-    // MARK: - Tax-framing discipline (F004 / F006 / F009 copy discipline)
 
-    private let taxBannedPhrases = [
-        "irs-approved", "irs-certified", "official irs", "no tax on tips", "tax free", "tax-free",
-        "your deduction", "deduct up to", "estimated refund", "maximise your refund", "maximize your refund",
-        "we file", "guaranteed",
-    ]
+    /// The banned phrases, read from the spec rather than written here.
+    ///
+    /// The quality gate scans store/listing.json for the same list. Two
+    /// hardcoded copies would drift, and the one that drifts silently is the
+    /// one nobody runs -- so both read this.
+    private func bannedPhrases(_ group: String) throws -> [String] {
+        var url = URL(fileURLWithPath: #filePath)
+        for _ in 0..<4 { url.deleteLastPathComponent() }
+        let specURL = url.appendingPathComponent("specifications/shift-slip.json")
+        let data = try Data(contentsOf: specURL)
+        let json = try JSONSerialization.jsonObject(with: data) as? [String: Any]
+        let phrases = ((json?["qa"] as? [String: Any])?["banned_phrases"] as? [String: Any])?[group] as? [String]
+        let list = phrases ?? []
+        // An empty list would make the test pass by testing nothing.
+        XCTAssertFalse(list.isEmpty, "qa.banned_phrases.\(group) is missing from the spec")
+        return list
+    }
+
+    // MARK: - Tax-framing discipline (F004 / F006 / F009 copy discipline)
 
     func testNoBannedTaxPhrasingAnywhereInAnyLanguage() throws {
         var hits: [String] = []
+        let taxBannedPhrases = try bannedPhrases("tax")
         for entry in try allStrings() {
             let lowered = entry.value.lowercased()
             for phrase in taxBannedPhrases where lowered.contains(phrase) {
@@ -73,10 +87,10 @@ final class StringCatalogBannedPhrasesTests: XCTestCase {
 
     // MARK: - Minimum-wage check stays informational (F008)
 
-    private let wageClaimBannedPhrases = ["illegal", "wage theft", "you are owed", "violation", "lawsuit", "claim"]
 
     func testMinimumWageCopyNeverReadsAsALegalClaim() throws {
         var hits: [String] = []
+        let wageClaimBannedPhrases = try bannedPhrases("wage_claim")
         for entry in try allStrings() {
             let lowered = entry.value.lowercased()
             for phrase in wageClaimBannedPhrases where lowered.contains(phrase) {
