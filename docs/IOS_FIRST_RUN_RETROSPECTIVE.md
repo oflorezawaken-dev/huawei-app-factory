@@ -149,7 +149,7 @@ sido correcto.
 | El gate no ve el IAP de consola | **Parcial.** El envío se niega si ningún IAP está en estado enviable (#47). El gate sigue sin verlo antes |
 | `apps-ios/price-jar/ipad-out/` | Sigue ahí. Borrar |
 | Registro con un solo tamaño de iPad | Sin cambios |
-| **Envío automatizado a revisión** | **No fiable todavía.** Cuatro ejecuciones fallidas en ShiftSlip por formas de la API adivinadas. Ver §7 |
+| **Envío automatizado a revisión** | **Con red, sin estrenar contra Apple.** Las formas se validan offline (#55), la versión y el IAP los crea la fábrica (#56), y el envío lee de vuelta build y contenido antes del PATCH final (#57). Nada de eso se ha ejercitado aún en un envío real: trátalo como supervisado la primera vez |
 
 ---
 
@@ -219,8 +219,12 @@ en la spec y Apple lo ignora igual. El mock sigue teniendo que ser hostil.
    ruta salió de la spec y la comprueba `test_asc_api_shapes.py` (46 llamadas). El gate exige
    la copia y la captura (`iap_store_copy`) antes de que nada llegue a Apple. Es `what=setup` en
    `factory-ios-store.yml`, y parte de `all`.
-3. **Lectura de vuelta** antes de enviar: qué build lleva la versión y qué elementos hay en el
-   envío. Con eso el "diagnóstico" deja de adivinar.
+3. **Hecho:** lectura de vuelta antes de enviar. `verify_attached_build` comprueba con
+   `/v1/appStoreVersions/{id}/build` que la versión lleva el build de esta ejecución — una versión
+   puede quedarse con uno anterior y Apple no protesta. `verify_submission_contents` pregunta a
+   Apple, vía `/v1/reviewSubmissions/{id}/items?include=…`, qué contiene el envío antes del PATCH
+   final, y **se niega a enviar** si falta la versión o alguna compra. Los 201 de los POST no eran
+   prueba: el envío que llegó a revisión sin la compra los tuvo todos.
 4. **Fijar XcodeGen** (hoy solo se imprime la versión) y **certificado en secrets**.
 5. Hasta que 2 y 3 existan, **el envío a revisión se hace desde la consola**. Es lo que
    funcionó en ambas apps; el automatizado lleva cuatro fallos seguidos y deja estado que Apple no
