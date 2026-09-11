@@ -105,14 +105,36 @@ jobs:
         with:
           xcode-version: ${{ env.FACTORY_XCODE_VERSION }}
 
-      - name: Install XcodeGen
+      - name: Install XcodeGen 2.46.0
         run: |
-          brew install xcodegen
-          # Logged on purpose: XcodeGen 2.46 resolved a project-level
-          # TARGETED_DEVICE_FAMILY differently from 2.42, which is how an
-          # iPhone-only app shipped universal while every local check agreed it
-          # was iPhone-only. When a generated project surprises you, look here.
-          xcodegen --version
+          set -euo pipefail
+          # Pinned, not `brew install xcodegen`. The generator's version changes the
+          # generated project: measured on ShiftSlip's own spec, resolving
+          # TARGETED_DEVICE_FAMILY via xcodebuild -showBuildSettings --
+          #
+          #   generator  TARGETED_DEVICE_FAMILY on the project only  ->  resolved
+          #   2.46.0     "1"                                         ->  1,2   (universal!)
+          #   2.42.0     "1"                                         ->  1
+          #
+          # brew served 2.46 to CI while the author's Mac had 2.42, so an iPhone-only
+          # app shipped to Apple as universal and Apple demanded 13-inch iPad
+          # screenshots for a layout that has none. Both apps now also set the value on
+          # the target, where it wins on either version -- but an unpinned generator is
+          # a moving floor under every other setting too, which is why Xcode is pinned
+          # here as well.
+          url="https://github.com/yonaskolb/XcodeGen/releases/download/2.46.0/xcodegen.artifactbundle.zip"
+          want="ef6d0a23bfb7393387f98e321ffd78a487231172e2e78c48d3c26275c263fd0c"
+          curl -sSL --retry 3 -o "$RUNNER_TEMP/xcodegen.zip" "$url"
+          got="$(shasum -a 256 "$RUNNER_TEMP/xcodegen.zip" | cut -d' ' -f1)"
+          [[ "$got" == "$want" ]] || { echo "::error::XcodeGen 2.46.0 checksum is $got, expected $want"; exit 1; }
+          unzip -q "$RUNNER_TEMP/xcodegen.zip" -d "$RUNNER_TEMP/xcodegen"
+          bin="$RUNNER_TEMP/xcodegen/xcodegen.artifactbundle/xcodegen-2.46.0-macosx/bin"
+          # XcodeGen reads its build-setting presets from a bundle beside the binary; a
+          # copy that loses it generates projects missing Xcode's defaults.
+          [[ -d "$bin/XcodeGen_XcodeGenKit.bundle/Contents/Resources/SettingPresets" ]] \
+            || { echo "::error::the XcodeGen artifact bundle has no SettingPresets"; exit 1; }
+          echo "$bin" >> "$GITHUB_PATH"
+          "$bin/xcodegen" --version
 
       - name: Generate Xcode project
         run: cd "$APP_PATH" && xcodegen generate
@@ -232,14 +254,36 @@ jobs:
         with:
           xcode-version: ${{ env.FACTORY_XCODE_VERSION }}
 
-      - name: Install XcodeGen
+      - name: Install XcodeGen 2.46.0
         run: |
-          brew install xcodegen
-          # Logged on purpose: XcodeGen 2.46 resolved a project-level
-          # TARGETED_DEVICE_FAMILY differently from 2.42, which is how an
-          # iPhone-only app shipped universal while every local check agreed it
-          # was iPhone-only. When a generated project surprises you, look here.
-          xcodegen --version
+          set -euo pipefail
+          # Pinned, not `brew install xcodegen`. The generator's version changes the
+          # generated project: measured on ShiftSlip's own spec, resolving
+          # TARGETED_DEVICE_FAMILY via xcodebuild -showBuildSettings --
+          #
+          #   generator  TARGETED_DEVICE_FAMILY on the project only  ->  resolved
+          #   2.46.0     "1"                                         ->  1,2   (universal!)
+          #   2.42.0     "1"                                         ->  1
+          #
+          # brew served 2.46 to CI while the author's Mac had 2.42, so an iPhone-only
+          # app shipped to Apple as universal and Apple demanded 13-inch iPad
+          # screenshots for a layout that has none. Both apps now also set the value on
+          # the target, where it wins on either version -- but an unpinned generator is
+          # a moving floor under every other setting too, which is why Xcode is pinned
+          # here as well.
+          url="https://github.com/yonaskolb/XcodeGen/releases/download/2.46.0/xcodegen.artifactbundle.zip"
+          want="ef6d0a23bfb7393387f98e321ffd78a487231172e2e78c48d3c26275c263fd0c"
+          curl -sSL --retry 3 -o "$RUNNER_TEMP/xcodegen.zip" "$url"
+          got="$(shasum -a 256 "$RUNNER_TEMP/xcodegen.zip" | cut -d' ' -f1)"
+          [[ "$got" == "$want" ]] || { echo "::error::XcodeGen 2.46.0 checksum is $got, expected $want"; exit 1; }
+          unzip -q "$RUNNER_TEMP/xcodegen.zip" -d "$RUNNER_TEMP/xcodegen"
+          bin="$RUNNER_TEMP/xcodegen/xcodegen.artifactbundle/xcodegen-2.46.0-macosx/bin"
+          # XcodeGen reads its build-setting presets from a bundle beside the binary; a
+          # copy that loses it generates projects missing Xcode's defaults.
+          [[ -d "$bin/XcodeGen_XcodeGenKit.bundle/Contents/Resources/SettingPresets" ]] \
+            || { echo "::error::the XcodeGen artifact bundle has no SettingPresets"; exit 1; }
+          echo "$bin" >> "$GITHUB_PATH"
+          "$bin/xcodegen" --version
 
       - name: Generate Xcode project
         run: cd "$APP_PATH" && xcodegen generate
@@ -269,12 +313,30 @@ jobs:
           set -euo pipefail
           [[ -n "$ASC_KEY_ID" && -n "$ASC_ISSUER_ID" ]] || { echo "::error::ASC_KEY_ID/ASC_ISSUER_ID are not configured in the appstore environment."; exit 1; }
           cd "$APP_PATH"
+          # Archive UNSIGNED. Nothing sets CODE_SIGN_IDENTITY, and Xcode's iOS default is
+          # "Apple Development" in EVERY configuration -- Release is only a name and carries
+          # no signing semantics. So with CODE_SIGN_STYLE: Automatic the archive is signed
+          # FOR DEVELOPMENT and automatic signing demands an "iOS App Development" profile.
+          # An ephemeral runner starts with an empty keychain, so -allowProvisioningUpdates
+          # minted a NEW Apple Development certificate every single run until the account hit
+          # Apple's limit and the owner had to revoke by hand, twice. Development certificates
+          # cannot be cloud-managed -- only distribution ones can -- so there was no reuse path.
+          #
+          # The archive's signature is thrown away moments later: -exportArchive re-signs for
+          # app-store-connect. Not signing here therefore costs nothing and removes the cause.
+          # Verified locally: archives successfully with zero provisioning/certificate log lines.
+          #
+          # Do NOT "fix" this instead by setting CODE_SIGN_IDENTITY="Apple Distribution":
+          # Xcode rejects that while CODE_SIGN_STYLE is Automatic ("conflicting provisioning
+          # settings"). The export below is where distribution signing belongs, and it still
+          # uses cloud-managed signing with the same API key.
           xcodebuild -project "$(find . -maxdepth 1 -name '*.xcodeproj')" -scheme "$APP_SCHEME" -configuration Release \
             -destination 'generic/platform=iOS' -archivePath build/App.xcarchive archive \
             -allowProvisioningUpdates \
             -authenticationKeyPath "$RUNNER_TEMP/keys/AuthKey.p8" \
             -authenticationKeyID "$ASC_KEY_ID" \
-            -authenticationKeyIssuerID "$ASC_ISSUER_ID"
+            -authenticationKeyIssuerID "$ASC_ISSUER_ID" \
+            CODE_SIGNING_ALLOWED=NO
 
       - name: Export IPA
         env:
@@ -296,6 +358,15 @@ jobs:
           [[ -n "$ipa" ]] || { echo "::error::export produced no .ipa"; exit 1; }
           rm -rf /tmp/ipa-check && unzip -q "$ipa" -d /tmp/ipa-check
           codesign -dv --verbose=4 /tmp/ipa-check/Payload/*.app
+          # "Some signature exists" is not the assertion worth making: an export signed with
+          # a DEVELOPMENT identity passes `codesign -dv` too, and that is exactly the signature
+          # this job used to produce by accident. Assert the authority Apple requires instead.
+          authority="$(codesign -dv --verbose=4 /tmp/ipa-check/Payload/*.app 2>&1 \
+                        | grep -m1 '^Authority=' | cut -d= -f2-)"
+          case "$authority" in
+            "Apple Distribution"*) echo "signed by $authority" ;;
+            *) echo "::error::the exported IPA is signed by '$authority', not an Apple Distribution certificate. App Store Connect will refuse it."; exit 1 ;;
+          esac
 
       - name: Verify the binary ships the devices the spec declares
         run: |
