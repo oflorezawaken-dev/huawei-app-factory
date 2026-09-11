@@ -122,8 +122,21 @@ jobs:
             echo "::error::No successful Factory iOS Build run found. Run 'Factory iOS Build' for $APP_SLUG first."
             exit 1
           fi
-          conclusion="$(gh run view "$run_id" -R "$GITHUB_REPOSITORY" --json conclusion --jq .conclusion)"
-          [[ "$conclusion" == "success" ]] || { echo "::error::Run $run_id concluded with '$conclusion'."; exit 1; }
+          # Judge THIS app's release job, not the whole run. The build workflow
+          # is a matrix over every registered app, so one app failing fails the
+          # run -- and this refused to publish ShiftSlip's perfectly good,
+          # already-verified IPA because PriceJar's release in the same run hit
+          # Apple's certificate limit. The two apps have nothing to do with each
+          # other.
+          conclusion="$(gh run view "$run_id" -R "$GITHUB_REPOSITORY" --json jobs \
+                         --jq ".jobs[] | select(.name == \"release ($APP_SLUG)\") | .conclusion")"
+          if [[ -z "$conclusion" ]]; then
+            echo "::error::Run $run_id has no 'release ($APP_SLUG)' job. Jobs present:"
+            gh run view "$run_id" -R "$GITHUB_REPOSITORY" --json jobs --jq '.jobs[].name' | sed 's/^/  /'
+            exit 1
+          fi
+          [[ "$conclusion" == "success" ]] || {
+            echo "::error::release ($APP_SLUG) in run $run_id concluded with '$conclusion'."; exit 1; }
           echo "run_id=$run_id" >> "$GITHUB_OUTPUT"
 
       - name: Download signed IPA
