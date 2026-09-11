@@ -52,6 +52,12 @@ targets:
       - package: GoogleMobileAds
     settings:
       base:
+        # On the TARGET, not only on the project. XcodeGen 2.46 lets the target
+        # default win over a project-level value, so a build machine with a
+        # newer generator than the author's shipped ShiftSlip 1.0.0 (1) as
+        # universal while project.yml said "1" and the gate agreed. Apple then
+        # demanded 13-inch iPad screenshots for an iPhone-only layout.
+        TARGETED_DEVICE_FAMILY: "1"
         INFOPLIST_FILE: Sources/Info.plist
         PRODUCT_BUNDLE_IDENTIFIER: $(APP_BUNDLE_ID)
         MARKETING_VERSION: $(MARKETING_VERSION)

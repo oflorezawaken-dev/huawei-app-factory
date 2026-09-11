@@ -36,9 +36,14 @@ detached is not.
    - `excludes: [Info.plist]` on the sources entry, so the plist is not also copied as
      a resource.
    - `TARGETED_DEVICE_FAMILY` set from the spec's `devices`: `"1"` for iPhone only,
-     `"1,2"` for iPhone and iPad. XcodeGen does not set it and Xcode's default is
-     universal, so an iPhone-only app shipped to Apple as universal — and Apple then
-     demanded iPad screenshots for it. The gate's `device_family` rule checks this.
+     `"1,2"` for iPhone and iPad — **on the application target, not only on the
+     project**. Xcode's default is universal, and XcodeGen 2.46 lets the target
+     default win over a project-level value, so ShiftSlip 1.0.0 (1) reached Apple
+     as universal while `project.yml` said `"1"`, the gate agreed, and a local
+     build with an older XcodeGen produced the right thing. Apple then demanded
+     13-inch iPad screenshots for a layout that has none. The gate's
+     `device_family` rule reads the project; the release job reads
+     `UIDeviceFamily` out of the built binary, which is the one that counts.
    - `UIRequiresFullScreen: true` in Info.plist. Without it Apple's upload servers reject an iPhone-only, portrait-only app with error 90474 ("iPad Multitasking support requires these orientations"), because a single-orientation app must either declare all four orientations or opt out of iPad multitasking entirely. The first PriceJar upload found this after Archive and Export both succeeded.
    Add targets or dependencies if the spec needs them; do not rewrite what is there.
 

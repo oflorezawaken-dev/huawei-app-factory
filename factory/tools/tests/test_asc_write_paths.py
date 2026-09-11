@@ -157,7 +157,7 @@ class Handler(BaseHTTPRequestHandler):
             self._json(200, {"data": rows})
         elif path == f"/v1/apps/{ASC_APP_ID}/appPriceSchedule":
             self._maybe(STATE["price_schedule"])
-        elif path == f"/v1/appStoreVersions/{VERSION_ID}/ageRatingDeclaration":
+        elif path == f"/v1/appInfos/{APP_INFO_ID}/ageRatingDeclaration":
             self._maybe(STATE["age_rating"])
         elif path == f"/v1/apps/{ASC_APP_ID}/appDataUsages":
             self._json(200, {"data": STATE["data_usages"]})
