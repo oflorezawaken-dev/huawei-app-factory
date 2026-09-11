@@ -221,11 +221,16 @@ def clear_open_review_submission(asc_app_id: str, token: str) -> None:
         attrs = row.get("attributes") or {}
         if attrs.get("submitted"):
             continue
+        # Not DELETE: Apple answers 403 "does not allow 'DELETE'". Cancelling is
+        # an update, and leaving these open is how four of them piled up on
+        # PriceJar over a day of failed attempts.
         try:
-            api_call("DELETE", f"/v1/reviewSubmissions/{row['id']}", token=token)
-            log(f"removed the open, unsubmitted reviewSubmission {row['id']}")
+            api_call("PATCH", f"/v1/reviewSubmissions/{row['id']}",
+                     {"data": {"type": "reviewSubmissions", "id": row["id"],
+                               "attributes": {"canceled": True}}}, token)
+            log(f"cancelled the open, unsubmitted reviewSubmission {row['id']}")
         except ASCError as exc:
-            log(f"warning: could not remove open reviewSubmission {row['id']}: {exc}")
+            log(f"warning: could not cancel open reviewSubmission {row['id']}: {exc}")
 
 
 # An in-app purchase does not travel with a version by being "Ready to Submit".
@@ -234,6 +239,12 @@ def clear_open_review_submission(asc_app_id: str, token: str) -> None:
 # "the app includes references to paid content but the associated In-App
 # Purchase products have not been submitted for review."
 IAP_SUBMITTABLE_STATES = ("READY_TO_SUBMIT", "DEVELOPER_ACTION_NEEDED", "REJECTED")
+
+# Apple rejected "inAppPurchaseV2" with 'is not a relationship on the resource
+# reviewSubmissionItems'. Rather than guess a second name and find out on the
+# next submission, the run tries the known spellings in order and logs the one
+# Apple accepted, so the answer ends up in the log instead of in my head.
+IAP_ITEM_RELATIONSHIPS = ("inAppPurchase", "inAppPurchaseV2")
 
 
 def in_app_purchases(asc_app_id: str, token: str) -> list[dict]:
@@ -277,13 +288,32 @@ def add_iap_submission_items(submission_id: str, submittable: list[dict], token:
     added = []
     for row in submittable:
         attrs = row.get("attributes") or {}
-        api_call("POST", "/v1/reviewSubmissionItems", {
-            "data": {"type": "reviewSubmissionItems",
-                     "relationships": {
-                         "reviewSubmission": {"data": {"type": "reviewSubmissions", "id": submission_id}},
-                         "inAppPurchaseV2": {"data": {"type": "inAppPurchases", "id": row["id"]}}}}}, token)
-        added.append(str(attrs.get("productId") or row["id"]))
-        log(f"added in-app purchase {added[-1]} to the submission")
+        product = str(attrs.get("productId") or row["id"])
+        errors = []
+        for relationship in IAP_ITEM_RELATIONSHIPS:
+            try:
+                api_call("POST", "/v1/reviewSubmissionItems", {
+                    "data": {"type": "reviewSubmissionItems",
+                             "relationships": {
+                                 "reviewSubmission": {
+                                     "data": {"type": "reviewSubmissions", "id": submission_id}},
+                                 relationship: {
+                                     "data": {"type": "inAppPurchases", "id": row["id"]}}}}}, token)
+            except ASCError as exc:
+                if "unknown relationship" not in str(exc):
+                    raise
+                errors.append(f"{relationship}: {exc}")
+                continue
+            log(f"added in-app purchase {product} to the submission (relationship: {relationship})")
+            added.append(product)
+            break
+        else:
+            raise ASCError(
+                f"could not attach {product}: App Store Connect rejected every relationship name "
+                f"tried {IAP_ITEM_RELATIONSHIPS}.\n  " + "\n  ".join(errors) +
+                "\nCheck Apple's current reviewSubmissionItems schema and pin the right one; do "
+                "not submit without the product, or review will reject the app for paid content "
+                "that was never submitted.")
     return added
 
 
