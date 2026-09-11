@@ -26,7 +26,7 @@ settings:
     # check_ios_app.py's device_family rule enforces. Declaring iPad means
     # Apple requires 13-inch iPad screenshots and will review the iPad
     # layout, so both are part of the flow rather than an afterthought.
-    TARGETED_DEVICE_FAMILY: "1,2"
+
     SWIFT_VERSION: "5.0"
     DEVELOPMENT_TEAM: $(APPLE_TEAM_ID)
     CODE_SIGN_STYLE: Automatic
@@ -53,6 +53,12 @@ targets:
       - package: GoogleMobileAds
     settings:
       base:
+        # On the TARGET, not only on the project. XcodeGen 2.46 lets the target's
+        # universal default win over a project-level value -- measured: project-level
+        # "1" resolves to 1,2 under 2.46 and to 1 under 2.42. An iPhone-only app
+        # generated from this template must set "1" HERE, or it ships universal and
+        # Apple demands iPad screenshots for a layout it does not have.
+        TARGETED_DEVICE_FAMILY: "1,2"
         INFOPLIST_FILE: Sources/Info.plist
         PRODUCT_BUNDLE_IDENTIFIER: $(APP_BUNDLE_ID)
         MARKETING_VERSION: $(MARKETING_VERSION)
