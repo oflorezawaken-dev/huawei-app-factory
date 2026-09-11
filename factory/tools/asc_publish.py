@@ -167,7 +167,14 @@ def diagnose_submission_blockers(asc_app_id: str, version_id: str, token: str) -
         return bool(data.get("data")), "" if data.get("data") else "no price schedule set"
 
     def age_rating():
-        data = api_call("GET", f"/v1/appStoreVersions/{version_id}/ageRatingDeclaration", token=token)
+        # On appInfos, not appStoreVersions: the version relationship does not
+        # exist and answered 404, which the report then had to call "could not
+        # check". The age rating belongs to the app's information, not to one
+        # version of it.
+        infos = api_call("GET", f"/v1/apps/{asc_app_id}/appInfos?limit=1", token=token).get("data") or []
+        if not infos:
+            return False, "the app has no appInfo yet"
+        data = api_call("GET", f"/v1/appInfos/{infos[0]['id']}/ageRatingDeclaration", token=token)
         return bool(data.get("data")), "" if data.get("data") else "questionnaire not completed"
 
     def privacy():
