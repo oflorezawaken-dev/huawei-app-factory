@@ -303,6 +303,76 @@ def add_iap_submission_items(submission_id: str, submittable: list[dict], token:
     return added
 
 
+def attached_build_number(version_id: str, token: str) -> str | None:
+    """The build the version actually carries, or None when it carries none.
+
+    "Which build is in review?" was a question I had to ask the user twice,
+    with screenshots, because nothing here could answer it. A version can
+    happily hold an older build than the one just uploaded -- Apple does not
+    complain, and the wrong binary goes to review.
+    """
+    try:
+        data = api_call("GET", f"/v1/appStoreVersions/{version_id}/build", token=token)
+    except ASCError as exc:
+        if "HTTP 404" in str(exc):
+            return None
+        raise
+    row = data.get("data")
+    return str((row.get("attributes") or {}).get("version") or "") if row else None
+
+
+def verify_attached_build(version_id: str, want_build: str, token: str) -> None:
+    got = attached_build_number(version_id, token)
+    if got == want_build:
+        log(f"version carries build {got}, as the registry says")
+        return
+    raise ASCError(
+        f"the version carries build {got or 'nothing'} but the registry says {want_build}. "
+        "Submitting now would send a different binary than the one just built -- check "
+        "current_version.build and the build that was uploaded.")
+
+
+def submission_contents(submission_id: str, token: str) -> dict[str, set[str]]:
+    """Resource ids in the submission, by type, straight from Apple.
+
+    Read through `include` rather than from each item's relationships: the
+    included array always carries the resources, while a to-one relationship's
+    `data` is populated at the server's discretion.
+    """
+    data = api_call(
+        "GET",
+        f"/v1/reviewSubmissions/{submission_id}/items"
+        "?include=appStoreVersion,inAppPurchaseVersion&limit=50", token=token)
+    found: dict[str, set[str]] = {}
+    for row in data.get("included") or []:
+        found.setdefault(str(row.get("type")), set()).add(str(row.get("id")))
+    return found
+
+
+def verify_submission_contents(submission_id: str, version_id: str, expect_iaps: int,
+                               token: str) -> None:
+    """Refuse to submit unless Apple confirms the submission holds what it must.
+
+    Every POST here returned 201 on the run that still went to review without
+    the in-app purchase, and App Review answered "the associated In-App
+    Purchase products have not been submitted". A 201 is not evidence; this is.
+    """
+    found = submission_contents(submission_id, token)
+    versions = found.get("appStoreVersions", set())
+    purchases = found.get("inAppPurchaseVersions", set())
+    problems = []
+    if version_id not in versions:
+        problems.append(f"the appStoreVersion {version_id} is not in it (found {sorted(versions) or 'none'})")
+    if expect_iaps and len(purchases) < expect_iaps:
+        problems.append(f"{expect_iaps} in-app purchase(s) were added but Apple reports "
+                        f"{len(purchases)}")
+    if problems:
+        raise ASCError(
+            "App Store Connect does not hold what this submission needs: " + "; ".join(problems) +
+            ". Not submitting -- review would reject it for the missing piece.")
+    log(f"submission holds the version and {len(purchases)} in-app purchase(s), confirmed by Apple")
+
+
 def submit_for_review(asc_app_id: str, token: str, iap_product_id: str = "") -> None:
     # Everything that can be checked is checked before anything is created: a
     # failure after the POST leaves an open submission behind, and Apple refuses
@@ -357,6 +427,15 @@ def submit_for_review(asc_app_id: str, token: str, iap_product_id: str = "") -> 
     # The version alone is not the submission when the app sells something.
     if submittable_iaps:
         add_iap_submission_items(submission_id, submittable_iaps, token)
+
+    # Ask Apple what it actually holds before pulling the trigger, and leave the
+    # app as we found it if the answer is wrong -- an abandoned submission locks
+    # the version against every later edit.
+    try:
+        verify_submission_contents(submission_id, version_id, len(submittable_iaps), token)
+    except ASCError:
+        clear_open_review_submission(asc_app_id, token)
+        raise
 
     api_call("PATCH", f"/v1/reviewSubmissions/{submission_id}",
               {"data": {"type": "reviewSubmissions", "id": submission_id,
@@ -428,6 +507,9 @@ def main(argv: list[str]) -> int:
             if build_id:
                 attach_build(version_id, build_id, token)
             if a.submit:
+                # Before anything irreversible: the version must carry the build
+                # this run is publishing, not whatever was attached last.
+                verify_attached_build(version_id, build_number, token)
                 if a.notes:
                     set_release_notes(version_id, a.notes, token)
                 submit_for_review(asc_app_id, token,

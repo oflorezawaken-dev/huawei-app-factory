@@ -60,6 +60,11 @@ STATE = {
     "build_encryption": False,
     # What Apple reports once it has looked at the uploaded image.
     "asset_state": {"state": "COMPLETE", "errors": []},
+    # What the version actually carries, and what each submission holds. Both
+    # used to be unknowable from here, which is how a submission went to review
+    # without its in-app purchase and nothing noticed.
+    "version_build": "3",
+    "drop_iap_from_submission": False,
     # Apple's in-app purchases for this app, and how they come back.
     "iaps": [{"type": "inAppPurchases", "id": "iap1",
               "attributes": {"productId": "com.example.fixture.removeads",
@@ -149,6 +154,21 @@ class Handler(BaseHTTPRequestHandler):
             rows = [{"id": sid, "attributes": {"screenshotDisplayType": dt}}
                     for dt, sid in STATE["screenshot_sets"].items()]
             self._json(200, {"data": rows})
+        elif path == f"/v1/appStoreVersions/{VERSION_ID}/build":
+            if STATE["version_build"] is None:
+                self._json(404, {"errors": [{"title": "NOT_FOUND"}]})
+            else:
+                self._json(200, {"data": {"type": "builds", "id": "b1",
+                                          "attributes": {"version": STATE["version_build"]}}})
+        elif path.startswith("/v1/reviewSubmissions/") and path.endswith("/items"):
+            sub_id = path.split("/")[3]
+            sub = STATE["submissions"].get(sub_id, {})
+            included = [{"type": "appStoreVersions", "id": v} for v in sub.get("items", [])]
+            if not STATE["drop_iap_from_submission"]:
+                included += [{"type": "inAppPurchaseVersions", "id": i} for i in sub.get("iaps", [])]
+            self._json(200, {"data": [{"type": "reviewSubmissionItems", "id": new_id()}
+                                      for _ in included],
+                             "included": included})
         elif path == f"/v1/apps/{ASC_APP_ID}/inAppPurchasesV2":
             self._json(200, {"data": STATE["iaps"]})
         elif path == "/v2/inAppPurchases/iap1/versions":
@@ -498,6 +518,23 @@ def main() -> int:
     check("that submission has the version attached as an item",
           bool(submitted) and VERSION_ID in submitted[0]["items"])
 
+    print("\nthe version must carry the build this run is publishing:")
+    # asc_publish.main calls this before anything irreversible. A version can
+    # hold an older build and Apple will not complain -- the wrong binary just
+    # goes to review, and nothing here could see it until now.
+    STATE["version_build"] = "3"
+    asc_publish.verify_attached_build(VERSION_ID, "3", None)
+    check("passes when the attached build matches the registry", True)
+    for bad, label in (("2", "an older build"), (None, "no build at all")):
+        STATE["version_build"] = bad
+        try:
+            asc_publish.verify_attached_build(VERSION_ID, "3", None)
+            msg = ""
+        except asc_publish.ASCError as exc:
+            msg = str(exc)
+        check(f"refuses {label}", bool(msg) and "registry says 3" in msg, msg)
+    STATE["version_build"] = "3"
+
     print("\na version that sells something must carry the purchase:")
     # "Ready to Submit" is configured-and-waiting, not submitted. PriceJar 1.0.0
     # (4) was rejected because the version went in without the product.
@@ -506,6 +543,22 @@ def main() -> int:
     check("the in-app purchase is added as its own submission item",
           len(with_iap) == 1 and with_iap[0]["iaps"] == ["iapv1"],
           str([s.get("iaps") for s in STATE["submissions"].values()]))
+
+    print("\nApple is asked what the submission actually holds:")
+    # Every POST returned 201 on the run that still reached review without its
+    # purchase. A 201 is not evidence of what App Store Connect holds.
+    STATE["drop_iap_from_submission"] = True
+    try:
+        asc_publish.submit_for_review(ASC_APP_ID, None, "com.example.fixture.removeads")
+        msg = ""
+    except asc_publish.ASCError as exc:
+        msg = str(exc)
+    check("refuses to submit when Apple does not report the purchase",
+          bool(msg) and "in-app purchase" in msg, msg)
+    check("and says nothing was submitted",
+          not any(s["attributes"].get("submitted") and s.get("iaps") == [] for s in STATE["submissions"].values()),
+          str([(k, v["attributes"]) for k, v in STATE["submissions"].items()]))
+    STATE["drop_iap_from_submission"] = False
 
     print("\nan unfinished purchase stops the submission instead of repeating the rejection:")
     STATE["iaps"] = [{"type": "inAppPurchases", "id": "iap1",
