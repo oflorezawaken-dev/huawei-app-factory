@@ -178,9 +178,11 @@ def diagnose_submission_blockers(asc_app_id: str, version_id: str, token: str) -
         return bool(data.get("data")), "" if data.get("data") else "questionnaire not completed"
 
     def privacy():
-        data = api_call("GET", f"/v1/apps/{asc_app_id}/appDataUsages?limit=1", token=token)
-        rows = data.get("data") or []
-        return bool(rows), "" if rows else "App Privacy questionnaire has no answers"
+        # Not exposed by the App Store Connect API at all -- verified against
+        # Apple's OpenAPI specification, which has no path for it. Two probes at
+        # guessed URLs 404'd before that was checked. Reported as console-only
+        # rather than as a failed lookup.
+        raise ASCError("not in the API; check App Store Connect > App Privacy (needs Admin)")
 
     def review_detail():
         data = api_call("GET", f"/v1/appStoreVersions/{version_id}/appStoreReviewDetail", token=token)
@@ -240,11 +242,10 @@ def clear_open_review_submission(asc_app_id: str, token: str) -> None:
 # Purchase products have not been submitted for review."
 IAP_SUBMITTABLE_STATES = ("READY_TO_SUBMIT", "DEVELOPER_ACTION_NEEDED", "REJECTED")
 
-# Apple rejected "inAppPurchaseV2" with 'is not a relationship on the resource
-# reviewSubmissionItems'. Rather than guess a second name and find out on the
-# next submission, the run tries the known spellings in order and logs the one
-# Apple accepted, so the answer ends up in the log instead of in my head.
-IAP_ITEM_RELATIONSHIPS = ("inAppPurchase", "inAppPurchaseV2")
+# From Apple's OpenAPI spec: ReviewSubmissionItemCreateRequest relates to an
+# inAppPurchaseVersion -- the purchase's version, not the purchase. Two names
+# were guessed before the spec was consulted; both cost a live submission.
+IAP_ITEM_RELATIONSHIP = "inAppPurchaseVersion"
 
 
 def in_app_purchases(asc_app_id: str, token: str) -> list[dict]:
@@ -289,31 +290,16 @@ def add_iap_submission_items(submission_id: str, submittable: list[dict], token:
     for row in submittable:
         attrs = row.get("attributes") or {}
         product = str(attrs.get("productId") or row["id"])
-        errors = []
-        for relationship in IAP_ITEM_RELATIONSHIPS:
-            try:
-                api_call("POST", "/v1/reviewSubmissionItems", {
-                    "data": {"type": "reviewSubmissionItems",
-                             "relationships": {
-                                 "reviewSubmission": {
-                                     "data": {"type": "reviewSubmissions", "id": submission_id}},
-                                 relationship: {
-                                     "data": {"type": "inAppPurchases", "id": row["id"]}}}}}, token)
-            except ASCError as exc:
-                if "unknown relationship" not in str(exc):
-                    raise
-                errors.append(f"{relationship}: {exc}")
-                continue
-            log(f"added in-app purchase {product} to the submission (relationship: {relationship})")
-            added.append(product)
-            break
-        else:
-            raise ASCError(
-                f"could not attach {product}: App Store Connect rejected every relationship name "
-                f"tried {IAP_ITEM_RELATIONSHIPS}.\n  " + "\n  ".join(errors) +
-                "\nCheck Apple's current reviewSubmissionItems schema and pin the right one; do "
-                "not submit without the product, or review will reject the app for paid content "
-                "that was never submitted.")
+        versions = api_call("GET", f"/v2/inAppPurchases/{row['id']}/versions", token=token).get("data") or []
+        if not versions:
+            raise ASCError(f"{product} has no inAppPurchaseVersion to submit; finish it in App Store Connect")
+        api_call("POST", "/v1/reviewSubmissionItems", {
+            "data": {"type": "reviewSubmissionItems",
+                     "relationships": {
+                         "reviewSubmission": {"data": {"type": "reviewSubmissions", "id": submission_id}},
+                         "inAppPurchaseVersion": {"data": {"type": "inAppPurchaseVersions", "id": versions[0]["id"]}}}}}, token)
+        added.append(product)
+        log(f"added in-app purchase {product} to the submission")
     return added
 
 

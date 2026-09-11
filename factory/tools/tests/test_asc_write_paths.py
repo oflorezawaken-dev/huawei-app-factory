@@ -151,6 +151,8 @@ class Handler(BaseHTTPRequestHandler):
             self._json(200, {"data": rows})
         elif path == f"/v1/apps/{ASC_APP_ID}/inAppPurchasesV2":
             self._json(200, {"data": STATE["iaps"]})
+        elif path == "/v2/inAppPurchases/iap1/versions":
+            self._json(200, {"data": [{"type": "inAppPurchaseVersions", "id": "iapv1"}]})
         elif path == f"/v1/apps/{ASC_APP_ID}/reviewSubmissions":
             rows = [{"type": "reviewSubmissions", "id": sid, "attributes": sub["attributes"]}
                     for sid, sub in STATE["submissions"].items()]
@@ -159,8 +161,6 @@ class Handler(BaseHTTPRequestHandler):
             self._maybe(STATE["price_schedule"])
         elif path == f"/v1/appInfos/{APP_INFO_ID}/ageRatingDeclaration":
             self._maybe(STATE["age_rating"])
-        elif path == f"/v1/apps/{ASC_APP_ID}/appDataUsages":
-            self._json(200, {"data": STATE["data_usages"]})
         elif path == f"/v1/appStoreVersions/{VERSION_ID}/appStoreReviewDetail":
             self._maybe(STATE["review_detail"])
         elif path == f"/v1/apps/{ASC_APP_ID}/builds":
@@ -216,16 +216,14 @@ class Handler(BaseHTTPRequestHandler):
             STATE["submissions"][sub_id] = {"attributes": {"submitted": False}, "items": []}
             self._json(201, {"data": {"type": rtype, "id": sub_id}})
         elif rtype == "reviewSubmissionItems":
-            if "inAppPurchaseV2" in data["relationships"]:
-                # Apple: 'inAppPurchaseV2' is not a relationship on the resource
-                # 'reviewSubmissionItems'. The mock said yes to it for a whole
-                # submission attempt.
+            unknown = [k for k in data["relationships"] if k not in ("reviewSubmission", "appStoreVersion", "inAppPurchaseVersion")]
+            if unknown:
+                # Exactly Apple's answer to 'inAppPurchaseV2' and 'inAppPurchase'.
                 self._json(409, {"errors": [{
                     "title": "The provided entity includes an unknown relationship",
-                    "detail": "'inAppPurchaseV2' is not a relationship on the resource "
-                              "'reviewSubmissionItems'"}]})
+                    "detail": f"'{unknown[0]}' is not a relationship on the resource 'reviewSubmissionItems'"}]})
                 return
-            iap = data["relationships"].get("inAppPurchase")
+            iap = data["relationships"].get("inAppPurchaseVersion")
             if iap:
                 sub_id = data["relationships"]["reviewSubmission"]["data"]["id"]
                 STATE["submissions"][sub_id].setdefault("iaps", []).append(iap["data"]["id"])
@@ -506,7 +504,7 @@ def main() -> int:
     asc_publish.submit_for_review(ASC_APP_ID, None, "com.example.fixture.removeads")
     with_iap = [s for s in STATE["submissions"].values() if s.get("iaps")]
     check("the in-app purchase is added as its own submission item",
-          len(with_iap) == 1 and with_iap[0]["iaps"] == ["iap1"],
+          len(with_iap) == 1 and with_iap[0]["iaps"] == ["iapv1"],
           str([s.get("iaps") for s in STATE["submissions"].values()]))
 
     print("\nan unfinished purchase stops the submission instead of repeating the rejection:")
@@ -543,7 +541,8 @@ def main() -> int:
         msg = str(exc)
         check("raises when Apple refuses the version", True)
     check("reports Pricing as unmet", "!!  Pricing" in msg, msg)
-    check("reports the App Privacy questionnaire as unmet", "!!  App Privacy" in msg, msg)
+    check("says App Privacy is console-only, not a failed lookup",
+          "App Privacy" in msg and "not in the API" in msg, msg)
     check("names the contact field that is actually blank", "contactPhone" in msg, msg)
     check("reports export compliance as unmet", "!!  Export compliance" in msg, msg)
     check("does NOT flag the age rating, which is set -- the diagnosis has to "
