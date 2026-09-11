@@ -78,6 +78,17 @@ final class ScreenshotTests: XCTestCase {
         tapTab("Stats")
         settle()
         capture(named: "05-stats")
+
+        // 6. Settings, for the in-app purchase review screenshot. Apple reviews
+        // the Remove Ads product separately from the app and requires a shot of
+        // the screen that offers it; App Review rejected 1.0.0 (4) partly for
+        // not having one. Capturing it here means it is produced by every build
+        // instead of being taken by hand, and it is NOT a store screenshot --
+        // store/screenshots holds those, and this one is not copied there.
+        tapTab("Settings")
+        XCTAssertTrue(app.buttons["settings.ads.remove"].waitForExistence(timeout: 20),
+                      "the Remove Ads purchase must be on screen for the review shot")
+        capture(named: "06-settings-iap")
     }
 
     /// Tapping a tab the instant a sheet has dismissed is not safe: the tab
