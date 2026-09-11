@@ -641,6 +641,32 @@
       "Cold start reaches an interactive Dashboard in under 2 seconds on an iPhone SE (2nd generation) with 2 jobs and 1,500 shifts, and scrolling Shift History over that data stays at 60 fps.",
       "Line coverage of the tip-out, earnings and pay-period modules is at least 90%, and the whole unit-test suite runs in under 60 seconds.",
       "No AdMob unit ID, app ID or IAP product ID appears as a literal in tracked Swift source; all come from Config/AdMob.xcconfig, and a check fails the build if a 'ca-app-pub-' literal is found outside that file."
-    ]
+    ],
+    "banned_phrases": {
+      "_note": "Checked in two places against this one list: a unit test scans the in-app string catalogue in all nine languages, and the quality gate scans store/listing.json. The listing was unchecked until now, and it is the copy Apple actually reads.",
+      "tax": [
+        "irs-approved",
+        "irs-certified",
+        "official irs",
+        "no tax on tips",
+        "tax free",
+        "tax-free",
+        "your deduction",
+        "deduct up to",
+        "estimated refund",
+        "maximise your refund",
+        "maximize your refund",
+        "we file",
+        "guaranteed"
+      ],
+      "wage_claim": [
+        "illegal",
+        "wage theft",
+        "you are owed",
+        "violation",
+        "lawsuit",
+        "claim"
+      ]
+    }
   }
 }
