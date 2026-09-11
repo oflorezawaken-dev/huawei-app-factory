@@ -571,10 +571,15 @@ def main() -> int:
     STATE["reject_review_item"] = False
     stale = new_id()
     STATE["submissions"][stale] = {"attributes": {"submitted": False}, "items": []}
-    asc_publish.submit_for_review(ASC_APP_ID, None)
-    check("is cleared instead of blocking a new one -- Apple allows only one "
-          "open submission per app", stale not in STATE["submissions"],
+    # asc_publish.main calls this BEFORE touching the version, because adding a
+    # version to a submission locks it against every metadata edit: a run that
+    # died mid-way left the version unreachable until the submission was gone.
+    asc_publish.clear_open_review_submission(ASC_APP_ID, None)
+    check("is cancelled, not left to lock the version", stale not in STATE["submissions"],
           str(sorted(STATE["submissions"])))
+    check("cancelled by PATCH, which is the only verb Apple allows",
+          STATE.get("cancelled_submissions", 0) > 0,
+          f"cancelled={STATE.get('cancelled_submissions')}")
 
     print("\na first version rejects whatsNew; the rest of the listing still lands:")
     STATE["reject_whats_new"] = True

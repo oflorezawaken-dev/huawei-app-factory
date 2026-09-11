@@ -324,10 +324,6 @@ def submit_for_review(asc_app_id: str, token: str, iap_product_id: str = "") -> 
     submittable_iaps = (submittable_in_app_purchases(asc_app_id, iap_product_id, token)
                         if iap_product_id else [])
 
-    # A previous failed run may have left one behind, and Apple allows only one
-    # open submission per app.
-    clear_open_review_submission(asc_app_id, token)
-
     submission = api_call("POST", "/v1/reviewSubmissions", {
         "data": {"type": "reviewSubmissions", "attributes": {"platform": "IOS"},
                  "relationships": {"app": {"data": {"type": "apps", "id": asc_app_id}}}}}, token)
@@ -434,6 +430,14 @@ def main(argv: list[str]) -> int:
 
         if a.attach or a.submit:
             token = make_token()
+            # Before anything that edits the version. Adding a version to a
+            # review submission moves it to READY_FOR_REVIEW, and App Store
+            # Connect then refuses every metadata edit -- so a run that died
+            # after adding the version item left the version locked, the
+            # submission open and unsubmitted, and the next run unable to do
+            # anything at all. Cancelling first puts it back in reach.
+            if a.submit:
+                clear_open_review_submission(asc_app_id, token)
             version_id = find_editable_version(asc_app_id, marketing_version, token)
             if build_id:
                 attach_build(version_id, build_id, token)
