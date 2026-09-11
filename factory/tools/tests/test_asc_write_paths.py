@@ -216,7 +216,16 @@ class Handler(BaseHTTPRequestHandler):
             STATE["submissions"][sub_id] = {"attributes": {"submitted": False}, "items": []}
             self._json(201, {"data": {"type": rtype, "id": sub_id}})
         elif rtype == "reviewSubmissionItems":
-            iap = data["relationships"].get("inAppPurchaseV2")
+            if "inAppPurchaseV2" in data["relationships"]:
+                # Apple: 'inAppPurchaseV2' is not a relationship on the resource
+                # 'reviewSubmissionItems'. The mock said yes to it for a whole
+                # submission attempt.
+                self._json(409, {"errors": [{
+                    "title": "The provided entity includes an unknown relationship",
+                    "detail": "'inAppPurchaseV2' is not a relationship on the resource "
+                              "'reviewSubmissionItems'"}]})
+                return
+            iap = data["relationships"].get("inAppPurchase")
             if iap:
                 sub_id = data["relationships"]["reviewSubmission"]["data"]["id"]
                 STATE["submissions"][sub_id].setdefault("iaps", []).append(iap["data"]["id"])
@@ -273,6 +282,10 @@ class Handler(BaseHTTPRequestHandler):
                 if row["id"] == rid:
                     row["attrs"].update(data.get("attributes", {}))
             self._json(200, {"data": {"type": rtype, "id": rid}})
+        elif rtype == "reviewSubmissions" and data.get("attributes", {}).get("canceled"):
+            STATE["submissions"].pop(rid, None)
+            STATE["cancelled_submissions"] = STATE.get("cancelled_submissions", 0) + 1
+            self._json(200, {"data": {"type": rtype, "id": rid}})
         elif rtype == "reviewSubmissions":
             if not STATE["submissions"][rid]["items"]:
                 self._json(422, {"errors": [{"title": "NO_ITEMS", "detail": "add an item before submitting"}]})
@@ -288,8 +301,13 @@ class Handler(BaseHTTPRequestHandler):
             return
         rid = self.path.rsplit("/", 1)[-1]
         if "/reviewSubmissions/" in self.path:
-            STATE["submissions"].pop(rid, None)
-            STATE["deleted_submissions"] = STATE.get("deleted_submissions", 0) + 1
+            # Apple forbids this outright; the mock used to accept it.
+            self._json(403, {"errors": [{
+                "title": "The given operation is not allowed",
+                "detail": "The resource 'reviewSubmissions' does not allow 'DELETE'."}]})
+            return
+        if False:
+            pass
         else:
             STATE["screenshots"].pop(rid, None)
             STATE["deleted_screenshots"] = STATE.get("deleted_screenshots", 0) + 1
