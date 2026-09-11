@@ -42,8 +42,7 @@ struct FirstRunView: View {
                 Button {
                     settings.currencyCode = currencyCode
                     SampleDataFactory.insertSampleData(into: context)
-                    settings.hasCompletedFirstRun = true
-                    isPresented = false
+                    finish()
                 } label: {
                     Text("firstrun.loadsample").frame(maxWidth: .infinity)
                 }
@@ -61,19 +60,30 @@ struct FirstRunView: View {
 
                 Button("firstrun.startempty") {
                     settings.currencyCode = currencyCode
-                    settings.hasCompletedFirstRun = true
-                    isPresented = false
+                    finish()
                 }
                 .accessibilityIdentifier("firstrun.startempty")
             }
             .padding()
             .navigationTitle("firstrun.title")
-            .sheet(isPresented: $showingJobEditor, onDismiss: {
-                settings.hasCompletedFirstRun = true
-                isPresented = false
-            }) {
+            .sheet(isPresented: $showingJobEditor, onDismiss: { finish() }) {
                 JobEditView(job: nil)
             }
         }
+    }
+
+    /// The single way out of First Run. There are three buttons that end it and
+    /// each used to set the flag and dismiss on its own; the tracking prompt has
+    /// to follow every one of them, so they all go through here.
+    ///
+    /// The user has just been told what the app does, which is the moment the
+    /// spec wanted for the prompt. Asking here rather than after the first saved
+    /// shift is what makes it reachable for an App Review pass -- PriceJar was
+    /// rejected under guideline 2.1 for a prompt buried behind an action the
+    /// reviewer never performed.
+    private func finish() {
+        settings.hasCompletedFirstRun = true
+        isPresented = false
+        Task { await AdsBootstrap.startAfterTrackingPrompt(settings: settings) }
     }
 }

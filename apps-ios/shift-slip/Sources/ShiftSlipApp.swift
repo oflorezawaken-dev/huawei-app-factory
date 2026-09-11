@@ -41,12 +41,11 @@ struct ShiftSlipApp: App {
                 .environment(interstitial)
                 .task {
                     guard !UITestMode.isActive else { return }
-                    // The tracking prompt is deliberately NOT requested here.
-                    // It fires once, right after the first shift is saved (see
-                    // ShiftSummaryView), so the user has already seen what the
-                    // app does before being asked. Cold start only starts the
-                    // ad SDK (no ad is shown yet) and reads the entitlement.
-                    AdsBootstrap.start()
+                    // Tracking prompt first, ad SDK second -- see
+                    // AdsBootstrap.startAfterTrackingPrompt. Does nothing until
+                    // First Run has been completed; FirstRunView calls it too, so
+                    // a fresh install is asked as soon as onboarding ends.
+                    await AdsBootstrap.startAfterTrackingPrompt(settings: settings)
                     await removeAdsStore.refreshEntitlement()
                 }
         }

@@ -101,7 +101,9 @@ struct ShiftSummaryView: View {
             }
             .task {
                 guard !UITestMode.isActive else { return }
-                await TrackingAuthorization.requestIfNeeded(settings: settings)
+                // The tracking prompt used to be requested here. A reviewer who
+                // never saved a shift never saw it, which is what App Review
+                // rejected PriceJar for; it now happens after First Run.
                 await interstitial.load()
                 await interstitial.presentIfAllowed(from: Self.rootViewController(),
                                                      savedShiftCount: settings.savedShiftCount)

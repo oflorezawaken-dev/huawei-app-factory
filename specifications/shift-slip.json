@@ -478,7 +478,7 @@
       "Any moment before a shift has been written to disk - the save always completes first",
       "Anywhere at all once the Remove Ads purchase is owned"
     ],
-    "att_requested_when": "Immediately after the first shift is saved, on the shift summary, so the user has already seen the app work before being asked. Never at launch, never during first run, never on the entry form, and never more than once."
+    "att_requested_when": "On the first launch after First Run completes, before the ad SDK starts, and never more than once. NOT after the first saved shift: App Review rejected PriceJar 1.0.0 under guideline 2.1 for a prompt placed behind an action the reviewer never performed, and Apple asks for the prompt before any trackable data is collected. Onboarding is where the user is told what the app does, so asking straight after it keeps the intent of 'never before the user knows what this is' while staying reachable in a review pass."
   },
   "localization": {
     "default_language": "en-US",

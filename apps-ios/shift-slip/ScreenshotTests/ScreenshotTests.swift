@@ -55,6 +55,24 @@ final class ScreenshotTests: XCTestCase {
         tab("Reports").tap()
         settle()
         capture(named: "05-reports")
+
+        // 6. Settings, for the in-app purchase review screenshot. Apple reviews
+        // the Remove Ads product separately and will not accept it for review
+        // without a shot of the screen that offers it; PriceJar 1.0.0 (4) was
+        // rejected partly for not having one. Produced by every build rather
+        // than taken by hand. NOT a store screenshot: store/screenshots holds
+        // those, and this is deliberately not copied there.
+        // Settings is NOT a tab here -- ShiftSlip's tabs are Dashboard, History,
+        // Reports and Jobs, and Settings opens from the Dashboard toolbar. Do
+        // not copy PriceJar's tab("Settings"): the apps are not laid out alike.
+        tab("Dashboard").tap()
+        let settingsButton = app.buttons["dashboard.settings"]
+        XCTAssertTrue(settingsButton.waitForExistence(timeout: 20), "the Settings button never appeared")
+        XCTAssertTrue(settingsButton.waitForHittability(timeout: 20), "the Settings button was never tappable")
+        settingsButton.tap()
+        XCTAssertTrue(app.buttons["settings.ads.remove"].waitForExistence(timeout: 20),
+                      "the Remove Ads purchase must be on screen for the review shot")
+        capture(named: "06-settings-iap")
     }
 
     private func tab(_ label: String) -> XCUIElement {

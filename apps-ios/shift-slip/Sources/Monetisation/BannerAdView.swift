@@ -43,8 +43,26 @@ struct BannerAdView: UIViewRepresentable {
 }
 
 enum AdsBootstrap {
-    /// Starts the SDK once. Called after the first frame, so it never delays launch.
-    static func start() {
+    private static var started = false
+
+    /// Asks for tracking permission, then starts the ad SDK -- in that order,
+    /// once, on the first launch that follows First Run.
+    ///
+    /// App Review rejected PriceJar 1.0.0 (4) under guideline 2.1 for a prompt
+    /// they could not find: it fired only after the user completed a specific
+    /// action deep in the app, and a reviewer who never performed that action
+    /// never saw it. ShiftSlip's spec asked for the same shape -- after the
+    /// first saved shift -- so it would have been rejected the same way.
+    ///
+    /// Waiting for First Run keeps the intent behind that line: do not ask
+    /// before the user has been told what the app is. Onboarding is where they
+    /// are told, and it is somewhere a review pass reaches immediately.
+    @MainActor
+    static func startAfterTrackingPrompt(settings: AppSettings) async {
+        guard !UITestMode.isActive, settings.hasCompletedFirstRun else { return }
+        await TrackingAuthorization.requestIfNeeded(settings: settings)
+        guard !started else { return }
+        started = true
         MobileAds.shared.start(completionHandler: nil)
     }
 }
