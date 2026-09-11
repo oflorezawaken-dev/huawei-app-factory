@@ -43,13 +43,12 @@ struct PriceJarApp: App {
                 .environment(interstitial)
                 .task {
                     guard !UITestMode.isActive else { return }
-                    // The tracking prompt is deliberately NOT requested here.
-                    // It fires once, right after the first price entry is
-                    // saved (see RecordPriceView / VerdictView), so the user
-                    // has already seen what the app does before being asked.
-                    // Cold start only starts the ad SDK (no ad is shown yet)
-                    // and reads the purchase entitlement.
-                    AdsBootstrap.start()
+                    // Tracking prompt first, ad SDK second -- see
+                    // AdsBootstrap.startAfterTrackingPrompt. Does nothing until
+                    // First Run has been completed; FirstRunView calls it too, so
+                    // a fresh install is asked as soon as onboarding ends rather
+                    // than on the next launch.
+                    await AdsBootstrap.startAfterTrackingPrompt(settings: settings)
                     await removeAdsStore.refreshEntitlement()
                 }
         }
