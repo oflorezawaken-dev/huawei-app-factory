@@ -198,6 +198,11 @@ def cmd_inspect(slugs: list[str], client_id: str, client_secret: str) -> int:
             if k in fields:
                 continue
             log(f"    (audit) {k} = {repr(v)[:160]}")
+        # privacyLabel is the console's privacy tags as data. Printed whole and
+        # last, because it is the one field worth copying between apps.
+        label = (payload.get("appInfo") or {}).get("privacyLabel")
+        if label:
+            log(f"    FULL privacyLabel = {label}")
     return 1 if failures else 0
 
 
