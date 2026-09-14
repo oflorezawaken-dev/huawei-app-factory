@@ -48,13 +48,48 @@ TOKEN_URL = f"{API_BASE}/oauth2/v1/token"
 PUBLISH_V2 = f"{API_BASE}/publish/v2"
 
 WATCH_LABEL = "review-status"
+NEWLINE = chr(10)
 
-# name, needs_a_human
-RELEASE_STATE: dict[int, tuple[str, bool]] = {}
+# Measured on 2026-09-14 against this account's own apps rather than copied from
+# a doc page: receipt-lens / plant-cue / habit-cue were on the shelf and all read
+# 0, sudoku was under review and read 4. Everything else is deliberately absent --
+# see the module docstring.
+RELEASE_STATE: dict[int, str] = {
+    0: "LIVE",
+    4: "IN_REVIEW",
+}
+
+# A version is only interesting once Huawei has said something about it. These are
+# the states worth an issue; IN_REVIEW is normal progress and stays silent.
+ACTIONABLE = {"LIVE", "REJECTED"}
 
 # What to do about each state. Instructions, not status text: an issue that only
 # says "REJECTED" has wasted the notification it cost.
-NEXT_STEP: dict[str, str] = {}
+NEXT_STEP = {
+    "LIVE":
+        "The version is on the shelf and downloadable. Nothing is blocked. Worth doing "
+        "now: check that the store listing reads the way you meant it to in every "
+        "language, and that the ad units are actually serving (a package built before "
+        "its unit IDs were set will show zero revenue while looking perfectly healthy).",
+    "REJECTED":
+        "Huawei rejected the version. The reviewer's own words are quoted below; fix the "
+        "cause, bump versionCode, and publish again with "
+        "`python factory/factory.py publish <slug> --submit --notes \"...\"`. Past "
+        "rejections in this factory were a privacy-tag declaration that contradicted the "
+        "app, and a camera crash from a FileProvider path that was never declared.",
+}
+
+
+def approved(opinion: str) -> bool:
+    """True when Huawei's review comment is an approval.
+
+    The wording is stable across every approval this account has received:
+    'App review results：
+    Your App has been approved.' Anything else that
+    carries a comment is treated as a rejection, which is the safe direction to
+    be wrong in -- a false rejection costs a glance, a missed one costs weeks.
+    """
+    return "has been approved" in opinion
 
 
 class WatchError(RuntimeError):
@@ -166,6 +201,100 @@ def cmd_inspect(slugs: list[str], client_id: str, client_secret: str) -> int:
     return 1 if failures else 0
 
 
+def gh(args: list[str], check: bool = True) -> str:
+    proc = subprocess.run(["gh", *args], capture_output=True, text=True)
+    if check and proc.returncode != 0:
+        raise WatchError(f"gh {' '.join(args[:2])} failed: {proc.stderr.strip()}")
+    return proc.stdout
+
+
+def issue_exists(repo: str, title: str) -> bool:
+    """True when an issue with this exact title already exists (open or closed)."""
+    raw = gh(["issue", "list", "--repo", repo, "--state", "all", "--limit", "200",
+              "--label", WATCH_LABEL, "--json", "title"])
+    try:
+        return any(row.get("title") == title for row in json.loads(raw or "[]"))
+    except json.JSONDecodeError:
+        return False
+
+
+def ensure_label(repo: str) -> None:
+    existing = gh(["label", "list", "--repo", repo, "--json", "name"], check=False)
+    try:
+        names = {row.get("name") for row in json.loads(existing or "[]")}
+    except json.JSONDecodeError:
+        names = set()
+    if WATCH_LABEL not in names:
+        gh(["label", "create", WATCH_LABEL, "--repo", repo, "--color", "5319E7",
+            "--description", "Automatic AppGallery review-state report"], check=False)
+
+
+def issue_body(app: dict, slug: str, version: str, state: str, fields: dict) -> str:
+    opinion = fields.get("auditOpinion") or ""
+    lines = [
+        f"**{app['name']}** version `{version}` is now **{state}** on AppGallery.",
+        "",
+        "## What to do",
+        "",
+        NEXT_STEP.get(state, "Open AppGallery Connect and look at the version."),
+    ]
+    if opinion:
+        lines += ["", "## What Huawei said", "", "```", opinion, "```"]
+    lines += [
+        "",
+        "## Details",
+        "",
+        f"- App: `{slug}` (`{app.get('package', '')}`), AppGallery App ID `{app.get('agc_app_id')}`",
+        f"- Released version on the shelf: `{fields.get('onShelfVersionNumber') or '-'}`",
+        f"- Last change reported by Huawei: {fields.get('updateTime') or '-'}",
+        "- See it yourself: `python factory/factory.py watch " + slug + " --inspect`",
+        "",
+        "---",
+        "*Opened automatically by `factory-watch.yml`. One issue per app+version+state, "
+        "so this will not repeat daily. Close it when handled.*",
+    ]
+    return NEWLINE.join(lines)
+
+
+def poll_app(slug: str, client_id: str, token: str, repo: str, dry_run: bool) -> bool:
+    """Polls one app; returns True when an issue was opened."""
+    app = find_app(slug)
+    fields = state_fields(app_info(str(app["agc_app_id"]), client_id, token))
+    version = str(fields.get("versionNumber") or "?")
+    raw_state = fields.get("releaseState")
+    opinion = fields.get("auditOpinion") or ""
+
+    # The number says where the version sits; the comment says what Huawei decided.
+    # Trust the comment for the verdict, because the enum is the part Huawei does
+    # not document and could renumber without telling anyone.
+    if opinion:
+        state = "LIVE" if approved(opinion) else "REJECTED"
+    else:
+        state = RELEASE_STATE.get(raw_state, "")
+
+    if not state:
+        log(f"{slug} {version}: releaseState={raw_state!r} is not in the measured table "
+            f"and there is no review comment; reporting nothing")
+        return False
+    if state not in ACTIONABLE:
+        log(f"{slug} {version}: {state} (in progress, nothing to report)")
+        return False
+
+    title = f"AppGallery review: {app['name']} {version} is now {state}"
+    if dry_run:
+        log(f"{slug} {version}: {state} -> [dry-run] would open issue {title!r}")
+        return False
+    if issue_exists(repo, title):
+        log(f"{slug} {version}: {state} (already reported)")
+        return False
+
+    ensure_label(repo)
+    gh(["issue", "create", "--repo", repo, "--title", title,
+        "--label", WATCH_LABEL, "--body", issue_body(app, slug, version, state, fields)])
+    log(f"{slug} {version}: {state} -> opened issue {title!r}")
+    return True
+
+
 def main(argv: list[str]) -> int:
     p = argparse.ArgumentParser(description="Watch the AppGallery review state")
     p.add_argument("slug", nargs="?", default="")
@@ -190,8 +319,18 @@ def main(argv: list[str]) -> int:
     if a.inspect:
         return cmd_inspect(slugs, client_id, client_secret)
 
-    log("watch mode is not wired up yet; run with --inspect")
-    return 0
+    token = make_token(client_id, client_secret)
+    failures, opened = [], 0
+    for slug in slugs:
+        try:
+            opened += int(poll_app(slug, client_id, token, a.repo, a.dry_run))
+        except WatchError as exc:
+            log(f"{slug}: error: {exc}")
+            failures.append(slug)
+
+    log(f"polled {len(slugs)} app(s), opened {opened} issue(s)"
+        + (f", {len(failures)} failed: {', '.join(failures)}" if failures else ""))
+    return 1 if failures else 0
 
 
 if __name__ == "__main__":
