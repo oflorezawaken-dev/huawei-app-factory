@@ -82,12 +82,26 @@ ML Kit stub, missing INTERNET) that 1.1 must close.
 
 ## What Huawei will not let us automate
 
-Creating the app in AppGallery Connect, the content-rating questionnaire, the **privacy
-tags** (personal-data declaration under Version information), the Petal Ads publisher
-account and ad units, and responding to review results. Budget ~20 minutes of console time
-per app. For the privacy tags the factory hands you the exact boxes to tick:
-`apps/<slug>/store/privacy-tags.md` (regenerate with
+Creating the app in AppGallery Connect, **enabling App Signing**, the content-rating
+questionnaire, the **privacy tags** (personal-data declaration under Version information),
+the Petal Ads publisher account and ad units, and responding to review results. Budget
+~20 minutes of console time per app. For the privacy tags the factory hands you the exact
+boxes to tick: `apps/<slug>/store/privacy-tags.md` (regenerate with
 `python factory/factory.py privacy-tags <slug>`).
+
+**App Signing is not optional.** Turn it on (method 1, AGC generates and keeps the key)
+before the first upload of every app. Huawei never lets you change a signature key
+afterwards, and enrolling a released app requires uploading the original key — so a lost
+keystore means that app can never be updated again. See `docs/APPGALLERY_PUBLISHING.md`.
+
+## Naming: the store name must carry the search keyword
+
+AppGallery discovery is search-driven. An invented brand name ("ReceiptLens", "PlantCue",
+"HabitCue") gets impressions from nobody, because nobody types it. Store names follow
+`Keyword - descriptor` or `Brand - Keyword`, and `store/listing.json` sets a **per-language
+`appName`** so the Spanish listing carries the Spanish keyword. The in-app name can stay
+short and brandable; the store name is the one that has to be findable. Full reasoning in
+`factory/prompts/10-research.md`.
 
 ## Adding app #2
 

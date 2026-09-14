@@ -42,7 +42,19 @@ first; it is the registry of apps and the source of factory-wide rules.
    (photos, transaction records, health data...), `check` validates it, `render --write`
    produces the console checklist `store/privacy-tags.md`. Manifest, privacy policy and
    privacy tags must agree. There is no API for this step: a human ticks the boxes.
-10. **Small, explained commits.** One concern per commit. Never force-push. Never commit
+10. **The store name must contain the search keyword.** On AppGallery, discovery is
+    search-driven: an invented brand name gets no impressions. Every app ships a store
+    name shaped `Keyword - short descriptor` or `Brand - Keyword`, and `store/listing.json`
+    carries a **per-language `appName`** with the keyword translated (Spanish matters
+    most; AppGallery is strong in Latin America and Spain). Never name an app after
+    someone else's trademark. The in-app `app_name` string may stay short and brandable;
+    it is the store `appName` that has to carry the keyword.
+11. **Every new app enables App Signing in AppGallery Connect before its first upload**
+    (method 1: AGC generates and keeps the signature key). Without it, losing the local
+    keystore makes the app impossible to update forever -- Huawei does not allow changing
+    a signature key, and enrolling later requires the very key you lost. Keep the factory
+    keystore and its passwords backed up in a password manager as well.
+12. **Small, explained commits.** One concern per commit. Never force-push. Never commit
    secrets, build output, or `.gradle/`.
 
 ## Where things live
