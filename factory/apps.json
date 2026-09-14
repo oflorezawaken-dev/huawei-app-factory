@@ -133,6 +133,11 @@
           "Sentry"
         ]
       }
+    },
+    "agc": {
+      "_note": "AppGallery app-info fields the Publishing API can set, so they stop being console steps. Write them BEFORE the first submission: a PUT to app-info on a released app opens a draft version even when nothing changes (measured on habit-cue 2026-09-14, see docs/APPGALLERY_PUBLISHING.md).",
+      "publish_country": "FJ,TW,MO,HK,TH,MY,SG,MV,CK,ID,AU,SB,TO,PF,NR,AS,VU,AZ,PG,LK,GE,KH,NZ,PH,KZ,MN,BD,VN,MM,LA,KR,KG,AM,BN,JP,UZ,NP,TM,TJ,PS,AF,IQ,QA,IL,KW,LB,SA,BH,PK,JO,AE,OM,BA,HR,AD,LT,MK,IT,DE,GB,ME,SM,MT,MC,RS,FR,VA,PL,AT,NL,BE,SE,DK,ES,CH,FI,GI,SI,CZ,PT,RO,SK,LV,GR,EE,BG,CY,NO,LU,IS,FO,GL,HU,IE,TR,MD,LI,UA,AL,AO,BF,BI,BJ,BW,TD,CG,GM,MW,ML,GW,MG,RW,SN,NA,NE,SC,MA,SS,ZA,YT,RE,MR,TG,ST,SO,KE,EG,CI,MU,ZW,MZ,CV,CF,KM,CM,DZ,NG,GH,ER,ET,DJ,GQ,LS,LR,GA,GN,CD,LY,SL,SZ,YE,ZM,TZ,UG,TN,VC,GP,AW,GD,MQ,MS,GT,GF,SR,VG,AN,LC,TT,AI,MX,AR,CR,CO,CL,BR,PE,PY,UY,VE,EC,JM,BB,BZ,AG,BS,KY,DO,BO,HN,NI,GY,HT,SV,PA,PR,CA",
+      "_publish_country_note": "196 country codes, read back from habit-cue on 2026-09-14 -- the distribution the owner had already chosen by hand. Excludes RU and BY (AppGallery blocks settlement there for ad-monetised apps), CN (needs a China-capable entity) and US (no full AppGallery store). Comma-separated; 'OTHER' is allowed as a member but never on its own."
     }
   },
   "apps": [
@@ -162,6 +167,12 @@
         "banner_ad_id": "x356165ye8",
         "interstitial_ad_id": "m16jsgk7s8",
         "_note": "Petal Ads unit IDs from the Petal Ads console (set 2026-09-06). Public identifiers, not secrets. CI exports them as PETAL_*_AD_ID for Gradle."
+      },
+      "agc_category": {
+        "parentType": 13,
+        "childType": 24,
+        "grandChildType": 10022,
+        "_note": "Tools. Measured from this app's own app-info on 2026-09-14; Huawei publishes no name-to-ID table. app-info accepts childType and grandChildType; parentType is recorded for humans and inferred by Huawei."
       }
     },
     {
@@ -188,7 +199,13 @@
         "_note": "Petal Ads unit IDs from the Petal Ads console (set 2026-09-07). Public identifiers, not secrets."
       },
       "proposal": "proposals/2026-09-06-plant-cue.md",
-      "issue": "https://github.com/oflorezawaken-dev/huawei-app-factory/issues/1"
+      "issue": "https://github.com/oflorezawaken-dev/huawei-app-factory/issues/1",
+      "agc_category": {
+        "parentType": 13,
+        "childType": 27,
+        "grandChildType": 10080,
+        "_note": "Lifestyle. Measured from this app's own app-info on 2026-09-14; Huawei publishes no name-to-ID table. app-info accepts childType and grandChildType; parentType is recorded for humans and inferred by Huawei."
+      }
     },
     {
       "slug": "habit-cue",
@@ -214,7 +231,13 @@
         "_note": "Petal Ads unit IDs from the Petal Ads console (set 2026-09-09). Public identifiers, not secrets."
       },
       "proposal": "proposals/2026-09-09-habit-cue.md",
-      "issue": "https://github.com/oflorezawaken-dev/huawei-app-factory/issues/35"
+      "issue": "https://github.com/oflorezawaken-dev/huawei-app-factory/issues/35",
+      "agc_category": {
+        "parentType": 13,
+        "childType": 24,
+        "grandChildType": 10022,
+        "_note": "Tools. Measured from this app's own app-info on 2026-09-14; Huawei publishes no name-to-ID table. app-info accepts childType and grandChildType; parentType is recorded for humans and inferred by Huawei."
+      }
     },
     {
       "slug": "sudoku",
@@ -239,7 +262,13 @@
         "interstitial_ad_id": "m63u66oiqd",
         "_note": "Petal Ads unit IDs from the Petal Ads console (set 2026-09-14, after the first package reached AppGallery). Public identifiers, not secrets. CI exports them as PETAL_*_AD_ID for Gradle."
       },
-      "proposal": "proposals/2026-09-14-sudoku.md"
+      "proposal": "proposals/2026-09-14-sudoku.md",
+      "agc_category": {
+        "parentType": 2,
+        "childType": 15,
+        "grandChildType": 10044,
+        "_note": "Games / Puzzle. Measured from this app's own app-info on 2026-09-14; Huawei publishes no name-to-ID table. app-info accepts childType and grandChildType; parentType is recorded for humans and inferred by Huawei."
+      }
     },
     {
       "slug": "price-jar",

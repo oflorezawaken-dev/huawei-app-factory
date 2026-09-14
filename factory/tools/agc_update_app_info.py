@@ -88,14 +88,51 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
                     metavar="KEY=PATH",
                     help="Field whose value is read verbatim from a file. Use this for "
                          "values containing commas or quotes, such as privacyLabel.")
+    p.add_argument("--from-registry", metavar="SLUG",
+                    help="Also send the app-info fields the registry knows: the shared "
+                         "distribution country list and this app's category IDs.")
     p.add_argument("--dry-run", action="store_true")
     return p.parse_args(argv)
+
+
+def registry_fields(slug: str) -> dict:
+    """The app-info fields kept in factory/apps.json.
+
+    Countries are shared by every app and live in defaults; the category differs
+    per app. Huawei publishes no table mapping category names to these IDs, so
+    they were read back from apps configured by hand. parentType is recorded for
+    humans but not sent: app-info infers it from childType.
+    """
+    import json as _json
+    here = os.path.dirname(os.path.abspath(__file__))
+    registry = _json.load(open(os.path.join(here, "..", "apps.json"), encoding="utf-8"))
+    app = next((a for a in registry["apps"] if a["slug"] == slug), None)
+    if app is None:
+        raise PublishError(f"no app named {slug} in factory/apps.json")
+
+    fields = {}
+    countries = (registry["defaults"].get("agc") or {}).get("publish_country")
+    if countries:
+        fields["publishCountry"] = countries
+    category = app.get("agc_category") or {}
+    for key in ("childType", "grandChildType"):
+        if category.get(key):
+            fields[key] = category[key]
+    if not category:
+        log(f"WARNING: {slug} has no agc_category in the registry; sending countries only")
+    return fields
 
 
 def main(argv: list[str]) -> int:
     args = parse_args(argv)
 
     body = {}
+    if args.from_registry:
+        try:
+            body.update(registry_fields(args.from_registry))
+        except PublishError as exc:
+            log(f"ERROR: {exc}")
+            return 2
     for item in args.fields:
         if "=" not in item:
             log(f"ERROR: --set expects KEY=VALUE, got: {item}")
