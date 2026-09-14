@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- One glyph, nothing else. At 48dp in a search result there is room for a
+         single shape, and the shape people are looking for is this one. The
+         strokes are slanted like a typeset hash rather than a plus sign, and sit
+         inside the 72dp safe zone so no launcher mask clips them. -->
+    <path
+        android:strokeColor="#7B1FA2"
+        android:strokeWidth="9"
+        android:strokeLineCap="round"
+        android:fillColor="#00000000"
+        android:pathData="M31,46 L79,46 M29,64 L77,64" />
+    <path
+        android:strokeColor="#7B1FA2"
+        android:strokeWidth="9"
+        android:strokeLineCap="round"
+        android:fillColor="#00000000"
+        android:pathData="M50,28 L42,82 M68,28 L60,82" />
+</vector>

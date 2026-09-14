@@ -1,0 +1,64 @@
+{
+  "_doc": "AppGallery privacy tags for this app. Labels are the exact console names from https://developer.huawei.com/consumer/en/doc/app/privacy-label . Baseline generated from the manifest permissions plus the mandatory Petal Ads block; add the app-specific items the code really stores or processes (e.g. Transaction records for receipts). Validate with: python factory/tools/privacy_tags.py check <slug>",
+  "collect_personal_data": true,
+  "scenarios": {
+    "App functionality": {},
+    "Advertising and marketing": {
+      "Identifiers": [
+        "OAID"
+      ],
+      "Location information": [
+        "Other approximate location information"
+      ],
+      "App information": [
+        "Basic app information",
+        "App usage information"
+      ],
+      "Device information": [
+        "OS information",
+        "Device status",
+        "Network type",
+        "Carrier",
+        "IP address",
+        "Acceleration sensor",
+        "Gyroscope",
+        "Other hardware and software parameters/System settings"
+      ]
+    },
+    "Disclosure to third parties": {
+      "Identifiers": [
+        "OAID"
+      ],
+      "App information": [
+        "App usage information"
+      ],
+      "Device information": [
+        "OS information",
+        "Network type",
+        "Carrier",
+        "IP address",
+        "Other hardware and software parameters/System settings"
+      ]
+    }
+  },
+  "not_applicable": {
+    "Product personalization": "No user profiling; ad personalisation belongs to the Petal Ads scenario.",
+    "Analytics": "No analytics or crash-reporting SDK.",
+    "Cross-border transfer": "Scenario means data sent outside the Chinese mainland; the app is not distributed in the Chinese mainland.",
+    "Others": ""
+  },
+  "item_notes": {
+    "OAID": "Read by the Huawei Petal Ads SDK for ad delivery and measurement.",
+    "Other approximate location information": "Petal Ads derives city/country from the IP address.",
+    "Basic app information": "Package name and version sent by the Petal Ads SDK with ad requests.",
+    "App usage information": "Ad events (impressions, clicks) reported by the Petal Ads SDK.",
+    "OS information": "Petal Ads SDK: Android/EMUI version for ad delivery.",
+    "Device status": "Petal Ads SDK: battery and storage status.",
+    "Network type": "Petal Ads SDK: Wi-Fi or mobile network type.",
+    "Carrier": "Petal Ads SDK: carrier information.",
+    "IP address": "Petal Ads SDK: network address of each ad request.",
+    "Acceleration sensor": "Petal Ads SDK: motion data used for ad-fraud detection.",
+    "Gyroscope": "Petal Ads SDK: motion data used for ad-fraud detection.",
+    "Other hardware and software parameters/System settings": "Petal Ads SDK: device brand/model, screen resolution, language, region."
+  }
+}
