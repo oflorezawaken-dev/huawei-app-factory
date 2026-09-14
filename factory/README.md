@@ -80,6 +80,19 @@ ML Kit stub, missing INTERNET) that 1.1 must close.
 4. Copy tells the truth about the shipped build.
 5. Secrets never enter the repo.
 
+## Screenshots come from a real phone
+
+The emulator does not run on the owner's machine (AMD SVM is disabled in firmware), so
+verification and store screenshots go through a phone over `adb`. Capture with
+`adb exec-out screencap -p > file.png` from **bash, not PowerShell** — PowerShell's `>`
+re-encodes the bytes and corrupts the PNG. For a set in another language use the per-app
+locale, `adb shell cmd locale set-app-locales <pkg> --locales en-US`, and reset it with
+`--locales ""` afterwards; never change the phone's own language. Crop the status and
+navigation bars off: they carry the owner's personal notification icons.
+
+A non-Huawei phone has no HMS, so Petal Ads serves nothing. That is a good test that ad
+failure is silent and leaves no empty space — it is not a test that ads work.
+
 ## What Huawei will not let us automate
 
 Creating the app in AppGallery Connect, **enabling App Signing**, the content-rating
