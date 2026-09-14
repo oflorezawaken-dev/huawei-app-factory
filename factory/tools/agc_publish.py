@@ -61,6 +61,19 @@ class PublishError(RuntimeError):
     pass
 
 
+class ApiError(PublishError):
+    """A Publishing API call that returned ret.code != 0, with the code kept."""
+
+    def __init__(self, code: int, message: str):
+        super().__init__(message)
+        self.code = code
+
+
+# AppGallery compiles an uploaded package before it can be submitted, and answers
+# app-submit with this until it finishes. It is a wait, not a failure.
+PACKAGE_STILL_COMPILING = 204144727
+
+
 def log(msg: str) -> None:
     print(f"[agc-publish] {msg}", flush=True)
 
@@ -92,7 +105,10 @@ def http_json(method: str, url: str, headers: dict, body: dict | None = None, ti
         raise PublishError(f"{method} {strip_query(url)} -> non-JSON response: {raw[:200]}") from None
     ret = parsed.get("ret") or {}
     if ret and ret.get("code", 0) != 0:
-        raise PublishError(f"{method} {strip_query(url)} -> API error {ret.get('code')}: {ret.get('msg')}")
+        raise ApiError(
+            int(ret.get("code") or 0),
+            f"{method} {strip_query(url)} -> API error {ret.get('code')}: {ret.get('msg')}",
+        )
     return parsed
 
 
@@ -219,14 +235,42 @@ class AgcClient:
             time.sleep(interval_s)
 
     # 7. submit ---------------------------------------------------------------
-    def submit_for_review(self, app_id: str, release_notes: str | None) -> None:
+    def submit_for_review(
+        self,
+        app_id: str,
+        release_notes: str | None,
+        timeout_s: int = 900,
+        interval_s: int = 60,
+    ) -> None:
+        """Submits, waiting out the compilation window AppGallery needs first.
+
+        A freshly uploaded package spends a few minutes being compiled, and
+        app-submit answers 204144727 for the whole of it. Failing the run there
+        would leave the package uploaded but unsubmitted, which is the worst of
+        both worlds, so wait instead.
+        """
         log("Submitting app for review")
         params = {"appId": app_id}
         if release_notes:
             params["remark"] = release_notes
         url = f"{PUBLISH_V2}/app-submit?{urllib.parse.urlencode(params)}"
-        http_json("POST", url, self._auth_headers(), body={})
-        log("Submitted. Review result will appear in AppGallery Connect.")
+
+        deadline = time.time() + timeout_s
+        while True:
+            try:
+                http_json("POST", url, self._auth_headers(), body={})
+                log("Submitted. Review result will appear in AppGallery Connect.")
+                return
+            except ApiError as e:
+                if e.code != PACKAGE_STILL_COMPILING:
+                    raise
+                if time.time() >= deadline:
+                    raise PublishError(
+                        f"The package was still compiling after {timeout_s}s. It is uploaded; "
+                        f"submit from the console or re-run with submit_for_review=true."
+                    ) from None
+                log(f"Package still compiling; retrying in {interval_s}s")
+                time.sleep(interval_s)
 
 
 def sha256_of(path: str) -> str:
