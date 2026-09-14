@@ -145,13 +145,13 @@
       "spec": "specifications/receipt-lens.json",
       "store_dir": "apps/receipt-lens/store",
       "privacy_path": "docs/privacy",
-      "privacy_tags_configured": "",
-      "status": "rejected",
+      "privacy_tags_configured": "2026-09-09",
+      "status": "live",
       "current_version": {
-        "versionCode": 2,
-        "versionName": "1.1.0",
-        "status": "ready_to_publish",
-        "note": "1.0.0 (versionCode 1) submitted 2026-09-06, REJECTED 2026-09-07: privacy tags said the app collects no personal data. Fix the tags (store/privacy-tags.md), then upload and submit 1.1.0."
+        "versionCode": 1,
+        "versionName": "1.0.0",
+        "status": "live",
+        "note": "LIVE on AppGallery since 2026-09-09 14:36 (onShelfVersionCode 1, onShelfVersionNumber 1.0.0). 1.0.0 was rejected 2026-09-07 over the privacy tags, the tags were then fixed in the console and the same version was approved: auditOpinion now reads 'Your App has been approved.' The 1.1.0 that was going to close known_gaps was never built or uploaded, so the live app still ships them. Measured from the Publishing API on 2026-09-14 (GET /publish/v2/app-info)."
       },
       "known_gaps": {
         "ml_kit_ocr": "No Huawei ML Kit dependency; OCR always falls back to manual entry and the notice text is developer-facing.",
@@ -174,12 +174,12 @@
       "store_dir": "apps/plant-cue/store",
       "privacy_path": "docs/plant-cue/privacy",
       "privacy_tags_configured": "2026-09-08",
-      "status": "ready_to_publish",
+      "status": "live",
       "current_version": {
         "versionCode": 2,
         "versionName": "1.0.1",
-        "status": "ready_to_publish",
-        "note": "1.0.0 (versionCode 1) submitted 2026-09-07, REJECTED 2026-09-08 (guideline 3.1): Take photo crashes when adding a plant. Cause: apps/plant-cue/app/src/main/res/xml/file_paths.xml was left as ReceiptLens's copy (receipts/, exports/) and never declared the camera/ cache folder ImageStorageManager.newCameraTempFile() actually writes to, so FileProvider.getUriForFile() throws IllegalArgumentException the instant Take photo is tapped. Fixed by declaring <cache-path name=\"camera\" path=\"camera/\" />. Privacy tags configured in console 2026-09-08; uploading and submitting 1.0.1."
+        "status": "live",
+        "note": "LIVE on AppGallery since 2026-09-09 10:33 (onShelfVersionCode 2, onShelfVersionNumber 1.0.1). 1.0.0 was rejected 2026-09-08 (guideline 3.1) because file_paths.xml never declared the camera/ cache folder FileProvider writes to, so Take photo crashed; 1.0.1 fixed that and was approved. Measured from the Publishing API on 2026-09-14 (GET /publish/v2/app-info)."
       },
       "known_gaps": {},
       "ads": {
@@ -199,13 +199,13 @@
       "spec": "specifications/habit-cue.json",
       "store_dir": "apps/habit-cue/store",
       "privacy_path": "docs/habit-cue/privacy",
-      "privacy_tags_configured": "",
-      "status": "ready_to_publish",
+      "privacy_tags_configured": "2026-09-10",
+      "status": "live",
       "current_version": {
         "versionCode": 1,
         "versionName": "1.0.0",
-        "status": "ready_to_publish",
-        "note": "1.0.0 uploaded 2026-09-09 with Huawei TEST ad units (upload-only, allow_test_ad_units override) to unblock the Petal Ads console. Real unit IDs pasted the same day; rebuild and re-upload replace that test package before any submission."
+        "status": "live",
+        "note": "LIVE on AppGallery since 2026-09-10 14:28 (onShelfVersionCode 1, onShelfVersionNumber 1.0.0). The published package carries the REAL Petal Ads units: the artifact it was uploaded from was built at 21:55 UTC on 2026-09-09, after the 16:55 commit that set g9h2yi5k1g / v1o7h3tkyt, so the earlier test-unit upload was replaced. Privacy tags are declared in the console (12 items under Advertising and marketing). Measured from the Publishing API on 2026-09-14 (GET /publish/v2/app-info)."
       },
       "known_gaps": {},
       "ads": {
