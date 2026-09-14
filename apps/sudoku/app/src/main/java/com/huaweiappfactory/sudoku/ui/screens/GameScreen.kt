@@ -1,9 +1,8 @@
 package com.huaweiappfactory.sudoku.ui.screens
 
 import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -34,6 +33,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -98,44 +98,45 @@ fun GameScreen(
             onTogglePause = { if (state.paused) viewModel.resume() else viewModel.pause() }
         )
 
-        Box(modifier = Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
-            when {
-                state.loading -> LoadingBoard()
-                state.failed -> FailedBoard(onRetry = viewModel::retry)
-                else -> Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .verticalScroll(rememberScrollState())
-                        .padding(horizontal = 8.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
+        when {
+            state.loading -> Box(Modifier.weight(1f).fillMaxWidth(), Alignment.Center) { LoadingBoard() }
+            state.failed -> Box(Modifier.weight(1f).fillMaxWidth(), Alignment.Center) {
+                FailedBoard(onRetry = viewModel::retry)
+            }
+            else -> {
+                // The board takes the room the controls leave, never the other way
+                // round: the number pad must always be reachable.
+                Box(
+                    modifier = Modifier.weight(1f).fillMaxWidth().padding(horizontal = 8.dp),
+                    contentAlignment = Alignment.Center
                 ) {
                     SudokuGrid(
                         cells = state.cells,
                         hidden = state.paused,
-                        onCellClick = viewModel::select
+                        onCellClick = viewModel::select,
+                        modifier = Modifier.fillMaxSize()
                     )
-                    if (state.paused) {
-                        PausedNotice(onResume = viewModel::resume)
-                    } else {
-                        ActionRow(
-                            canUndo = state.canUndo,
-                            notesMode = state.notesMode,
-                            hintsLeft = state.hintsLeft,
-                            enabled = state.finish == null,
-                            onUndo = viewModel::undo,
-                            onErase = viewModel::erase,
-                            onToggleNotes = viewModel::toggleNotesMode,
-                            onHint = viewModel::hint
-                        )
-                        NumberPad(
-                            remainingByDigit = state.remainingByDigit,
-                            notesMode = state.notesMode,
-                            enabled = state.finish == null,
-                            onDigit = viewModel::input
-                        )
-                    }
-                    Spacer(Modifier.height(4.dp))
+                    if (state.paused) PausedNotice(onResume = viewModel::resume)
                 }
+                Spacer(Modifier.height(10.dp))
+                ActionRow(
+                    canUndo = state.canUndo,
+                    notesMode = state.notesMode,
+                    hintsLeft = state.hintsLeft,
+                    enabled = state.finish == null && !state.paused,
+                    onUndo = viewModel::undo,
+                    onErase = viewModel::erase,
+                    onToggleNotes = viewModel::toggleNotesMode,
+                    onHint = viewModel::hint
+                )
+                Spacer(Modifier.height(10.dp))
+                NumberPad(
+                    remainingByDigit = state.remainingByDigit,
+                    notesMode = state.notesMode,
+                    enabled = state.finish == null && !state.paused,
+                    onDigit = viewModel::input
+                )
+                Spacer(Modifier.height(16.dp))
             }
         }
     }
@@ -242,11 +243,15 @@ private fun FailedBoard(onRetry: () -> Unit) {
     }
 }
 
+/** Sits on top of the blanked board, so the grid lines stay visible but no digit does. */
 @Composable
 private fun PausedNotice(onResume: () -> Unit) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.fillMaxWidth().padding(24.dp)
+        modifier = Modifier
+            .clip(RoundedCornerShape(16.dp))
+            .background(MaterialTheme.colorScheme.surfaceVariant)
+            .padding(horizontal = 24.dp, vertical = 20.dp)
     ) {
         Text(
             stringResource(R.string.board_paused_title),

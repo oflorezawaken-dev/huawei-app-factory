@@ -79,8 +79,8 @@ val DarkBoardColors = BoardColors(
     entryText = Color(0xFF8FBBFF),
     noteText = Color(0xFF9BA0A8),
     selectedCell = Color(0xFF294A72),
-    relatedCell = Color(0xFF23272D),
-    sameValueCell = Color(0xFF1F3454),
+    relatedCell = Color(0xFF262C34),
+    sameValueCell = Color(0xFF22395C),
     conflictCell = Color(0xFF5C1A16),
     conflictText = Color(0xFFFFB4AB)
 )

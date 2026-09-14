@@ -50,10 +50,12 @@ fun SudokuGrid(
     BoxWithConstraints(
         modifier = modifier
             .fillMaxWidth()
-            .aspectRatio(1f)
             .testTag("sudoku_grid")
     ) {
-        val side = minOf(maxWidth, maxHeight)
+        // The caller gives the grid whatever room is left after the controls; the
+        // board takes the smaller side of that and centres itself, so it stays
+        // square and never pushes the number pad off the screen.
+        val side = if (maxHeight == Dp.Infinity) maxWidth else minOf(maxWidth, maxHeight)
         val cellSize = side / SudokuBoard.SIZE
         val digitSize = (cellSize.value * 0.52f).sp
         val noteSize = (cellSize.value * 0.22f).sp

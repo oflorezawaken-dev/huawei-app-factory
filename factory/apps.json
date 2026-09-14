@@ -231,7 +231,7 @@
         "versionCode": 1,
         "versionName": "1.0.0",
         "status": "planned",
-        "note": "Rebuild of the owner's best-converting AppGallery app (4.85% CTR, 48.05% conversion, 3,177 downloads Mar-Aug 2026). The original cannot be updated: its keystore was lost and App Signing was never enabled. First app built under naming rule 10, so the store name leads with the keyword in all 9 languages."
+        "note": "Rebuild of the owner's best-converting AppGallery app (4.85% CTR, 48.05% conversion, 3,177 downloads Mar-Aug 2026). The original cannot be updated: its keystore was lost and App Signing was never enabled. First app built under naming rule 10, so the store name leads with the keyword in all 9 languages. Verified on a physical Samsung SM-A045M (Android 14, 720x1600) on 2026-09-14: full game played to a win, Expert generation ~1 s, ads absent and leaving no gap on a device without HMS. Store screenshots come from that device (English and Spanish captured natively)."
       },
       "known_gaps": {
         "ad_unit_ids": "No Petal Ads unit IDs yet: the Petal Ads console only lets you create them after the first package is uploaded to AppGallery. The build falls back to Huawei's test IDs until they exist; publish --submit stays blocked meanwhile."

@@ -14,6 +14,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -155,6 +156,12 @@ private fun ThemeChip(mode: String, labelRes: Int, current: String, onSelect: (S
         selected = current == mode,
         onClick = { onSelect(mode) },
         label = { Text(stringResource(labelRes)) },
+        // The Material default paints a selected chip in the secondary colour, which
+        // here is the amber reserved for "look at this"; the theme picker is not that.
+        colors = FilterChipDefaults.filterChipColors(
+            selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+            selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
+        ),
         modifier = Modifier
             .padding(end = 8.dp)
             .testTag("theme_${mode.lowercase()}")
