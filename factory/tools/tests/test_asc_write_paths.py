@@ -60,6 +60,15 @@ STATE = {
     "build_encryption": False,
     # What Apple reports once it has looked at the uploaded image.
     "asset_state": {"state": "COMPLETE", "errors": []},
+    # What the version actually carries, and what each submission holds. Both
+    # used to be unknowable from here, which is how a submission went to review
+    # without its in-app purchase and nothing noticed.
+    "version_build": "3",
+    "drop_iap_from_submission": False,
+    # Apple's in-app purchases for this app, and how they come back.
+    "iaps": [{"type": "inAppPurchases", "id": "iap1",
+              "attributes": {"productId": "com.example.fixture.removeads",
+                             "state": "READY_TO_SUBMIT"}}],
 }
 
 
@@ -145,16 +154,33 @@ class Handler(BaseHTTPRequestHandler):
             rows = [{"id": sid, "attributes": {"screenshotDisplayType": dt}}
                     for dt, sid in STATE["screenshot_sets"].items()]
             self._json(200, {"data": rows})
+        elif path == f"/v1/appStoreVersions/{VERSION_ID}/build":
+            if STATE["version_build"] is None:
+                self._json(404, {"errors": [{"title": "NOT_FOUND"}]})
+            else:
+                self._json(200, {"data": {"type": "builds", "id": "b1",
+                                          "attributes": {"version": STATE["version_build"]}}})
+        elif path.startswith("/v1/reviewSubmissions/") and path.endswith("/items"):
+            sub_id = path.split("/")[3]
+            sub = STATE["submissions"].get(sub_id, {})
+            included = [{"type": "appStoreVersions", "id": v} for v in sub.get("items", [])]
+            if not STATE["drop_iap_from_submission"]:
+                included += [{"type": "inAppPurchaseVersions", "id": i} for i in sub.get("iaps", [])]
+            self._json(200, {"data": [{"type": "reviewSubmissionItems", "id": new_id()}
+                                      for _ in included],
+                             "included": included})
+        elif path == f"/v1/apps/{ASC_APP_ID}/inAppPurchasesV2":
+            self._json(200, {"data": STATE["iaps"]})
+        elif path == "/v2/inAppPurchases/iap1/versions":
+            self._json(200, {"data": [{"type": "inAppPurchaseVersions", "id": "iapv1"}]})
         elif path == f"/v1/apps/{ASC_APP_ID}/reviewSubmissions":
             rows = [{"type": "reviewSubmissions", "id": sid, "attributes": sub["attributes"]}
                     for sid, sub in STATE["submissions"].items()]
             self._json(200, {"data": rows})
         elif path == f"/v1/apps/{ASC_APP_ID}/appPriceSchedule":
             self._maybe(STATE["price_schedule"])
-        elif path == f"/v1/appStoreVersions/{VERSION_ID}/ageRatingDeclaration":
+        elif path == f"/v1/appInfos/{APP_INFO_ID}/ageRatingDeclaration":
             self._maybe(STATE["age_rating"])
-        elif path == f"/v1/apps/{ASC_APP_ID}/appDataUsages":
-            self._json(200, {"data": STATE["data_usages"]})
         elif path == f"/v1/appStoreVersions/{VERSION_ID}/appStoreReviewDetail":
             self._maybe(STATE["review_detail"])
         elif path == f"/v1/apps/{ASC_APP_ID}/builds":
@@ -210,6 +236,19 @@ class Handler(BaseHTTPRequestHandler):
             STATE["submissions"][sub_id] = {"attributes": {"submitted": False}, "items": []}
             self._json(201, {"data": {"type": rtype, "id": sub_id}})
         elif rtype == "reviewSubmissionItems":
+            unknown = [k for k in data["relationships"] if k not in ("reviewSubmission", "appStoreVersion", "inAppPurchaseVersion")]
+            if unknown:
+                # Exactly Apple's answer to 'inAppPurchaseV2' and 'inAppPurchase'.
+                self._json(409, {"errors": [{
+                    "title": "The provided entity includes an unknown relationship",
+                    "detail": f"'{unknown[0]}' is not a relationship on the resource 'reviewSubmissionItems'"}]})
+                return
+            iap = data["relationships"].get("inAppPurchaseVersion")
+            if iap:
+                sub_id = data["relationships"]["reviewSubmission"]["data"]["id"]
+                STATE["submissions"][sub_id].setdefault("iaps", []).append(iap["data"]["id"])
+                self._json(201, {"data": {"type": rtype, "id": new_id()}})
+                return
             if STATE["reject_review_item"]:
                 self._json(409, {"errors": [{
                     "title": "The request cannot be fulfilled because of the state of another resource.",
@@ -261,6 +300,10 @@ class Handler(BaseHTTPRequestHandler):
                 if row["id"] == rid:
                     row["attrs"].update(data.get("attributes", {}))
             self._json(200, {"data": {"type": rtype, "id": rid}})
+        elif rtype == "reviewSubmissions" and data.get("attributes", {}).get("canceled"):
+            STATE["submissions"].pop(rid, None)
+            STATE["cancelled_submissions"] = STATE.get("cancelled_submissions", 0) + 1
+            self._json(200, {"data": {"type": rtype, "id": rid}})
         elif rtype == "reviewSubmissions":
             if not STATE["submissions"][rid]["items"]:
                 self._json(422, {"errors": [{"title": "NO_ITEMS", "detail": "add an item before submitting"}]})
@@ -276,8 +319,13 @@ class Handler(BaseHTTPRequestHandler):
             return
         rid = self.path.rsplit("/", 1)[-1]
         if "/reviewSubmissions/" in self.path:
-            STATE["submissions"].pop(rid, None)
-            STATE["deleted_submissions"] = STATE.get("deleted_submissions", 0) + 1
+            # Apple forbids this outright; the mock used to accept it.
+            self._json(403, {"errors": [{
+                "title": "The given operation is not allowed",
+                "detail": "The resource 'reviewSubmissions' does not allow 'DELETE'."}]})
+            return
+        if False:
+            pass
         else:
             STATE["screenshots"].pop(rid, None)
             STATE["deleted_screenshots"] = STATE.get("deleted_screenshots", 0) + 1
@@ -470,6 +518,64 @@ def main() -> int:
     check("that submission has the version attached as an item",
           bool(submitted) and VERSION_ID in submitted[0]["items"])
 
+    print("\nthe version must carry the build this run is publishing:")
+    # asc_publish.main calls this before anything irreversible. A version can
+    # hold an older build and Apple will not complain -- the wrong binary just
+    # goes to review, and nothing here could see it until now.
+    STATE["version_build"] = "3"
+    asc_publish.verify_attached_build(VERSION_ID, "3", None)
+    check("passes when the attached build matches the registry", True)
+    for bad, label in (("2", "an older build"), (None, "no build at all")):
+        STATE["version_build"] = bad
+        try:
+            asc_publish.verify_attached_build(VERSION_ID, "3", None)
+            msg = ""
+        except asc_publish.ASCError as exc:
+            msg = str(exc)
+        check(f"refuses {label}", bool(msg) and "registry says 3" in msg, msg)
+    STATE["version_build"] = "3"
+
+    print("\na version that sells something must carry the purchase:")
+    # "Ready to Submit" is configured-and-waiting, not submitted. PriceJar 1.0.0
+    # (4) was rejected because the version went in without the product.
+    asc_publish.submit_for_review(ASC_APP_ID, None, "com.example.fixture.removeads")
+    with_iap = [s for s in STATE["submissions"].values() if s.get("iaps")]
+    check("the in-app purchase is added as its own submission item",
+          len(with_iap) == 1 and with_iap[0]["iaps"] == ["iapv1"],
+          str([s.get("iaps") for s in STATE["submissions"].values()]))
+
+    print("\nApple is asked what the submission actually holds:")
+    # Every POST returned 201 on the run that still reached review without its
+    # purchase. A 201 is not evidence of what App Store Connect holds.
+    STATE["drop_iap_from_submission"] = True
+    try:
+        asc_publish.submit_for_review(ASC_APP_ID, None, "com.example.fixture.removeads")
+        msg = ""
+    except asc_publish.ASCError as exc:
+        msg = str(exc)
+    check("refuses to submit when Apple does not report the purchase",
+          bool(msg) and "in-app purchase" in msg, msg)
+    check("and says nothing was submitted",
+          not any(s["attributes"].get("submitted") and s.get("iaps") == [] for s in STATE["submissions"].values()),
+          str([(k, v["attributes"]) for k, v in STATE["submissions"].items()]))
+    STATE["drop_iap_from_submission"] = False
+
+    print("\nan unfinished purchase stops the submission instead of repeating the rejection:")
+    STATE["iaps"] = [{"type": "inAppPurchases", "id": "iap1",
+                      "attributes": {"productId": "com.example.fixture.removeads",
+                                     "state": "MISSING_METADATA"}}]
+    try:
+        asc_publish.submit_for_review(ASC_APP_ID, None, "com.example.fixture.removeads")
+        msg = ""
+    except asc_publish.ASCError as exc:
+        msg = str(exc)
+    check("raises rather than submitting without the product", bool(msg), msg)
+    check("names the product and the state Apple reports",
+          "com.example.fixture.removeads" in msg and "MISSING_METADATA" in msg, msg)
+    STATE["iaps"] = [{"type": "inAppPurchases", "id": "iap1",
+                      "attributes": {"productId": "com.example.fixture.removeads",
+                                     "state": "READY_TO_SUBMIT"}}]
+
     print("\nApple refuses the version -- diagnose it, and leave nothing behind:")
     # Apple's own error says only "not in valid state", so the run has to ask
     # the API which console-only requirements are unmet. Half are set here and
@@ -488,7 +594,8 @@ def main() -> int:
         msg = str(exc)
         check("raises when Apple refuses the version", True)
     check("reports Pricing as unmet", "!!  Pricing" in msg, msg)
-    check("reports the App Privacy questionnaire as unmet", "!!  App Privacy" in msg, msg)
+    check("says App Privacy is console-only, not a failed lookup",
+          "App Privacy" in msg and "not in the API" in msg, msg)
     check("names the contact field that is actually blank", "contactPhone" in msg, msg)
     check("reports export compliance as unmet", "!!  Export compliance" in msg, msg)
     check("does NOT flag the age rating, which is set -- the diagnosis has to "
@@ -516,10 +623,15 @@ def main() -> int:
     STATE["reject_review_item"] = False
     stale = new_id()
     STATE["submissions"][stale] = {"attributes": {"submitted": False}, "items": []}
-    asc_publish.submit_for_review(ASC_APP_ID, None)
-    check("is cleared instead of blocking a new one -- Apple allows only one "
-          "open submission per app", stale not in STATE["submissions"],
+    # asc_publish.main calls this BEFORE touching the version, because adding a
+    # version to a submission locks it against every metadata edit: a run that
+    # died mid-way left the version unreachable until the submission was gone.
+    asc_publish.clear_open_review_submission(ASC_APP_ID, None)
+    check("is cancelled, not left to lock the version", stale not in STATE["submissions"],
           str(sorted(STATE["submissions"])))
+    check("cancelled by PATCH, which is the only verb Apple allows",
+          STATE.get("cancelled_submissions", 0) > 0,
+          f"cancelled={STATE.get('cancelled_submissions')}")
 
     print("\na first version rejects whatsNew; the rest of the listing still lands:")
     STATE["reject_whats_new"] = True

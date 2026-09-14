@@ -20,6 +20,12 @@ on:
     paths:
       - 'apps-ios/**'
       - 'factory/**'
+      # This file too, or a CI change is first exercised on main, after the
+      # merge. Two fixes in a row needed a follow-up for exactly that: the
+      # simulator selection and FACTORY_VARS both looked right locally and
+      # failed only once merged. The Android lane has always listed its own
+      # workflow here; the iOS lane was the odd one out.
+      - '.github/workflows/factory-ios-build.yml'
   workflow_dispatch:
     inputs:
       app:
@@ -31,6 +37,12 @@ permissions:
   contents: read
 
 env:
+  # Ad unit IDs live in repository variables, never in git (factory rule 5).
+  # Workflow-level, not per step: registry.py resolves them when it writes
+  # the environment, and check_ios_app.py resolves them again for itself --
+  # setting this on only the first step left the quality gate blind and it
+  # failed shift-slip for ad IDs that were configured all along.
+  FACTORY_VARS: ${{ toJSON(vars) }}
   # Pin the toolchain: xcodebuild output is not reproducible across Xcode
   # versions, and macos-latest silently moves. Verified present on this image
   # as of 2026-09-07; bump this when Apple ships a new stable and re-verify
@@ -93,8 +105,36 @@ jobs:
         with:
           xcode-version: ${{ env.FACTORY_XCODE_VERSION }}
 
-      - name: Install XcodeGen
-        run: brew install xcodegen
+      - name: Install XcodeGen 2.46.0
+        run: |
+          set -euo pipefail
+          # Pinned, not `brew install xcodegen`. The generator's version changes the
+          # generated project: measured on ShiftSlip's own spec, resolving
+          # TARGETED_DEVICE_FAMILY via xcodebuild -showBuildSettings --
+          #
+          #   generator  TARGETED_DEVICE_FAMILY on the project only  ->  resolved
+          #   2.46.0     "1"                                         ->  1,2   (universal!)
+          #   2.42.0     "1"                                         ->  1
+          #
+          # brew served 2.46 to CI while the author's Mac had 2.42, so an iPhone-only
+          # app shipped to Apple as universal and Apple demanded 13-inch iPad
+          # screenshots for a layout that has none. Both apps now also set the value on
+          # the target, where it wins on either version -- but an unpinned generator is
+          # a moving floor under every other setting too, which is why Xcode is pinned
+          # here as well.
+          url="https://github.com/yonaskolb/XcodeGen/releases/download/2.46.0/xcodegen.artifactbundle.zip"
+          want="ef6d0a23bfb7393387f98e321ffd78a487231172e2e78c48d3c26275c263fd0c"
+          curl -sSL --retry 3 -o "$RUNNER_TEMP/xcodegen.zip" "$url"
+          got="$(shasum -a 256 "$RUNNER_TEMP/xcodegen.zip" | cut -d' ' -f1)"
+          [[ "$got" == "$want" ]] || { echo "::error::XcodeGen 2.46.0 checksum is $got, expected $want"; exit 1; }
+          unzip -q "$RUNNER_TEMP/xcodegen.zip" -d "$RUNNER_TEMP/xcodegen"
+          bin="$RUNNER_TEMP/xcodegen/xcodegen.artifactbundle/xcodegen-2.46.0-macosx/bin"
+          # XcodeGen reads its build-setting presets from a bundle beside the binary; a
+          # copy that loses it generates projects missing Xcode's defaults.
+          [[ -d "$bin/XcodeGen_XcodeGenKit.bundle/Contents/Resources/SettingPresets" ]] \
+            || { echo "::error::the XcodeGen artifact bundle has no SettingPresets"; exit 1; }
+          echo "$bin" >> "$GITHUB_PATH"
+          "$bin/xcodegen" --version
 
       - name: Generate Xcode project
         run: cd "$APP_PATH" && xcodegen generate
@@ -102,65 +142,89 @@ jobs:
       - name: Pick simulators
         run: |
           set -euo pipefail
-          # simctl prints "<name> (<UDID>) (<state>)", and an iPad's own name
-          # contains parentheses -- "iPad Pro 13-inch (M5)". Cutting at the
-          # first "(" therefore yielded "iPad Pro 13-inch", which matches no
-          # destination and failed the iPad screenshot capture. Cut at the
-          # UDID instead, which is unambiguous.
-          strip_udid='s/^ *(.*) \([0-9A-Fa-f-]{36}\) \(.*\) *$/\1/'
+          # Address simulators by UDID, not by name. A name has to be parsed out
+          # of simctl's output and an iPad's own name contains parentheses --
+          # "iPad Pro 13-inch (M5)" -- which is how IPAD_SIMULATOR once ended up
+          # as the unusable "iPad Pro 13-inch". A UDID needs no parsing.
           available="$(xcrun simctl list devices available)"
-          names="$(printf '%s\n' "$available" | sed -E "$strip_udid")"
           pick() {
-            local pattern="$1" label="$2" name
-            name="$(printf '%s\n' "$available" | grep -m1 -E "$pattern" | sed -E "$strip_udid")"
-            [[ -n "$name" ]] || { echo "::error::no $label simulator available"; return 1; }
-            # A wrong-but-non-empty name is exactly how this broke, and the
-            # truncated name is a prefix of the real one -- so this has to be
-            # a whole-line exact match, not a substring search.
-            printf '%s\n' "$names" | grep -qxF "$name" || {
-              echo "::error::extracted simulator name '$name' ($label) is not a device simctl listed"
-              return 1
-            }
-            printf '%s' "$name"
+            local pattern="$1" label="$2" line udid
+            # LAST match, not the first: simctl groups devices by runtime in
+            # ascending order, so the first "iPhone 17 Pro Max" is the one on the
+            # OLDEST installed runtime. Pinning to that is what booted a device
+            # that never came up (bootstatus ended Status=4294967295) -- picking
+            # by name had left the choice to xcodebuild, which took a newer one.
+            line="$(printf '%s\n' "$available" | grep -E "$pattern" | tail -1)"
+            [[ -n "$line" ]] || { echo "::error::no $label simulator available"; return 1; }
+            udid="$(printf '%s' "$line" | sed -E 's/.*\(([0-9A-Fa-f-]{36})\).*/\1/')"
+            [[ "$udid" =~ ^[0-9A-Fa-f-]{36}$ ]] || {
+              echo "::error::could not read a UDID for $label out of: $line"; return 1; }
+            echo "  $label -> $line" >&2
+            printf '%s' "$udid"
           }
-          # Assign first: a failing $(...) inside an argument list would not
-          # trip `set -e`, and would write an empty name to the environment.
+          # Assign first: a failing $(...) inside an argument list would not trip
+          # `set -e`, and would write an empty UDID to the environment.
           unit="$(pick 'iPhone 1[6-9]( Pro)?( Max)?' 'iPhone 16/17-class')"
           shots="$(pick 'iPhone 1[6-9] Pro Max' 'iPhone Pro Max (6.9in)')"
-          ipad="$(pick 'iPad Pro 13-inch' '13-inch iPad')"
-          echo "UNIT_SIMULATOR=$unit"   | tee -a "$GITHUB_ENV"
-          echo "SHOTS_SIMULATOR=$shots" | tee -a "$GITHUB_ENV"
-          echo "IPAD_SIMULATOR=$ipad"   | tee -a "$GITHUB_ENV"
+          {
+            echo "UNIT_SIMULATOR=$unit"
+            echo "SHOTS_SIMULATOR=$shots"
+          } >> "$GITHUB_ENV"
+          # Only when the spec ships iPad. An iPhone-only app has no iPad layout
+          # to capture, Apple wants no iPad screenshots for it, and the gate no
+          # longer asks for them -- this step was the last place still assuming
+          # every app is universal.
+          if [[ "$APP_DEVICES" == *iPad* ]]; then
+            echo "IPAD_SIMULATOR=$(pick 'iPad Pro 13-inch' '13-inch iPad')" >> "$GITHUB_ENV"
+          else
+            echo "iPhone-only ($APP_DEVICES): skipping the iPad capture"
+          fi
 
       - name: Unit tests
         run: |
+          set -euo pipefail
+          # Boot HERE, in the shell, rather than letting xcodebuild start against
+          # a half-booted simulator: XCUIApplication.launch() has a fixed timeout
+          # with no public knob, and a cold device spends it on springboard and
+          # services coming up -- that is the "Timed out while launching
+          # application via Xcode" failure. Measured locally, a cold device costs
+          # ~17s more than a warm one (56s vs 39s), and a CI runner is slower.
+          "$GITHUB_WORKSPACE/factory/tools/boot_simulator.sh" "$UNIT_SIMULATOR"
           cd "$APP_PATH"
           xcodebuild test -project "$(find . -maxdepth 1 -name '*.xcodeproj')" -scheme "$APP_SCHEME" \
-            -destination "platform=iOS Simulator,name=$UNIT_SIMULATOR" \
+            -destination "platform=iOS Simulator,id=$UNIT_SIMULATOR" \
             CODE_SIGNING_ALLOWED=NO
 
       - name: Screenshot capture
         run: |
+          set -euo pipefail
+          "$GITHUB_WORKSPACE/factory/tools/boot_simulator.sh" "$SHOTS_SIMULATOR"
           cd "$APP_PATH"
           rm -rf shots.xcresult
           xcodebuild test -project "$(find . -maxdepth 1 -name '*.xcodeproj')" -scheme "${APP_SCHEME}Screenshots" \
-            -destination "platform=iOS Simulator,name=$SHOTS_SIMULATOR" \
+            -destination "platform=iOS Simulator,id=$SHOTS_SIMULATOR" \
             -resultBundlePath shots.xcresult CODE_SIGNING_ALLOWED=NO
 
       - name: Screenshot capture (iPad 13-inch)
+        if: contains(env.APP_DEVICES, 'iPad')
         run: |
+          set -euo pipefail
+          "$GITHUB_WORKSPACE/factory/tools/boot_simulator.sh" "$IPAD_SIMULATOR"
           cd "$APP_PATH"
           rm -rf shots-ipad.xcresult
           xcodebuild test -project "$(find . -maxdepth 1 -name '*.xcodeproj')" -scheme "${APP_SCHEME}Screenshots" \
-            -destination "platform=iOS Simulator,name=$IPAD_SIMULATOR" \
+            -destination "platform=iOS Simulator,id=$IPAD_SIMULATOR" \
             -resultBundlePath shots-ipad.xcresult CODE_SIGNING_ALLOWED=NO
 
       - name: Extract screenshots
         run: |
+          set -euo pipefail
           cd "$APP_PATH"
           mkdir -p screenshots-out screenshots-out-ipad
           xcrun xcresulttool export attachments --path shots.xcresult --output-path screenshots-out
-          xcrun xcresulttool export attachments --path shots-ipad.xcresult --output-path screenshots-out-ipad
+          if [[ -d shots-ipad.xcresult ]]; then
+            xcrun xcresulttool export attachments --path shots-ipad.xcresult --output-path screenshots-out-ipad
+          fi
 
       - uses: actions/upload-artifact@v4
         with:
@@ -190,8 +254,36 @@ jobs:
         with:
           xcode-version: ${{ env.FACTORY_XCODE_VERSION }}
 
-      - name: Install XcodeGen
-        run: brew install xcodegen
+      - name: Install XcodeGen 2.46.0
+        run: |
+          set -euo pipefail
+          # Pinned, not `brew install xcodegen`. The generator's version changes the
+          # generated project: measured on ShiftSlip's own spec, resolving
+          # TARGETED_DEVICE_FAMILY via xcodebuild -showBuildSettings --
+          #
+          #   generator  TARGETED_DEVICE_FAMILY on the project only  ->  resolved
+          #   2.46.0     "1"                                         ->  1,2   (universal!)
+          #   2.42.0     "1"                                         ->  1
+          #
+          # brew served 2.46 to CI while the author's Mac had 2.42, so an iPhone-only
+          # app shipped to Apple as universal and Apple demanded 13-inch iPad
+          # screenshots for a layout that has none. Both apps now also set the value on
+          # the target, where it wins on either version -- but an unpinned generator is
+          # a moving floor under every other setting too, which is why Xcode is pinned
+          # here as well.
+          url="https://github.com/yonaskolb/XcodeGen/releases/download/2.46.0/xcodegen.artifactbundle.zip"
+          want="ef6d0a23bfb7393387f98e321ffd78a487231172e2e78c48d3c26275c263fd0c"
+          curl -sSL --retry 3 -o "$RUNNER_TEMP/xcodegen.zip" "$url"
+          got="$(shasum -a 256 "$RUNNER_TEMP/xcodegen.zip" | cut -d' ' -f1)"
+          [[ "$got" == "$want" ]] || { echo "::error::XcodeGen 2.46.0 checksum is $got, expected $want"; exit 1; }
+          unzip -q "$RUNNER_TEMP/xcodegen.zip" -d "$RUNNER_TEMP/xcodegen"
+          bin="$RUNNER_TEMP/xcodegen/xcodegen.artifactbundle/xcodegen-2.46.0-macosx/bin"
+          # XcodeGen reads its build-setting presets from a bundle beside the binary; a
+          # copy that loses it generates projects missing Xcode's defaults.
+          [[ -d "$bin/XcodeGen_XcodeGenKit.bundle/Contents/Resources/SettingPresets" ]] \
+            || { echo "::error::the XcodeGen artifact bundle has no SettingPresets"; exit 1; }
+          echo "$bin" >> "$GITHUB_PATH"
+          "$bin/xcodegen" --version
 
       - name: Generate Xcode project
         run: cd "$APP_PATH" && xcodegen generate
@@ -221,12 +313,30 @@ jobs:
           set -euo pipefail
           [[ -n "$ASC_KEY_ID" && -n "$ASC_ISSUER_ID" ]] || { echo "::error::ASC_KEY_ID/ASC_ISSUER_ID are not configured in the appstore environment."; exit 1; }
           cd "$APP_PATH"
+          # Archive UNSIGNED. Nothing sets CODE_SIGN_IDENTITY, and Xcode's iOS default is
+          # "Apple Development" in EVERY configuration -- Release is only a name and carries
+          # no signing semantics. So with CODE_SIGN_STYLE: Automatic the archive is signed
+          # FOR DEVELOPMENT and automatic signing demands an "iOS App Development" profile.
+          # An ephemeral runner starts with an empty keychain, so -allowProvisioningUpdates
+          # minted a NEW Apple Development certificate every single run until the account hit
+          # Apple's limit and the owner had to revoke by hand, twice. Development certificates
+          # cannot be cloud-managed -- only distribution ones can -- so there was no reuse path.
+          #
+          # The archive's signature is thrown away moments later: -exportArchive re-signs for
+          # app-store-connect. Not signing here therefore costs nothing and removes the cause.
+          # Verified locally: archives successfully with zero provisioning/certificate log lines.
+          #
+          # Do NOT "fix" this instead by setting CODE_SIGN_IDENTITY="Apple Distribution":
+          # Xcode rejects that while CODE_SIGN_STYLE is Automatic ("conflicting provisioning
+          # settings"). The export below is where distribution signing belongs, and it still
+          # uses cloud-managed signing with the same API key.
           xcodebuild -project "$(find . -maxdepth 1 -name '*.xcodeproj')" -scheme "$APP_SCHEME" -configuration Release \
             -destination 'generic/platform=iOS' -archivePath build/App.xcarchive archive \
             -allowProvisioningUpdates \
             -authenticationKeyPath "$RUNNER_TEMP/keys/AuthKey.p8" \
             -authenticationKeyID "$ASC_KEY_ID" \
-            -authenticationKeyIssuerID "$ASC_ISSUER_ID"
+            -authenticationKeyIssuerID "$ASC_ISSUER_ID" \
+            CODE_SIGNING_ALLOWED=NO
 
       - name: Export IPA
         env:
@@ -248,6 +358,37 @@ jobs:
           [[ -n "$ipa" ]] || { echo "::error::export produced no .ipa"; exit 1; }
           rm -rf /tmp/ipa-check && unzip -q "$ipa" -d /tmp/ipa-check
           codesign -dv --verbose=4 /tmp/ipa-check/Payload/*.app
+          # "Some signature exists" is not the assertion worth making: an export signed with
+          # a DEVELOPMENT identity passes `codesign -dv` too, and that is exactly the signature
+          # this job used to produce by accident. Assert the authority Apple requires instead.
+          authority="$(codesign -dv --verbose=4 /tmp/ipa-check/Payload/*.app 2>&1 \
+                        | grep -m1 '^Authority=' | cut -d= -f2-)"
+          case "$authority" in
+            "Apple Distribution"*) echo "signed by $authority" ;;
+            *) echo "::error::the exported IPA is signed by '$authority', not an Apple Distribution certificate. App Store Connect will refuse it."; exit 1 ;;
+          esac
+
+      - name: Verify the binary ships the devices the spec declares
+        run: |
+          set -euo pipefail
+          # The gate reads project.yml; this reads the thing that gets uploaded.
+          # ShiftSlip 1.0.0 (1) went to Apple as universal with project.yml
+          # saying "1" and the gate agreeing, because the build machine's
+          # XcodeGen resolved the setting differently. Intent is not evidence.
+          plist="$(echo /tmp/ipa-check/Payload/*.app/Info.plist)"
+          got="$(/usr/libexec/PlistBuddy -c 'Print :UIDeviceFamily' "$plist" \
+                  | grep -Eo '[0-9]+' | sort -u | paste -sd, -)"
+          want=""
+          [[ "$APP_DEVICES" == *iPhone* ]] && want="1"
+          [[ "$APP_DEVICES" == *iPad* ]] && want="${want:+$want,}2"
+          if [[ -z "$want" ]]; then
+            echo "spec declares no devices ($APP_DEVICES); skipping"
+          elif [[ "$got" != "$want" ]]; then
+            echo "::error::the built app declares UIDeviceFamily=$got but the spec says $APP_DEVICES (expected $want). Apple will demand screenshots for a device this app was never designed for."
+            exit 1
+          else
+            echo "UIDeviceFamily=$got matches the spec's $APP_DEVICES"
+          fi
 
       - uses: actions/upload-artifact@v4
         with:

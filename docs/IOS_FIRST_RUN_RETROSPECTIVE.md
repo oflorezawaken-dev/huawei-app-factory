@@ -138,20 +138,18 @@ sido correcto.
 
 ---
 
-## 5. Deuda abierta — esto SÍ va a doler en la app nº2
+## 5. Deuda abierta — estado tras dos apps (2026-09-11)
 
-Honestamente, la fábrica está más afinada, pero no está limpia:
-
-| Qué | Impacto en la próxima app | Estado |
-|---|---|---|
-| **Test de capturas inestable** | Falla ~2 de cada 5 arranques en frío, en la aserción de la pestaña *Shopping List*. **Bloquea el job `release`**, no solo el reporte | Sin diagnosticar (decisión tuya de no seguir investigando). Cuenta con reintentar el run |
-| **Certificados de firma se agotan** | Cada runner efímero crea un certificado de desarrollo nuevo. El límite de Apple se alcanza y hay que revocarlos a mano | Sin arreglar. Se resuelve con un certificado guardado en secrets en vez de firma cloud-managed |
-| **Limpieza de `reviewSubmission` no funciona** | Apple devuelve `403` al `DELETE`. Hoy hay **4 submissions abiertas** acumuladas en PriceJar | Hay que cambiarlo a `PATCH {canceled: true}` |
-| **Sondas de diagnóstico con URL mal** | Clasificación por edad y App Privacy salen `?` en vez de `!!`/`ok` | `ageRatingDeclaration` cuelga de `appInfos`, no de `appStoreVersions`; `appDataUsages` no es relación de `apps` |
-| **PR #30 sin mergear** | **La trampa 13 sigue viva en `main`**. La app nº2 volvería a mandar las capturas de iPad al set de iPhone | Mergear antes de empezar |
-| **El gate no ve el IAP de consola** | `iap_configured` pasa en verde aunque el producto no exista en App Store Connect. La app llega a revisión con el botón de compra muerto | Sin arreglar. Se detectaría con `GET /v1/apps/{id}/inAppPurchases` — verificar el nombre del endpoint antes de usarlo |
-| **`apps-ios/price-jar/ipad-out/`** | 5 PNG crudos commiteados por error; basura de trabajo | Borrar |
-| **Registro con un solo tamaño de iPad** | Solo `2064x2752`. Apple documenta también `2048x2732`, pero no está probado: el único intento estuvo contaminado por la trampa 13 | Dejarlo así hasta comprobarlo |
+| Qué | Estado |
+|---|---|
+| Test de capturas inestable | **Cerrado.** Era un bug de producto: ATT sin guard de test bloqueaba el cierre de una hoja. Arreglado en la app, el template y el prompt (#34, #48) |
+| Certificados de firma se agotan | **Cerrado (#58).** No faltaba un certificado guardado: el archive se firmaba para *desarrollo* y cada runner efímero acuñaba uno. Se archiva sin firmar; el export sigue con firma cloud-managed de distribución. Queda **un paso manual único**: revocar los de desarrollo ya acumulados, que el arreglo no libera |
+| Submissions colgadas | **Abierto, y peor de lo que creía.** Apple no permite `DELETE` (403) **ni** `PATCH canceled` en `READY_FOR_REVIEW` (409). Recuperación solo desde consola: *Eliminar de revisión* |
+| Sondas de diagnóstico | Clasificación por edad **arreglada** (`appInfos`, #50). App Privacy **no está en la API** — confirmado en la spec; se reporta como consola-only |
+| El gate no ve el IAP de consola | **Parcial.** El envío se niega si ningún IAP está en estado enviable (#47). El gate sigue sin verlo antes |
+| `apps-ios/price-jar/ipad-out/` | Sigue ahí. Borrar |
+| Registro con un solo tamaño de iPad | Sin cambios |
+| **Envío automatizado a revisión** | **Con red, sin estrenar contra Apple.** Las formas se validan offline (#55), la versión y el IAP los crea la fábrica (#56), y el envío lee de vuelta build y contenido antes del PATCH final (#57). Nada de eso se ha ejercitado aún en un envío real: trátalo como supervisado la primera vez |
 
 ---
 
@@ -166,3 +164,105 @@ Honestamente, la fábrica está más afinada, pero no está limpia:
 La app nº2 debería ahorrarse los 13 fallos y las vueltas de los formularios de consola. Lo que
 no se ahorra es el test inestable ni los certificados, y eso son las dos cosas que conviene
 arreglar antes de empezar.
+
+---
+
+## 7. Segundo recorrido: ShiftSlip — el barrido que pediste
+
+ShiftSlip fue de propuesta a IPA firmado **sin un solo fallo de la app**: las 13 trampas de PriceJar
+no reaparecieron. Aun así el recorrido costó **~20 PRs de corrección** (#34–#54) y **cuatro
+ejecuciones fallidas de envío**. Casi ninguno era un bug nuevo: eran **seis patrones**, repetidos.
+
+### 7.1 Los seis patrones, con recuento
+
+| # | Patrón | Veces | Ejemplos |
+|---|---|---|---|
+| A | **Forma de la API adivinada**, y el mock diciendo que sí | **8** | `appStoreVersionState`, `APP_IPHONE_69`, `DELETE reviewSubmissions` (403), `inAppPurchaseV2` (409), `ageRatingDeclaration` en versiones (404), `appDataUsages` (404), `PATCH canceled` (409), `filter[screenshotDisplayType]` ignorado |
+| B | **Regla escrita en prosa, sin comprobación donde toca** | 5 | guard de ATT en un comentario; set de iPad "required whenever…"; regla 5 de ad IDs; IAP fuera del gate; ficha sin escanear |
+| C | **Comprobar la intención, no el artefacto** | 4 | gate lee `project.yml` y el binario era universal; "uploaded" por un 200 y Apple lo rechazó después; `bootstatus` sale 0 con el simulador muerto; conclusión del run y no del job |
+| D | **Local ≠ CI, en silencio** | 4 | XcodeGen 2.42 vs 2.46; orden de runtimes del simulador; `FACTORY_VARS` por paso; workflows sin verificar en PR |
+| E | **El spec arrastraba un diseño rechazado** | 1 | ATT tras la primera acción → ShiftSlip nació con el rechazo de PriceJar |
+| F | **Copiar entre apps dando por hecho que son iguales** | 1 | `tab("Settings")` de PriceJar en una app sin esa pestaña |
+
+**El patrón A solo explica más de un tercio de todo el tiempo perdido**, y es el único que se
+puede eliminar de raíz: Apple publica la especificación OpenAPI de la API completa.
+
+### 7.1b Una corrección que estuve a punto de escribir, y no debí
+
+Investigando el paso 4, dos verificadores afirmaron con alta confianza que la atribución
+«XcodeGen 2.42 vs 2.46» era falsa y que había que corregirla en cinco sitios. Antes de tocar la
+documentación lo medí con los dos binarios reales, resolviendo con `xcodebuild -showBuildSettings`
+en vez de leer el `pbxproj` crudo:
+
+| generador | `TARGETED_DEVICE_FAMILY` solo a nivel de proyecto | resuelve |
+|---|---|---|
+| **2.46.0** | `"1"` | **`1,2`** |
+| 2.42.0 | `"1"` | `1` |
+
+La atribución original era **correcta**; los verificadores leyeron entradas del `pbxproj` en vez de
+los ajustes resueltos. La lección no es «no usar verificadores» — dos de ellos tumbaron una
+recomendación que directamente no compilaba (`CODE_SIGN_IDENTITY: "Apple Distribution"` bajo firma
+automática: *conflicting provisioning settings*) y otro destripó un script de importación de `.p12`
+que fallaba en silencio. La lección es que **un agente seguro de sí mismo no es evidencia**, igual
+que un 201 no lo era. Medirlo costó cinco minutos; escribir una falsedad en la fábrica habría
+costado la próxima app.
+
+### 7.2 Lo que la spec responde en una pasada, offline
+
+Comprobado el 11-09 contra la spec 4.4.1 (966 rutas), sin una sola llamada a Apple:
+
+- La relación del IAP en un envío es **`inAppPurchaseVersion`** — ni `inAppPurchase` ni
+  `inAppPurchaseV2`; mi "probar los dos candidatos" habría fallado otra vez.
+- `reviewSubmissions/{id}` admite solo **GET y PATCH**. No hay DELETE.
+- `ageRatingDeclaration` cuelga de **`appInfos`**. `appDataUsages` **no existe**: App Privacy no
+  está en la API.
+- **`POST /v1/appStoreVersions`** existe: crear la versión no tiene por qué ser un paso humano.
+- **El IAP completo es automatizable**: `/v2/inAppPurchases`, localizaciones, precio, captura de
+  revisión (`inAppPurchaseAppStoreReviewScreenshots`), y `inAppPurchaseSubmissions`.
+- **La lectura que faltaba existe**: `/v1/reviewSubmissions/{id}/items` y
+  `/v1/appStoreVersions/{id}/build`. "¿Qué build lleva la versión?" y "¿va la compra dentro?" dejan
+  de ser preguntas para el humano.
+
+Límite honesto: la spec valida **forma**, no comportamiento. `filter[screenshotDisplayType]` está
+en la spec y Apple lo ignora igual. El mock sigue teniendo que ser hostil.
+
+### 7.3 Lo que cambia en la fábrica (en este orden)
+
+1. **Hecho:** `test_asc_api_shapes.py` valida cada `api_call` de las herramientas contra la spec
+   (ruta, verbo, filtros, relaciones). Lo primero que cazó fue `appDataUsages`; lo segundo, que
+   una clave variable en las relaciones dejaba la comprobación en blanco. Cuatro de los ocho
+   fallos del patrón A habrían muerto aquí.
+2. **Hecho:** `asc_setup.py` crea la versión y el IAP completo — localizaciones desde el bloque
+   `iap` de `listing.json`, disponibilidad en todos los territorios, precio desde `iap.price_usd`
+   resuelto a un price point de USA, y la captura de revisión (`store/iap-review-screenshot.png`)
+   esperando el `COMPLETE` de Apple. Idempotente: la segunda ejecución hace cero POSTs. Cada
+   ruta salió de la spec y la comprueba `test_asc_api_shapes.py` (46 llamadas). El gate exige
+   la copia y la captura (`iap_store_copy`) antes de que nada llegue a Apple. Es `what=setup` en
+   `factory-ios-store.yml`, y parte de `all`.
+3. **Hecho:** lectura de vuelta antes de enviar. `verify_attached_build` comprueba con
+   `/v1/appStoreVersions/{id}/build` que la versión lleva el build de esta ejecución — una versión
+   puede quedarse con uno anterior y Apple no protesta. `verify_submission_contents` pregunta a
+   Apple, vía `/v1/reviewSubmissions/{id}/items?include=…`, qué contiene el envío antes del PATCH
+   final, y **se niega a enviar** si falta la versión o alguna compra. Los 201 de los POST no eran
+   prueba: el envío que llegó a revisión sin la compra los tuvo todos.
+4. **Hecho, y no como estaba planeado (#58).** El límite de certificados **no** se arreglaba
+   guardando un certificado en secrets: **el archive se firmaba para desarrollo**. Nada fija
+   `CODE_SIGN_IDENTITY` y el valor por defecto de Xcode es `Apple Development` en *todas* las
+   configuraciones — Release es solo un nombre. Con firma automática, cada runner efímero, con el
+   llavero vacío, acuñaba un certificado de desarrollo nuevo; y los de desarrollo **no** pueden ser
+   cloud-managed, así que no había reutilización posible. La firma del archive se descarta acto
+   seguido — el export vuelve a firmar para `app-store-connect` — así que **archivar sin firmar**
+   elimina la causa sin guardar ningún secreto. Medido: 0 líneas de provisioning, archive producido.
+   De paso, la comprobación de firma del IPA solo exigía «que exista alguna firma», y un export con
+   identidad de desarrollo la pasaba; ahora exige autoridad **Apple Distribution**. Y XcodeGen queda
+   fijado en **2.46.0** por artifactbundle con SHA256 verificado.
+5. Hasta que 2 y 3 existan, **el envío a revisión se hace desde la consola**. Es lo que
+   funcionó en ambas apps; el automatizado lleva cuatro fallos seguidos y deja estado que Apple no
+   permite deshacer.
+
+### 7.4 Coste, para calibrar
+
+- PriceJar: 1 rechazo (3 motivos), 5 builds, 4 intentos de envío.
+- ShiftSlip: 0 fallos de app, 2 builds, **4 ejecuciones de envío fallidas**, envío final desde consola.
+- Regla que sale de todo esto: **ninguna llamada nueva a la API de Apple sin pasar por la spec
+  primero.** Cada nombre adivinado costó, de media, una ejecución real y a veces estado irreversible.

@@ -45,7 +45,7 @@ import struct
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from registry import ROOT, find, load, platform_of  # noqa: E402
+from registry import ROOT, find, load, platform_of, ad_id as registry_ad_id  # noqa: E402
 
 # Apple's own boilerplate; not a factory stub.
 ALLOWED_FATAL_ERRORS = ("init(coder:)", "has not been implemented")
@@ -254,13 +254,30 @@ def main(argv: list[str]) -> int:
                gap_key="admob")
 
         admob = app.get("admob") or {}
-        ids = {k: str(admob.get(k) or "") for k in ("app_id", "banner_unit_id", "interstitial_unit_id")}
+        # Resolve exactly the way registry.py does for the build, or the gate
+        # judges different IDs from the ones that get compiled in. Real values
+        # come from repo variables; the registry entry is a fallback.
+        FIELD_ENV = {"app_id": "APP_ID", "banner_unit_id": "BANNER_UNIT_ID",
+                     "interstitial_unit_id": "INTERSTITIAL_UNIT_ID"}
+        slug_upper = slug.upper().replace("-", "_")
+        ids = {k: registry_ad_id(slug_upper, env_field, admob.get(k))
+               for k, env_field in FIELD_ENV.items()}
         missing = [k for k, v in ids.items() if not v]
         test_prefix = ios["admob_test_id_prefix"]
         using_test = [k for k, v in ids.items() if v.startswith(test_prefix)]
         report("admob_unit_ids", not missing and not using_test,
                f"missing: {missing or 'none'}; Google test IDs: {using_test or 'none'}",
                gap_key="admob_unit_ids")
+
+        # Factory rule 5: ad unit IDs never live in git. PriceJar's were
+        # committed to a public repo for a whole release before anyone noticed,
+        # because nothing checked -- the rule was written down and unenforced,
+        # the same failure shape as the ATT guard and the iPad screenshot set.
+        committed = [k for k in FIELD_ENV
+                     if str(admob.get(k) or "") and not str(admob.get(k)).startswith(test_prefix)]
+        report("ad_ids_not_in_git", not committed,
+               f"production AdMob IDs committed in factory/apps.json: {committed or 'none'}"
+               + ("; move them to repo variables ADMOB_%s_<FIELD>" % slug_upper if committed else ""))
 
     if rules.get("att_required"):
         has_att_string = "NSUserTrackingUsageDescription" in info_text
@@ -341,9 +358,11 @@ def main(argv: list[str]) -> int:
     # here rather than by Apple, which is where PriceJar 1.0.0 found it.
     FAMILY_BY_DEVICE = {"iPhone": "1", "iPad": "2"}
     spec_devices = []
+    spec_data: dict = {}
     spec_path = os.path.join(ROOT, app["spec"])
     if os.path.isfile(spec_path):
-        spec_devices = (json.loads(read(spec_path)).get("technical") or {}).get("devices") or []
+        spec_data = json.loads(read(spec_path))
+        spec_devices = (spec_data.get("technical") or {}).get("devices") or []
     if spec_devices:
         want_family = ",".join(FAMILY_BY_DEVICE[d] for d in spec_devices if d in FAMILY_BY_DEVICE)
         got = resolved_settings("TARGETED_DEVICE_FAMILY")
@@ -391,7 +410,16 @@ def main(argv: list[str]) -> int:
 
     # Screenshots follow the fastlane deliver layout (one folder per language);
     # the device set is inferred from the pixel size, as Apple does on upload.
-    required_sets = {name: cfg for name, cfg in ios["screenshot_sets"].items() if cfg.get("required")}
+    # A set is required only for a device the spec ships. The registry has always
+    # said the iPad set is "required whenever the app declares iPad support", but
+    # `required: true` was read unconditionally, so an iPhone-only app was asked
+    # for 13-inch iPad screenshots that Apple does not want and the capture step
+    # cannot produce. The intent lived in a note; this is the check.
+    required_sets = {
+        name: cfg for name, cfg in ios["screenshot_sets"].items()
+        if cfg.get("required") and (
+            not spec_devices or cfg.get("device") is None or cfg["device"] in spec_devices)
+    }
     default_folder = next((k for k, v in ios["screenshot_dir_to_asc_lang"].items() if v == languages[0]), "en")
     shots_dir = os.path.join(store_dir, "screenshots", default_folder)
     shots = sorted(f for f in os.listdir(shots_dir)) if os.path.isdir(shots_dir) else []
@@ -427,14 +455,65 @@ def main(argv: list[str]) -> int:
         entries = json.loads(read(listing_path)).get("languages", [])
         have = {e.get("lang") for e in entries}
         missing = [l for l in languages if l not in have]
+        # A locale row that exists with an empty description is not a listing.
+        # "missing languages: none" used to pass on exactly that, which is how
+        # eight of nine ShiftSlip locales read as complete while holding null.
+        REQUIRED_FIELDS = ("name", "subtitle", "description", "keywords")
+        blank = [f"{e.get('lang')}.{f}" for e in entries for f in REQUIRED_FIELDS
+                 if not str(e.get(f) or "").strip()]
         over = []
         for e in entries:
             for field, limit in limits.items():
                 value = e.get(field)
                 if isinstance(value, str) and len(value) > limit:
                     over.append(f"{e.get('lang')}.{field}={len(value)}>{limit}")
-        report("listing", not (missing or over),
-               f"missing languages: {missing or 'none'}; over limit: {over or 'none'}")
+        report("listing", not (missing or over or blank),
+               f"missing languages: {missing or 'none'}; over limit: {over or 'none'}; "
+               f"empty required fields: {blank or 'none'}")
+
+        # The purchase has store copy of its own, and Apple reviews it separately
+        # with a screenshot of the screen that offers it. asc_setup.py creates
+        # all of that from these inputs, so they are checked here first -- an
+        # incomplete purchase is what two of PriceJar's three rejections were.
+        if (app.get("iap") or {}).get("remove_ads_product_id"):
+            IAP_LIMITS = {"name": 30, "description": 45}
+            iap_problems = []
+            for e in entries:
+                iap = e.get("iap") or {}
+                for field, limit in IAP_LIMITS.items():
+                    value = str(iap.get(field) or "").strip()
+                    if not value:
+                        iap_problems.append(f"{e.get('lang')}.iap.{field} empty")
+                    elif len(value) > limit:
+                        iap_problems.append(f"{e.get('lang')}.iap.{field}={len(value)}>{limit}")
+            shot = os.path.join(store_dir, "iap-review-screenshot.png")
+            shot_info = png_info(shot) if os.path.isfile(shot) else None
+            if not shot_info:
+                iap_problems.append("store/iap-review-screenshot.png missing or not a PNG")
+            elif shot_info[2]:
+                iap_problems.append("store/iap-review-screenshot.png has an alpha channel")
+            report("iap_store_copy", not iap_problems,
+                   f"purchase copy and review screenshot: {iap_problems or 'complete'}")
+
+        # The in-app strings have a unit test scanning them for phrases the app
+        # must never use; the store listing had nothing. That is backwards --
+        # the listing is the copy App Review actually reads, and it is where a
+        # promise about taxes or wages is most tempting to write. Both now check
+        # the same list, which lives in the spec so there is no second copy.
+        banned = (spec_data.get("qa") or {}).get("banned_phrases") or {}
+        phrases = [p for key, values in banned.items()
+                   if not key.startswith("_") for p in values]
+        if phrases:
+            hits = []
+            for e in entries:
+                for field, value in e.items():
+                    if field == "lang" or not isinstance(value, str):
+                        continue
+                    lowered = value.lower()
+                    hits += [f"{e.get('lang')}/{field}: '{ph}'" for ph in phrases if ph in lowered]
+            report("listing_copy", not hits,
+                   f"banned phrases in the store listing: {hits or 'none'} "
+                   f"({len(phrases)} from the spec, {len(entries)} locale(s))")
     else:
         report("listing", False, f"{os.path.relpath(listing_path, ROOT)} missing")
 

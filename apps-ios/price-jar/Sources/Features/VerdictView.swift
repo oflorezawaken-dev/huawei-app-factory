@@ -126,17 +126,12 @@ struct VerdictView: View {
         context.insert(entry)
         didSave = true
 
-        let wasFirstEntry = !settings.hasSavedFirstPriceEntry
         settings.hasSavedFirstPriceEntry = true
+        // The tracking prompt used to be requested here, on the first saved
+        // price. Apple could not find it during review, and awaiting a system
+        // alert on this path meant onSaved() -- which dismisses Record Price --
+        // never ran when the alert appeared. Both are gone: this just closes up.
         dismiss()
-        if wasFirstEntry, !settings.hasRequestedTracking {
-            settings.hasRequestedTracking = true
-            Task {
-                await TrackingAuthorization.requestIfNeeded()
-                await MainActor.run { onSaved() }
-            }
-        } else {
-            onSaved()
-        }
+        onSaved()
     }
 }

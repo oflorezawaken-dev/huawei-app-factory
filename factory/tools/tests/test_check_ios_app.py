@@ -32,6 +32,11 @@ BUNDLE_ID = "com.example.fixture"
 PRODUCT_ID = "com.example.fixture.removeads"
 
 
+def read_file(path: str) -> str:
+    with open(path, encoding="utf-8") as fh:
+        return fh.read()
+
+
 def write(path: str, text: str) -> None:
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path, "w", encoding="utf-8") as fh:
@@ -79,11 +84,10 @@ def registry(**app_overrides) -> dict:
         "support_path": f"docs/{SLUG}/support",
         "status": "planned",
         "current_version": {"marketing_version": "1.0.0", "build": 1},
-        "admob": {
-            "app_id": "ca-app-pub-1111111111111111~2222222222",
-            "banner_unit_id": "ca-app-pub-1111111111111111/3333333333",
-            "interstitial_unit_id": "ca-app-pub-1111111111111111/4444444444",
-        },
+        # Empty here on purpose: factory rule 5 keeps ad unit IDs out of git, so
+        # the real values reach the gate through FACTORY_VARS the way the build
+        # gets them. run_gate supplies them unless a case overrides.
+        "admob": {"app_id": "", "banner_unit_id": "", "interstitial_unit_id": ""},
         "iap": {"remove_ads_product_id": PRODUCT_ID},
         "known_gaps": {},
     }
@@ -92,9 +96,15 @@ def registry(**app_overrides) -> dict:
     return {"defaults": real["defaults"], "apps": [app]}
 
 
-def build_fixture(root: str, **app_overrides) -> None:
+def build_fixture(root: str, devices=None, **app_overrides) -> None:
     reg = registry(**app_overrides)
     ios = reg["defaults"]["ios"]
+    # A fixture that declares its devices must also be a project built for them,
+    # or device_family fails and every device-related assertion drowns in it.
+    family = {"iPhone": "1", "iPad": "2"}
+    device_family_setting = (
+        f"\n        TARGETED_DEVICE_FAMILY: \"{','.join(family[d] for d in devices if d in family)}\""
+        if devices else "")
     write(os.path.join(root, "factory", "apps.json"), json.dumps(reg, indent=2))
     app_dir = os.path.join(root, "apps-ios", SLUG)
 
@@ -115,7 +125,7 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: {BUNDLE_ID}
         MARKETING_VERSION: 1.0.0
-        CURRENT_PROJECT_VERSION: 1
+        CURRENT_PROJECT_VERSION: 1{device_family_setting}
     dependencies:
       - package: GoogleMobileAds
   FixtureTests:
@@ -186,7 +196,8 @@ final class MonetisationTests: XCTestCase {
     shots = os.path.join(app_dir, "store", "screenshots", "en")
     for i in range(1, 4):
         write_png(os.path.join(shots, f"{i:02d}.png"), 1320, 2868, alpha=False)
-        write_png(os.path.join(shots, f"ipad-{i:02d}.png"), 2064, 2752, alpha=False)
+        if devices is None or "iPad" in devices:
+            write_png(os.path.join(shots, f"ipad-{i:02d}.png"), 2064, 2752, alpha=False)
 
     write(os.path.join(app_dir, "store", "listing.json"), json.dumps({
         "languages": [{
@@ -195,16 +206,32 @@ final class MonetisationTests: XCTestCase {
             "description": "Fixture keeps offline plant care reminders.",
             "keywords": "plants,care,reminder,watering,garden",
             "release_notes": "First release.",
+            # The purchase's own store copy; asc_setup.py creates the
+            # localizations from it and iap_store_copy checks it first.
+            "iap": {"name": "Remove Ads", "description": "Remove ads, permanently."},
         } for lang in ios["languages"]]
     }, indent=2))
+    # Apple reviews the purchase separately and needs a shot of the screen that
+    # offers it. Two of PriceJar's three rejections were an incomplete purchase.
+    write_png(os.path.join(app_dir, "store", "iap-review-screenshot.png"), 1320, 2868, alpha=False)
 
     write(os.path.join(root, "docs", SLUG, "privacy", "index.html"), "<h1>Privacy</h1>")
     write(os.path.join(root, "docs", SLUG, "support", "index.html"), "<h1>Support</h1>")
-    write(os.path.join(root, "specifications", f"{SLUG}.json"), json.dumps({"slug": SLUG}))
+    spec = {"slug": SLUG}
+    if devices is not None:
+        spec["technical"] = {"devices": devices}
+    write(os.path.join(root, "specifications", f"{SLUG}.json"), json.dumps(spec))
 
 
-def run_gate(root: str, strict: bool = True) -> tuple[int, dict[str, str], str]:
-    env = dict(os.environ, FACTORY_ROOT=root)
+FIXTURE_VARS = json.dumps({
+    "ADMOB_FIXTURE_APP_APP_ID": "ca-app-pub-1111111111111111~2222222222",
+    "ADMOB_FIXTURE_APP_BANNER_UNIT_ID": "ca-app-pub-1111111111111111/3333333333",
+    "ADMOB_FIXTURE_APP_INTERSTITIAL_UNIT_ID": "ca-app-pub-1111111111111111/4444444444",
+})
+
+
+def run_gate(root: str, strict: bool = True, factory_vars: str = FIXTURE_VARS) -> tuple[int, dict[str, str], str]:
+    env = dict(os.environ, FACTORY_ROOT=root, FACTORY_VARS=factory_vars)
     cmd = [sys.executable, CHECKER, SLUG] + (["--strict"] if strict else [])
     proc = subprocess.run(cmd, capture_output=True, text=True, env=env)
     statuses = dict((rule, status) for status, rule in
@@ -233,13 +260,41 @@ def main() -> int:
     finally:
         shutil.rmtree(root, ignore_errors=True)
 
+    # --- an iPhone-only app is not asked for iPad screenshots ---------------
+    # The registry always said the iPad set was "required whenever the app
+    # declares iPad support", but `required: true` was read unconditionally, so
+    # an iPhone-only app failed on screenshots it must not ship and the capture
+    # step cannot produce.
+    print("\niPhone-only spec, no iPad screenshots:")
+    root = tempfile.mkdtemp(prefix="factory-ios-")
+    try:
+        build_fixture(root, devices=["iPhone"])
+        code, statuses, out = run_gate(root)
+        check("screenshots passes without any iPad image", statuses.get("screenshots") == "PASS", out)
+        check("exit code 0", code == 0, out)
+    finally:
+        shutil.rmtree(root, ignore_errors=True)
+
+    print("\nspec declares iPad but ships no iPad screenshots:")
+    root = tempfile.mkdtemp(prefix="factory-ios-")
+    try:
+        build_fixture(root, devices=["iPhone", "iPad"])
+        for f in os.listdir(os.path.join(root, "apps-ios", SLUG, "store", "screenshots", "en")):
+            if f.startswith("ipad-"):
+                os.remove(os.path.join(root, "apps-ios", SLUG, "store", "screenshots", "en", f))
+        code, statuses, out = run_gate(root)
+        check("screenshots FAILs -- Apple requires the set for an iPad app",
+              statuses.get("screenshots") == "FAIL", out)
+    finally:
+        shutil.rmtree(root, ignore_errors=True)
+
     # --- each break trips exactly its own rule ------------------------------
-    def broken(label: str, expect_rule: str, mutate) -> None:
+    def broken(label: str, expect_rule: str, mutate, factory_vars: str = FIXTURE_VARS) -> None:
         print(f"\n{label}:")
         root = tempfile.mkdtemp(prefix="factory-ios-")
         try:
             mutate(root)
-            code, statuses, out = run_gate(root)
+            code, statuses, out = run_gate(root, factory_vars=factory_vars)
             check(f"{expect_rule} is FAIL", statuses.get(expect_rule) == "FAIL",
                   f"got {statuses.get(expect_rule)}\n{out}")
             check("exit code 1", code == 1)
@@ -248,12 +303,14 @@ def main() -> int:
         finally:
             shutil.rmtree(root, ignore_errors=True)
 
+    TEST_ID_VARS = json.dumps({
+        "ADMOB_FIXTURE_APP_APP_ID": "ca-app-pub-3940256099942544~1458002511",
+        "ADMOB_FIXTURE_APP_BANNER_UNIT_ID": "ca-app-pub-3940256099942544/2934735716",
+        "ADMOB_FIXTURE_APP_INTERSTITIAL_UNIT_ID": "ca-app-pub-3940256099942544/4411468910",
+    })
+
     def with_test_admob_ids(root: str) -> None:
-        build_fixture(root, admob={
-            "app_id": "ca-app-pub-3940256099942544~1458002511",
-            "banner_unit_id": "ca-app-pub-3940256099942544/2934735716",
-            "interstitial_unit_id": "ca-app-pub-3940256099942544/4411468910",
-        })
+        build_fixture(root)
 
     def with_alpha_icon(root: str) -> None:
         build_fixture(root)
@@ -302,7 +359,8 @@ def main() -> int:
         path = os.path.join(root, "apps-ios", SLUG, "project.yml")
         write(path, open(path, encoding="utf-8").read() + "\n  # FirebaseAnalytics\n")
 
-    broken("Google's test ad unit IDs", "admob_unit_ids", with_test_admob_ids)
+    broken("Google's test ad unit IDs", "admob_unit_ids", with_test_admob_ids,
+           factory_vars=TEST_ID_VARS)
     broken("icon with an alpha channel", "icon", with_alpha_icon)
     broken("vague permission string", "usage_descriptions", with_vague_permission)
     broken("fatalError stub", "no_stubs", with_stub)
@@ -312,16 +370,41 @@ def main() -> int:
     broken("subtitle over 30 characters", "listing", with_long_subtitle)
     broken("analytics SDK in the project", "forbidden_deps", with_firebase)
 
+    def with_no_iap_copy(root: str) -> None:
+        build_fixture(root)
+        path = os.path.join(root, "apps-ios", SLUG, "store", "listing.json")
+        listing = json.loads(read_file(path))
+        for e in listing["languages"]:
+            e.pop("iap", None)
+        write(path, json.dumps(listing))
+
+    # An app that sells something must ship the purchase's copy. asc_setup.py
+    # creates the App Store Connect product from these fields, so a listing
+    # without them is a purchase Apple will reject as incomplete.
+    broken("purchase declared but its store copy missing", "iap_store_copy", with_no_iap_copy)
+
+    def with_committed_ad_ids(root: str) -> None:
+        build_fixture(root, admob={
+            "app_id": "ca-app-pub-1111111111111111~2222222222",
+            "banner_unit_id": "ca-app-pub-1111111111111111/3333333333",
+            "interstitial_unit_id": "ca-app-pub-1111111111111111/4444444444",
+        })
+
+    # Factory rule 5. PriceJar shipped a whole release with its ad unit IDs in a
+    # public repo because the rule was written down and nothing checked it.
+    broken("production ad IDs committed to the registry", "ad_ids_not_in_git",
+           with_committed_ad_ids)
+
     # --- known_gaps excuse a failure unless --strict ------------------------
     print("\nknown_gaps excuses the gap without --strict:")
     root = tempfile.mkdtemp(prefix="factory-ios-")
     try:
-        build_fixture(root, admob={"app_id": "", "banner_unit_id": "", "interstitial_unit_id": ""},
-                      known_gaps={"admob_unit_ids": "AdMob console pending; step 6 of the flow."})
-        code, statuses, out = run_gate(root, strict=False)
+        build_fixture(root, known_gaps={"admob_unit_ids": "AdMob console pending; step 6 of the flow."})
+        # No variables yet either -- that is what "console pending" means now.
+        code, statuses, out = run_gate(root, strict=False, factory_vars="{}")
         check("admob_unit_ids is EXCUSED", statuses.get("admob_unit_ids") == "EXCUSED", out)
         check("exit code 0", code == 0)
-        code, statuses, _ = run_gate(root, strict=True)
+        code, statuses, _ = run_gate(root, strict=True, factory_vars="{}")
         check("--strict turns it into FAIL", statuses.get("admob_unit_ids") == "FAIL")
         check("exit code 1 under --strict", code == 1)
     finally:

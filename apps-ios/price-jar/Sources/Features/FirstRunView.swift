@@ -88,6 +88,10 @@ struct FirstRunView: View {
     private func finish() {
         settings.hasCompletedFirstRun = true
         isPresented = false
+        // The user has just been told what the app does, which is the moment the
+        // spec wanted for the tracking prompt. Asking here rather than after the
+        // first saved price is what makes it reachable for an App Review pass.
+        Task { await AdsBootstrap.startAfterTrackingPrompt(settings: settings) }
     }
 }
 

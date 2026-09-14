@@ -167,13 +167,22 @@ def diagnose_submission_blockers(asc_app_id: str, version_id: str, token: str) -
         return bool(data.get("data")), "" if data.get("data") else "no price schedule set"
 
     def age_rating():
-        data = api_call("GET", f"/v1/appStoreVersions/{version_id}/ageRatingDeclaration", token=token)
+        # On appInfos, not appStoreVersions: the version relationship does not
+        # exist and answered 404, which the report then had to call "could not
+        # check". The age rating belongs to the app's information, not to one
+        # version of it.
+        infos = api_call("GET", f"/v1/apps/{asc_app_id}/appInfos?limit=1", token=token).get("data") or []
+        if not infos:
+            return False, "the app has no appInfo yet"
+        data = api_call("GET", f"/v1/appInfos/{infos[0]['id']}/ageRatingDeclaration", token=token)
         return bool(data.get("data")), "" if data.get("data") else "questionnaire not completed"
 
     def privacy():
-        data = api_call("GET", f"/v1/apps/{asc_app_id}/appDataUsages?limit=1", token=token)
-        rows = data.get("data") or []
-        return bool(rows), "" if rows else "App Privacy questionnaire has no answers"
+        # Not exposed by the App Store Connect API at all -- verified against
+        # Apple's OpenAPI specification, which has no path for it. Two probes at
+        # guessed URLs 404'd before that was checked. Reported as console-only
+        # rather than as a failed lookup.
+        raise ASCError("not in the API; check App Store Connect > App Privacy (needs Admin)")
 
     def review_detail():
         data = api_call("GET", f"/v1/appStoreVersions/{version_id}/appStoreReviewDetail", token=token)
@@ -214,17 +223,162 @@ def clear_open_review_submission(asc_app_id: str, token: str) -> None:
         attrs = row.get("attributes") or {}
         if attrs.get("submitted"):
             continue
+        # Not DELETE: Apple answers 403 "does not allow 'DELETE'". Cancelling is
+        # an update, and leaving these open is how four of them piled up on
+        # PriceJar over a day of failed attempts.
         try:
-            api_call("DELETE", f"/v1/reviewSubmissions/{row['id']}", token=token)
-            log(f"removed the open, unsubmitted reviewSubmission {row['id']}")
+            api_call("PATCH", f"/v1/reviewSubmissions/{row['id']}",
+                     {"data": {"type": "reviewSubmissions", "id": row["id"],
+                               "attributes": {"canceled": True}}}, token)
+            log(f"cancelled the open, unsubmitted reviewSubmission {row['id']}")
         except ASCError as exc:
-            log(f"warning: could not remove open reviewSubmission {row['id']}: {exc}")
+            log(f"warning: could not cancel open reviewSubmission {row['id']}: {exc}")
 
 
-def submit_for_review(asc_app_id: str, token: str) -> None:
-    # A previous failed run may have left one behind, and Apple allows only one
-    # open submission per app.
-    clear_open_review_submission(asc_app_id, token)
+# An in-app purchase does not travel with a version by being "Ready to Submit".
+# That state means configured and waiting; it has to be added to the review
+# submission as its own item. PriceJar 1.0.0 (4) was rejected for exactly this:
+# "the app includes references to paid content but the associated In-App
+# Purchase products have not been submitted for review."
+IAP_SUBMITTABLE_STATES = ("READY_TO_SUBMIT", "DEVELOPER_ACTION_NEEDED", "REJECTED")
+
+# From Apple's OpenAPI spec: ReviewSubmissionItemCreateRequest relates to an
+# inAppPurchaseVersion -- the purchase's version, not the purchase. Two names
+# were guessed before the spec was consulted; both cost a live submission.
+IAP_ITEM_RELATIONSHIP = "inAppPurchaseVersion"
+
+
+def in_app_purchases(asc_app_id: str, token: str) -> list[dict]:
+    """The app's in-app purchases, or [] when Apple answers and there are none.
+
+    Raises when it cannot ask at all, rather than reporting an empty list: the
+    caller refuses to submit an app whose registry declares a purchase and whose
+    purchases it could not enumerate, and a silent [] would turn that guard off.
+    """
+    data = api_call("GET", f"/v1/apps/{asc_app_id}/inAppPurchasesV2?limit=200", token=token)
+    return data.get("data", []) or []
+
+
+def submittable_in_app_purchases(asc_app_id: str, product_id: str, token: str) -> list[dict]:
+    """The purchases ready to go in, or an explanation of why none are.
+
+    Called BEFORE the review submission is created. Failing afterwards would
+    leave an open submission behind, and Apple does not allow deleting one.
+    """
+    rows = in_app_purchases(asc_app_id, token)
+    by_state: dict[str, list[str]] = {}
+    for row in rows:
+        attrs = row.get("attributes") or {}
+        by_state.setdefault(str(attrs.get("state")), []).append(str(attrs.get("productId")))
+
+    submittable = [r for r in rows
+                   if str((r.get("attributes") or {}).get("state")) in IAP_SUBMITTABLE_STATES]
+    if not submittable:
+        raise ASCError(
+            f"{product_id} is declared in the registry but no in-app purchase of this app is in "
+            f"a submittable state {IAP_SUBMITTABLE_STATES}. Apple has: "
+            + (", ".join(f"{pid} ({state})" for state, pids in sorted(by_state.items())
+                         for pid in pids) or "no in-app purchases at all")
+            + ". Submitting now would repeat the rejection that says the paid content was never "
+              "submitted for review -- complete the product in App Store Connect first.")
+    return submittable
+
+
+def add_iap_submission_items(submission_id: str, submittable: list[dict], token: str) -> list[str]:
+    """Attach already-validated in-app purchases to the review submission."""
+    added = []
+    for row in submittable:
+        attrs = row.get("attributes") or {}
+        product = str(attrs.get("productId") or row["id"])
+        versions = api_call("GET", f"/v2/inAppPurchases/{row['id']}/versions", token=token).get("data") or []
+        if not versions:
+            raise ASCError(f"{product} has no inAppPurchaseVersion to submit; finish it in App Store Connect")
+        api_call("POST", "/v1/reviewSubmissionItems", {
+            "data": {"type": "reviewSubmissionItems",
+                     "relationships": {
+                         "reviewSubmission": {"data": {"type": "reviewSubmissions", "id": submission_id}},
+                         "inAppPurchaseVersion": {"data": {"type": "inAppPurchaseVersions", "id": versions[0]["id"]}}}}}, token)
+        added.append(product)
+        log(f"added in-app purchase {product} to the submission")
+    return added
+
+
+def attached_build_number(version_id: str, token: str) -> str | None:
+    """The build the version actually carries, or None when it carries none.
+
+    "Which build is in review?" was a question I had to ask the user twice,
+    with screenshots, because nothing here could answer it. A version can
+    happily hold an older build than the one just uploaded -- Apple does not
+    complain, and the wrong binary goes to review.
+    """
+    try:
+        data = api_call("GET", f"/v1/appStoreVersions/{version_id}/build", token=token)
+    except ASCError as exc:
+        if "HTTP 404" in str(exc):
+            return None
+        raise
+    row = data.get("data")
+    return str((row.get("attributes") or {}).get("version") or "") if row else None
+
+
+def verify_attached_build(version_id: str, want_build: str, token: str) -> None:
+    got = attached_build_number(version_id, token)
+    if got == want_build:
+        log(f"version carries build {got}, as the registry says")
+        return
+    raise ASCError(
+        f"the version carries build {got or 'nothing'} but the registry says {want_build}. "
+        "Submitting now would send a different binary than the one just built -- check "
+        "current_version.build and the build that was uploaded.")
+
+
+def submission_contents(submission_id: str, token: str) -> dict[str, set[str]]:
+    """Resource ids in the submission, by type, straight from Apple.
+
+    Read through `include` rather than from each item's relationships: the
+    included array always carries the resources, while a to-one relationship's
+    `data` is populated at the server's discretion.
+    """
+    data = api_call(
+        "GET",
+        f"/v1/reviewSubmissions/{submission_id}/items"
+        "?include=appStoreVersion,inAppPurchaseVersion&limit=50", token=token)
+    found: dict[str, set[str]] = {}
+    for row in data.get("included") or []:
+        found.setdefault(str(row.get("type")), set()).add(str(row.get("id")))
+    return found
+
+
+def verify_submission_contents(submission_id: str, version_id: str, expect_iaps: int,
+                               token: str) -> None:
+    """Refuse to submit unless Apple confirms the submission holds what it must.
+
+    Every POST here returned 201 on the run that still went to review without
+    the in-app purchase, and App Review answered "the associated In-App
+    Purchase products have not been submitted". A 201 is not evidence; this is.
+    """
+    found = submission_contents(submission_id, token)
+    versions = found.get("appStoreVersions", set())
+    purchases = found.get("inAppPurchaseVersions", set())
+    problems = []
+    if version_id not in versions:
+        problems.append(f"the appStoreVersion {version_id} is not in it (found {sorted(versions) or 'none'})")
+    if expect_iaps and len(purchases) < expect_iaps:
+        problems.append(f"{expect_iaps} in-app purchase(s) were added but Apple reports "
+                        f"{len(purchases)}")
+    if problems:
+        raise ASCError(
+            "App Store Connect does not hold what this submission needs: " + "; ".join(problems) +
+            ". Not submitting -- review would reject it for the missing piece.")
+    log(f"submission holds the version and {len(purchases)} in-app purchase(s), confirmed by Apple")
+
+
+def submit_for_review(asc_app_id: str, token: str, iap_product_id: str = "") -> None:
+    # Everything that can be checked is checked before anything is created: a
+    # failure after the POST leaves an open submission behind, and Apple refuses
+    # to delete one.
+    submittable_iaps = (submittable_in_app_purchases(asc_app_id, iap_product_id, token)
+                        if iap_product_id else [])
 
     submission = api_call("POST", "/v1/reviewSubmissions", {
         "data": {"type": "reviewSubmissions", "attributes": {"platform": "IOS"},
@@ -269,6 +423,19 @@ def submit_for_review(asc_app_id: str, token: str) -> None:
             f"Open https://appstoreconnect.apple.com/apps/{asc_app_id}/distribution and fix "
             "whatever it flags, then re-run this workflow.") from exc
     log(f"added appStoreVersion {version_id} to the submission")
+
+    # The version alone is not the submission when the app sells something.
+    if submittable_iaps:
+        add_iap_submission_items(submission_id, submittable_iaps, token)
+
+    # Ask Apple what it actually holds before pulling the trigger, and leave the
+    # app as we found it if the answer is wrong -- an abandoned submission locks
+    # the version against every later edit.
+    try:
+        verify_submission_contents(submission_id, version_id, len(submittable_iaps), token)
+    except ASCError:
+        clear_open_review_submission(asc_app_id, token)
+        raise
 
     api_call("PATCH", f"/v1/reviewSubmissions/{submission_id}",
               {"data": {"type": "reviewSubmissions", "id": submission_id,
@@ -328,13 +495,25 @@ def main(argv: list[str]) -> int:
 
         if a.attach or a.submit:
             token = make_token()
+            # Before anything that edits the version. Adding a version to a
+            # review submission moves it to READY_FOR_REVIEW, and App Store
+            # Connect then refuses every metadata edit -- so a run that died
+            # after adding the version item left the version locked, the
+            # submission open and unsubmitted, and the next run unable to do
+            # anything at all. Cancelling first puts it back in reach.
+            if a.submit:
+                clear_open_review_submission(asc_app_id, token)
             version_id = find_editable_version(asc_app_id, marketing_version, token)
             if build_id:
                 attach_build(version_id, build_id, token)
             if a.submit:
+                # Before anything irreversible: the version must carry the build
+                # this run is publishing, not whatever was attached last.
+                verify_attached_build(version_id, build_number, token)
                 if a.notes:
                     set_release_notes(version_id, a.notes, token)
-                submit_for_review(asc_app_id, token)
+                submit_for_review(asc_app_id, token,
+                                  str((app.get("iap") or {}).get("remove_ads_product_id") or ""))
         return 0
     except TimeoutError as exc:
         log(f"error: {exc}")

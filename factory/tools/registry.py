@@ -77,6 +77,36 @@ def env_android(app: dict, defaults: dict, slug: str, slug_upper: str) -> dict:
     }
 
 
+def ad_id(slug_upper: str, field: str, registry_value) -> str:
+    """A production ad unit ID, from the repo's variables rather than from git.
+
+    Factory rule 5 keeps ad unit IDs out of the repository. They are not secret
+    -- anyone can read them out of a shipped IPA -- but a public repo hands them
+    to click-fraud tooling without the effort, so they live in GitHub Actions
+    *variables* and are looked up per app:
+
+        ADMOB_<SLUG>_APP_ID, ADMOB_<SLUG>_BANNER_UNIT_ID,
+        ADMOB_<SLUG>_INTERSTITIAL_UNIT_ID          (slug upper-cased, - to _)
+
+    Workflows pass the whole variable set as FACTORY_VARS (`toJSON(vars)`), so a
+    new app needs three variables and no workflow edit. Anything still in the
+    registry is used as a fallback, which keeps the Google test IDs working for
+    pull requests, where variables are not available.
+    """
+    name = f"ADMOB_{slug_upper}_{field}"
+    if name in os.environ:
+        return os.environ[name]
+    raw = os.environ.get("FACTORY_VARS")
+    if raw:
+        try:
+            value = json.loads(raw).get(name)
+        except json.JSONDecodeError:
+            value = None
+        if value:
+            return str(value)
+    return str(registry_value or "")
+
+
 def env_ios(app: dict, defaults: dict, slug: str, slug_upper: str) -> dict:
     ios_defaults = defaults["ios"]
     admob = app.get("admob") or {}
@@ -91,15 +121,32 @@ def env_ios(app: dict, defaults: dict, slug: str, slug_upper: str) -> dict:
         "ASC_APP_ID": str(app.get("asc_app_id") or ""),
         "APP_SKU": str(app.get("sku") or slug),
         "APPLE_TEAM_ID": str(app.get("team_id") or ios_defaults.get("team_id") or ""),
-        "ADMOB_APP_ID": str(admob.get("app_id") or ""),
-        "ADMOB_BANNER_UNIT_ID": str(admob.get("banner_unit_id") or ""),
-        "ADMOB_INTERSTITIAL_UNIT_ID": str(admob.get("interstitial_unit_id") or ""),
+        "ADMOB_APP_ID": ad_id(slug_upper, "APP_ID", admob.get("app_id")),
+        "ADMOB_BANNER_UNIT_ID": ad_id(slug_upper, "BANNER_UNIT_ID", admob.get("banner_unit_id")),
+        "ADMOB_INTERSTITIAL_UNIT_ID": ad_id(slug_upper, "INTERSTITIAL_UNIT_ID",
+                                            admob.get("interstitial_unit_id")),
         "IAP_REMOVE_ADS_PRODUCT_ID": str(iap.get("remove_ads_product_id") or ""),
         "MARKETING_VERSION": str(version.get("marketing_version") or ""),
         "CURRENT_PROJECT_VERSION": str(version.get("build") or ""),
         "FACTORY_MIN_IOS": str(app.get("min_ios") or ios_defaults["min_ios"]),
         "ARTIFACT_IPA": f"{slug}-release-ipa",
+        # What the spec says the app runs on, so CI can skip work for a device
+        # the app does not ship: an iPhone-only app has no iPad layout to
+        # capture and Apple wants no iPad screenshots for it.
+        "APP_DEVICES": ",".join(spec_devices(app)),
     }
+
+
+def spec_devices(app: dict) -> list[str]:
+    """technical.devices from the app's spec, or [] when there is no spec yet."""
+    path = os.path.join(ROOT, app.get("spec") or "")
+    if not app.get("spec") or not os.path.isfile(path):
+        return []
+    try:
+        with open(path, encoding="utf-8") as fh:
+            return list((json.load(fh).get("technical") or {}).get("devices") or [])
+    except (json.JSONDecodeError, OSError):
+        return []
 
 
 def cmd_env(slug: str) -> None:

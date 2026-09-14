@@ -71,3 +71,21 @@ wrote. Fix anything it flags in that set before you commit.
 
 Do NOT write app code, create the Xcode project, or invent App Store Connect IDs
 in this step. Commit as `spec: add <slug> (iOS)` and stop.
+
+
+## Where the tracking prompt goes — not negotiable
+
+`monetization.att_requested_when` must place Apple's tracking prompt **on the first launch
+after First Run completes, before the ad SDK starts**.
+
+Do not specify it after a first saved entry, a first completed action, or anywhere else
+that takes the user several steps to reach, however good that reads as UX. App Review
+rejected PriceJar 1.0.0 under guideline 2.1 — *"unable to locate the App Tracking
+Transparency permission request"* — for exactly that: the prompt fired only after the user
+saved their first price, and a reviewer who opened Settings and never saved one never saw
+it. Apple also asks for the prompt **before** any data that could track the user is
+collected, and starting the ad SDK at launch is collection.
+
+Onboarding is where the user is told what the app is, so asking immediately after it keeps
+the intent of "never before the user knows what this is" and stays somewhere a review pass
+reaches in its first thirty seconds.
