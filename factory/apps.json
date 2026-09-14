@@ -226,12 +226,12 @@
       "store_dir": "apps/sudoku/store",
       "privacy_path": "docs/sudoku/privacy",
       "privacy_tags_configured": "2026-09-14",
-      "status": "ready_to_publish",
+      "status": "submitted",
       "current_version": {
         "versionCode": 1,
         "versionName": "1.0.0",
-        "status": "ready_to_publish",
-        "note": "Rebuild of the owner's best-converting AppGallery app (4.85% CTR, 48.05% conversion, 3,177 downloads Mar-Aug 2026). The original cannot be updated: its keystore was lost and App Signing was never enabled. First app built under naming rule 10, so the store name leads with the keyword in all 9 languages. Verified on a physical Samsung SM-A045M (Android 14, 720x1600) on 2026-09-14: full game played to a win, Expert generation ~1 s, ads absent and leaving no gap on a device without HMS. Store screenshots come from that device (English and Spanish captured natively). Merged 2026-09-14 (PR #59); the release build on main produced the signed APK and AAB. App Signing method 1 is being enabled in the console; the upload key certificate is the factory keystore's, SHA-256 CE11AA273F03B687BF3CC8EAC4B5EFE485CBF387E16F7C0957375148FB73B711 (public, and the same for every factory app). Waiting on the AppGallery App ID. AppGallery App ID 118991717 (owner, 2026-09-14)."
+        "status": "submitted",
+        "note": "Rebuild of the owner's best-converting AppGallery app (4.85% CTR, 48.05% conversion, 3,177 downloads Mar-Aug 2026). The original cannot be updated: its keystore was lost and App Signing was never enabled. First app built under naming rule 10, so the store name leads with the keyword in all 9 languages. Verified on a physical Samsung SM-A045M (Android 14, 720x1600) on 2026-09-14: full game played to a win, Expert generation ~1 s, ads absent and leaving no gap on a device without HMS. Store screenshots come from that device (English and Spanish captured natively). Merged 2026-09-14 (PR #59); the release build on main produced the signed APK and AAB. App Signing method 1 is being enabled in the console; the upload key certificate is the factory keystore's, SHA-256 CE11AA273F03B687BF3CC8EAC4B5EFE485CBF387E16F7C0957375148FB73B711 (public, and the same for every factory app). Waiting on the AppGallery App ID. AppGallery App ID 118991717 (owner, 2026-09-14). 1.0.0 (versionCode 1) SUBMITTED for review 2026-09-14 with the real Petal Ads units (banner m22j0xccex, interstitial m63u66oiqd); that package replaced the earlier test-unit upload under the same versionCode. Awaiting the review verdict."
       },
       "known_gaps": {},
       "ads": {
