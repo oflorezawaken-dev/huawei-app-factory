@@ -21,7 +21,7 @@ on:
         type: choice
         options: [all, listing, icon, screenshots, app-info, privacy-tags]
       lang:
-        description: 'Listing: AGC code (en-US) or empty = all. Screenshots: folder under store/screenshots (en).'
+        description: 'Screenshots/icon: folder under store/screenshots (en, es, ...), empty = the default language. Listing: AGC code (en-US), empty = all.'
         required: false
         default: ''
       app_info_fields:
@@ -71,9 +71,11 @@ jobs:
         run: |
           set -euo pipefail
           # AGC requires a lang even for the icon (the icon file itself is the same for
-          # every language). Use the given AGC code, or the default language when empty.
-          lang="${{ inputs.lang }}"
-          [[ -n "$lang" ]] || lang="$(python3 -c "import json;print(json.load(open('factory/apps.json'))['defaults']['languages'][0])")"
+          # every language). `lang` means the same thing here as it does for screenshots
+          # -- a folder name -- so one dispatch can carry both without the caller having
+          # to remember which step wants "es" and which wants "es-ES".
+          folder="${{ inputs.lang }}"; [[ -n "$folder" ]] || folder="en"
+          lang="$(python3 factory/tools/registry.py agc-lang "$folder")"
           args=(--app-id "$AGC_APP_ID" --file-type icon --lang "$lang" --file "$APP_STORE_DIR/icon/icon-512.png")
           [[ "$DRY" == "true" ]] && args+=(--dry-run)
           python3 factory/tools/agc_upload_assets.py "${args[@]}"
