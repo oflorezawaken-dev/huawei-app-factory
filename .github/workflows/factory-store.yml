@@ -21,7 +21,7 @@ on:
         type: choice
         options: [all, listing, icon, screenshots, app-info, app-config, privacy-label, privacy-tags]
       lang:
-        description: 'Screenshots/icon: folder under store/screenshots (en, es, ...), empty = the default language. Listing: AGC code (en-US), empty = all.'
+        description: 'Screenshots/icon: folder under store/screenshots (en, es, ...), empty = every folder. Listing: AGC code (en-US), empty = all.'
         required: false
         default: ''
       app_info_fields:
@@ -74,24 +74,33 @@ jobs:
           # every language). `lang` means the same thing here as it does for screenshots
           # -- a folder name -- so one dispatch can carry both without the caller having
           # to remember which step wants "es" and which wants "es-ES".
-          folder="${{ inputs.lang }}"; [[ -n "$folder" ]] || folder="en"
-          lang="$(python3 factory/tools/registry.py agc-lang "$folder")"
-          args=(--app-id "$AGC_APP_ID" --file-type icon --lang "$lang" --file "$APP_STORE_DIR/icon/icon-512.png")
-          [[ "$DRY" == "true" ]] && args+=(--dry-run)
-          python3 factory/tools/agc_upload_assets.py "${args[@]}"
+          # Empty means every language, the same as it already does for the listing:
+          # a store page whose icon is set only in English shows nothing in the other
+          # eight, and nobody remembers to run this nine times.
+          folders="${{ inputs.lang }}"
+          [[ -n "$folders" ]] || folders="$(ls "$APP_STORE_DIR/screenshots")"
+          for folder in $folders; do
+            lang="$(python3 factory/tools/registry.py agc-lang "$folder")"
+            args=(--app-id "$AGC_APP_ID" --file-type icon --lang "$lang" --file "$APP_STORE_DIR/icon/icon-512.png")
+            [[ "$DRY" == "true" ]] && args+=(--dry-run)
+            python3 factory/tools/agc_upload_assets.py "${args[@]}"
+          done
 
       - name: Screenshots
         if: inputs.what == 'all' || inputs.what == 'screenshots'
         run: |
           set -euo pipefail
-          folder="${{ inputs.lang }}"; [[ -n "$folder" ]] || folder="en"
-          dir="$APP_STORE_DIR/screenshots/$folder"
-          [[ -d "$dir" ]] || { echo "::error::No screenshots at $dir"; exit 1; }
-          agc_lang="$(python3 factory/tools/registry.py agc-lang "$folder")"
-          args=(--app-id "$AGC_APP_ID" --file-type screenshot --lang "$agc_lang")
-          for f in "$dir"/*.png; do args+=(--file "$f"); done
-          [[ "$DRY" == "true" ]] && args+=(--dry-run)
-          python3 factory/tools/agc_upload_assets.py "${args[@]}"
+          folders="${{ inputs.lang }}"
+          [[ -n "$folders" ]] || folders="$(ls "$APP_STORE_DIR/screenshots")"
+          for folder in $folders; do
+            dir="$APP_STORE_DIR/screenshots/$folder"
+            [[ -d "$dir" ]] || { echo "::error::No screenshots at $dir"; exit 1; }
+            agc_lang="$(python3 factory/tools/registry.py agc-lang "$folder")"
+            args=(--app-id "$AGC_APP_ID" --file-type screenshot --lang "$agc_lang")
+            for f in "$dir"/*.png; do args+=(--file "$f"); done
+            [[ "$DRY" == "true" ]] && args+=(--dry-run)
+            python3 factory/tools/agc_upload_assets.py "${args[@]}"
+          done
 
       - name: App info
         if: inputs.what == 'all' || inputs.what == 'app-info'

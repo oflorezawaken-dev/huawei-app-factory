@@ -279,7 +279,7 @@
       "spec": "specifications/hashtags.json",
       "store_dir": "apps/hashtags/store",
       "privacy_path": "docs/hashtags/privacy",
-      "privacy_tags_configured": "",
+      "privacy_tags_configured": "2026-09-14",
       "status": "in_console",
       "current_version": {
         "versionCode": 1,

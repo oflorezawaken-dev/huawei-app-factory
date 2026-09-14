@@ -154,6 +154,27 @@ Network type; Carrier; IP address; Other hardware and software parameters/System
 Under **App functionality** each app adds what it handles itself (ReceiptLens: Image or video,
 Transaction records; PlantCue: Image or video).
 
+## privacyLabel through the API: works on some apps, silently drops on others
+
+`app-info` returns `privacyLabel`, and a `PUT` carrying it is accepted on an app
+that already has one: habit-cue took the full Petal Ads declaration on
+2026-09-14 and a read-back showed it. The same call on hashtags, an app that had
+never had a privacy label and had no package uploaded yet, returned
+`{"ret":{"code":0}}` and wrote **nothing** — the read-back has no `privacyLabel`
+field at all. Huawei reports success either way, so a green workflow run is not
+evidence; only a `GET` is.
+
+Until the condition is pinned down (a prior label, an uploaded package, or the
+console having initialised the form), treat the privacy tags as the console step
+they have always been, and **always verify with `agc_watch.py --inspect`** after
+writing them. The tags for hashtags 1.0.0 were set in the console on 2026-09-14.
+
+Where they live in the console, which is not where the old checklist said: not a
+page of their own, but a section of **Version information > the version > Privacy
+tags**, below "Privacy statement" and above "AI function declaration". That page
+also has a required **Generative AI service** radio (`Not involved` for every
+factory app so far) that blocks Submit if left unset.
+
 ## Next automation candidates
 
 - `PUT /publish/v2/app-language-info` to push the 9 localized store descriptions from `specifications/`.
