@@ -134,6 +134,43 @@ jobs:
           apksigner="$(ls -d "$ANDROID_HOME"/build-tools/*/apksigner | sort -V | tail -n 1)"
           "$apksigner" verify --print-certs "$PACKAGE_FILE"
 
+      - name: Verify the package really carries the registry's ad unit IDs
+        if: inputs.package_type == 'apk'
+        env:
+          ALLOW_TEST: ${{ inputs.allow_test_ad_units }}
+        run: |
+          set -euo pipefail
+          # The registry check above proves the IDs exist in git, not that THIS package
+          # was built with them: the newest successful release build can easily predate
+          # the commit that pasted them, and Gradle bakes the IDs into BuildConfig at
+          # build time. Read the dex and look for them.
+          dex="$(mktemp)"
+          unzip -p "$PACKAGE_FILE" 'classes*.dex' > "$dex"
+          missing=""
+          for id in "$PETAL_BANNER_AD_ID" "$PETAL_INTERSTITIAL_AD_ID"; do
+            [[ -n "$id" ]] || continue
+            grep -qa -- "$id" "$dex" || missing="$missing $id"
+          done
+          if [[ -n "$missing" ]]; then
+            echo "::error::The package does not contain the ad unit ID(s):$missing. It was built before the IDs were set. Re-run Factory Build on the commit that has them and publish that run_id."
+            exit 1
+          fi
+          # Huawei's documented test units must never reach a submission.
+          for test_id in testw6vs28auh3 teste9ih9j0rc3; do
+            if grep -qa -- "$test_id" "$dex"; then
+              if [[ "${{ inputs.submit_for_review }}" == "true" ]]; then
+                echo "::error::The package carries Huawei TEST ad unit $test_id; refusing to submit it for review."
+                exit 1
+              elif [[ "$ALLOW_TEST" != "true" ]]; then
+                echo "::error::The package carries Huawei TEST ad unit $test_id. Set allow_test_ad_units=true for an upload-only test."
+                exit 1
+              fi
+              echo "::warning::Package carries Huawei TEST ad unit $test_id (upload only)."
+            fi
+          done
+          rm -f "$dex"
+          echo "Ad unit IDs verified inside the package."
+
       - name: Upload to AppGallery Connect
         env:
           AGC_CLIENT_ID: ${{ secrets.AGC_CLIENT_ID }}
