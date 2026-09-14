@@ -271,6 +271,40 @@
       }
     },
     {
+      "slug": "hashtags",
+      "name": "Hashtags",
+      "path": "apps/hashtags",
+      "package": "com.huaweiappfactory.hashtags",
+      "agc_app_id": "",
+      "spec": "specifications/hashtags.json",
+      "store_dir": "apps/hashtags/store",
+      "privacy_path": "docs/hashtags/privacy",
+      "privacy_tags_configured": "",
+      "status": "planned",
+      "current_version": {
+        "versionCode": 1,
+        "versionName": "1.0.0",
+        "status": "planned",
+        "note": "Rebuild of the owner's highest-traffic, worst-converting app: 195,198 impressions produced 127 downloads (0.46% CTR) Mar-Aug 2026, against 4-5% everywhere else. The original cannot be updated -- keystore lost, App Signing never enabled -- and its name carries a trademark that rule 10 now forbids. First app to run through the automated console steps: app-config pushes countries and category before the first submission."
+      },
+      "known_gaps": {
+        "ad_unit_ids": "No Petal Ads unit IDs yet: the console only issues them after the first package reaches AppGallery. The build falls back to Huawei's test IDs until they exist; publish --submit stays blocked meanwhile."
+      },
+      "ads": {
+        "banner_ad_id": "",
+        "interstitial_ad_id": "",
+        "_note": "Filled from the Petal Ads console after the first upload. Public identifiers, not secrets."
+      },
+      "agc_category": {
+        "parentType": 13,
+        "childType": 24,
+        "grandChildType": 10022,
+        "_note": "Tools. Same IDs as receipt-lens and habit-cue, measured from their app-info on 2026-09-14; Huawei publishes no name-to-ID table."
+      },
+      "proposal": "proposals/2026-09-14-hashtags.md",
+      "issue": "https://github.com/oflorezawaken-dev/huawei-app-factory/issues/63"
+    },
+    {
       "slug": "price-jar",
       "name": "PriceJar",
       "platform": "ios",

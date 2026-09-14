@@ -1,0 +1,443 @@
+{
+  "spec_version": "1.0.0",
+  "app": {
+    "name": "Hashtags",
+    "store_name": {
+      "_note": "Store name leads with the search keyword in every language (factory rule 10). No platform or company is named anywhere: this app is about hashtags, which belong to nobody, and is not 'for' anyone's product. The in-app name stays the short 'Hashtags'.",
+      "en-US": "Hashtags - Tags for Your Posts",
+      "es-ES": "Hashtags - Etiquetas para tus Posts",
+      "pt-PT": "Hashtags - Etiquetas para as Publicações",
+      "fr-FR": "Hashtags - Tags pour vos Publications",
+      "de-DE": "Hashtags - Tags für deine Beiträge",
+      "it-IT": "Hashtags - Tag per i tuoi Post",
+      "tr-TR": "Hashtag - Gönderileriniz için Etiketler",
+      "ar": "هاشتاغ - وسوم لمنشوراتك",
+      "zh-CN": "话题标签 - 帖子标签助手"
+    },
+    "package_name": "com.huaweiappfactory.hashtags",
+    "version_name": "1.0.0",
+    "version_code": 1,
+    "type": "app",
+    "category": "Tools",
+    "description": "Hand-built hashtag sets by topic, copied in one tap, with a counter so you never blow past the 30-tag limit. Build your own sets, search every tag, keep favourites. Works completely offline.",
+    "target_audience": "People who post regularly and retype the same tags every time: small businesses, creators, photographers. They search the store for 'hashtags' and want something that works in five seconds without an account.",
+    "problem_solved": "Choosing hashtags means retyping the same list from a note, or pasting a scraped dump of 30 unrelated words that reads as spam. This gives sets that belong together, a counter that shows where the limit is, and a place to keep the ones that worked."
+  },
+  "product_strategy": {
+    "market_opportunity": "A rebuild of the owner's highest-traffic, worst-converting app: 195,198 impressions produced 127 downloads (0.46% CTR) between 2026-03-01 and 2026-08-28, against 4-5% CTR everywhere else in the portfolio. The demand already exists and costs nothing; the listing is what fails. The original also cannot be updated -- its keystore was lost and App Signing was never enabled.",
+    "competitive_advantage": "Exact search-query match with no trademark in the name, sets written with judgement rather than scraped, a tag counter that addresses the real 30-tag ceiling, everything free, and fully offline.",
+    "main_competitors": [
+      "Generic hashtag-generator apps, most of which are ad walls around a scraped list",
+      "Notes apps, which is what most people actually use today"
+    ],
+    "estimated_development_complexity": 3,
+    "estimated_market_potential": 7,
+    "monetization_strategy": "Free, supported by Huawei Petal Ads: banner on the topic list and Settings, interstitial only after a set is copied. No ad on the screen where tags are being selected."
+  },
+  "technical": {
+    "platform": "Android",
+    "language": "Kotlin",
+    "ui": "Jetpack Compose",
+    "architecture": "MVVM",
+    "min_sdk": 26,
+    "target_sdk": 36,
+    "compile_sdk": 36,
+    "offline_first": true,
+    "dependency_injection": "Manual AppContainer (same pattern as the other factory apps)",
+    "database": "Room",
+    "async": "Kotlin Coroutines",
+    "reactive_data": "Kotlin Flow",
+    "background_work": "None. No notifications, no WorkManager.",
+    "skeleton": "Copy apps/sudoku: it is the cleanest recent app, already has the corrected number-pad-era layout rules, the system-bar fix, the Petal Ads integration and the 9-language string structure. Strip every board, generator and solver file."
+  },
+  "features": [
+    {
+      "id": "F001",
+      "name": "Curated topic sets",
+      "description": "Hashtag sets grouped by topic (travel, food, fitness, photography, art, business, music, nature, fashion, pets, fitness, home, cars, books, gaming, beauty, wedding, sport, coffee, sunset). Each set is a hand-written group of tags that genuinely belong together, shipped inside the app as a JSON asset, never fetched.",
+      "priority": "P0",
+      "requires_internet": false,
+      "requires_permission": false,
+      "permission": ""
+    },
+    {
+      "id": "F002",
+      "name": "Copy in one tap",
+      "description": "Copy the whole set, or the tags currently selected, to the clipboard as a single space-separated string ready to paste. A confirmation shows what was copied.",
+      "priority": "P0",
+      "requires_internet": false,
+      "requires_permission": false,
+      "permission": ""
+    },
+    {
+      "id": "F003",
+      "name": "Tag counter and the 30 limit",
+      "description": "A live count of selected tags against the common 30-tag ceiling, with the count turning to the warning colour past it. The limit is presented as a general platform convention, never attributed to a named company.",
+      "priority": "P0",
+      "requires_internet": false,
+      "requires_permission": false,
+      "permission": ""
+    },
+    {
+      "id": "F004",
+      "name": "Select and deselect individual tags",
+      "description": "Tags are chips; tapping toggles selection. A set opens with everything selected so the common case is one tap, and trimming is optional.",
+      "priority": "P0",
+      "requires_internet": false,
+      "requires_permission": false,
+      "permission": ""
+    },
+    {
+      "id": "F005",
+      "name": "Custom sets",
+      "description": "Create, rename and delete your own sets; add tags by typing them, with the leading # added automatically and duplicates rejected. Custom sets sit beside the built-in ones.",
+      "priority": "P0",
+      "requires_internet": false,
+      "requires_permission": false,
+      "permission": ""
+    },
+    {
+      "id": "F006",
+      "name": "Search",
+      "description": "One search box across every tag and every set name, built-in and custom, matching on substring without the # prefix mattering.",
+      "priority": "P0",
+      "requires_internet": false,
+      "requires_permission": false,
+      "permission": ""
+    },
+    {
+      "id": "F007",
+      "name": "Favourites",
+      "description": "Star any tag; starred tags gather in a Favourites set that behaves like any other and can be copied as a whole.",
+      "priority": "P1",
+      "requires_internet": false,
+      "requires_permission": false,
+      "permission": ""
+    },
+    {
+      "id": "F008",
+      "name": "Recently copied",
+      "description": "The last ten copies, each restorable to the selection it was made from, because the same combination is usually wanted again.",
+      "priority": "P1",
+      "requires_internet": false,
+      "requires_permission": false,
+      "permission": ""
+    },
+    {
+      "id": "F009",
+      "name": "Settings",
+      "description": "Theme (light/dark/system), whether a set opens fully selected, privacy information, ads information, about.",
+      "priority": "P0",
+      "requires_internet": false,
+      "requires_permission": false,
+      "permission": ""
+    },
+    {
+      "id": "F010",
+      "name": "Petal Ads",
+      "description": "Real Huawei Petal Ads SDK: banner on the topic list and Settings; interstitial after a set is copied, under the factory frequency policy. Never on the tag-selection screen.",
+      "priority": "P0",
+      "requires_internet": true,
+      "requires_permission": true,
+      "permission": "android.permission.INTERNET, android.permission.ACCESS_NETWORK_STATE"
+    },
+    {
+      "id": "F011",
+      "name": "Localization",
+      "description": "Interface in all 9 factory languages with RTL support for Arabic. Topic names are translated; the hashtags themselves are not, because tags are a global namespace and translating them would produce tags nobody searches.",
+      "priority": "P0",
+      "requires_internet": false,
+      "requires_permission": false,
+      "permission": ""
+    },
+    {
+      "id": "F012",
+      "name": "Accessibility",
+      "description": "Content descriptions on every chip and control, 48dp touch targets, font scaling, screen-reader compatible selection state.",
+      "priority": "P0",
+      "requires_internet": false,
+      "requires_permission": false,
+      "permission": ""
+    }
+  ],
+  "screens": [
+    {
+      "id": "S001",
+      "name": "Topics",
+      "purpose": "Pick a topic, or reach your own sets.",
+      "components": [
+        "Search box",
+        "Grid of topic cards, each showing its tag count",
+        "Your sets section: custom sets, Favourites, Recently copied",
+        "Link to Settings",
+        "Petal Ads banner (bottom)"
+      ],
+      "navigation_to": ["S002", "S003", "S004"]
+    },
+    {
+      "id": "S002",
+      "name": "Set",
+      "purpose": "Choose tags and copy them.",
+      "components": [
+        "Topic name",
+        "Tag chips, selectable, starrable on long press",
+        "Sticky bar: selected count against 30, Select all / Clear, Copy",
+        "No ads"
+      ],
+      "navigation_to": []
+    },
+    {
+      "id": "S003",
+      "name": "Edit set",
+      "purpose": "Create or change a custom set.",
+      "components": [
+        "Name field",
+        "Tag input that adds # and rejects duplicates",
+        "Current tags as removable chips",
+        "Save, Delete"
+      ],
+      "navigation_to": []
+    },
+    {
+      "id": "S004",
+      "name": "Settings",
+      "purpose": "Appearance and disclosures.",
+      "components": [
+        "Theme selector",
+        "Open sets fully selected switch",
+        "Privacy information",
+        "Ads information",
+        "About",
+        "Petal Ads banner (bottom)"
+      ],
+      "navigation_to": []
+    }
+  ],
+  "data_model": {
+    "database": "Room",
+    "entities": [
+      {
+        "name": "CustomSetEntity",
+        "fields": ["id", "name", "tags (serialized)", "createdAt", "updatedAt"]
+      },
+      {
+        "name": "FavouriteTagEntity",
+        "fields": ["tag (primary key)", "addedAt"]
+      },
+      {
+        "name": "CopyHistoryEntity",
+        "fields": ["id", "tags (serialized)", "sourceSetName", "copiedAt"]
+      },
+      {
+        "name": "Built-in sets",
+        "fields": ["Shipped as a JSON asset, read-only, never written to the database"]
+      },
+      {
+        "name": "Preferences (SharedPreferences)",
+        "fields": ["theme_mode", "open_fully_selected"]
+      }
+    ],
+    "requirements": [
+      "Database operations off the main thread.",
+      "Copy history capped at 10 rows, oldest evicted.",
+      "No user data leaves the device."
+    ]
+  },
+  "content_requirements": {
+    "_note": "The tag sets ARE the product. This section is the specification for them, not an afterthought.",
+    "requirements": [
+      "At least 20 topics, each with 25-40 tags.",
+      "Tags within a set must plausibly co-occur on a real post: a mix of broad, medium and specific rather than 30 synonyms for the same word.",
+      "Lower-case, no spaces, no punctuation beyond the leading #, no numbers unless they are part of an established tag.",
+      "No tag that names a company, product or trademark.",
+      "No tag associated with engagement-farming schemes (follow-for-follow, like-for-like and their variants): they read as spam and can get a post suppressed.",
+      "No claim anywhere -- in the app or the listing -- that any set is trending, best, or guaranteed to increase reach. The app ships no live data and must not imply it does."
+    ]
+  },
+  "permissions": [
+    { "permission": "android.permission.INTERNET", "purpose": "Huawei Petal Ads only." },
+    { "permission": "android.permission.ACCESS_NETWORK_STATE", "purpose": "Huawei Petal Ads only." }
+  ],
+  "integrations": {
+    "huawei_services": ["Huawei Petal Ads"],
+    "external_services": [],
+    "analytics": false,
+    "crash_reporting": false,
+    "ads": true
+  },
+  "monetization": {
+    "enabled": true,
+    "provider": "Huawei Petal Ads",
+    "banner": true,
+    "interstitial": true,
+    "rewarded": false,
+    "iap": false,
+    "ad_frequency_rules": "Banner on Topics (S001) and Settings (S004). Interstitial only after a copy (S002), not in the first 60 seconds after launch, at least 3 minutes apart, at most one per 4 triggers. Never on the tag-selection screen itself. Ad unit IDs come from factory/apps.json via BuildConfig; Huawei test IDs in debug."
+  },
+  "localization": {
+    "default_language": "en",
+    "supported_languages": ["en", "es", "pt", "fr", "de", "it", "tr", "ar", "zh"],
+    "auto_detect_device_language": true,
+    "fallback_language": "en",
+    "rtl_languages": ["ar"],
+    "requirements": [
+      "All visible strings in Android string resources; no hard-coded text.",
+      "Topic names translated; hashtags never translated -- a translated tag is a tag nobody searches.",
+      "Arabic RTL verified; tag chips keep their left-to-right reading because the tags are Latin script."
+    ]
+  },
+  "design": {
+    "theme": "Clean, content-forward",
+    "style": "Material 3, chips as the primary element, one accent colour used for selection and the counter",
+    "primary_color": "#7B1FA2",
+    "secondary_color": "#00897B",
+    "supports_light_mode": true,
+    "supports_dark_mode": true,
+    "supports_system_theme": true,
+    "accessibility_required": true,
+    "requirements": [
+      "Selected and unselected chips must differ by more than colour alone.",
+      "The counter is the most prominent element of the sticky bar.",
+      "Touch targets at least 48dp; chips may be visually smaller but must keep the target.",
+      "The icon must be designed, not assembled: the original app's 0.46% CTR is the problem being solved, and at the impression stage the icon is most of the product."
+    ]
+  },
+  "privacy": {
+    "collects_personal_data": true,
+    "_collects_personal_data_note": "True because the mandatory Huawei Petal Ads SDK collects OAID, IP, device and app information. The app itself collects nothing about the user.",
+    "collects_sensitive_data": false,
+    "stores_data_locally": true,
+    "uploads_user_content": false,
+    "requires_privacy_policy": true,
+    "privacy_policy_url": "https://oflorezawaken-dev.github.io/huawei-app-factory/hashtags/privacy/",
+    "allow_backup": false,
+    "requirements": [
+      "Custom sets, favourites and history stay in app-private storage.",
+      "android:allowBackup=false.",
+      "The only network user is the Petal Ads SDK.",
+      "No account, no backend, no analytics, no crash reporting.",
+      "No camera, photos, storage, location or notification permission."
+    ],
+    "appgallery_privacy_tags": {
+      "_note": "No data items of its own: the app stores only tags the user typed or starred, which are not personal data. Only the standard Petal Ads block applies, which factory/tools/privacy_tags.py adds automatically and which can now be pushed with `factory.py store <slug> --what privacy-label`.",
+      "App functionality": {}
+    }
+  },
+  "ai": {
+    "enabled": false,
+    "provider": "",
+    "backend_required": false,
+    "features": [],
+    "user_content_sent_to_ai": false,
+    "requirements": ["No AI claims. The sets are written by hand and shipped as an asset."]
+  },
+  "offline_behavior": {
+    "requirements": [
+      "Every feature except ads works with no network.",
+      "First launch works offline: the built-in sets are an asset, not a download.",
+      "Ad failures are silent and leave no empty space."
+    ]
+  },
+  "qa": {
+    "unit_tests_required": true,
+    "ui_tests_required": true,
+    "lint_required": true,
+    "release_build_required": true,
+    "apk_required": true,
+    "aab_required": true,
+    "test_permissions": true,
+    "test_localization": true,
+    "test_dark_mode": true,
+    "test_ads": true,
+    "test_offline_behavior": true,
+    "test_accessibility": true,
+    "additional_tests": [
+      "Unit: the shipped tag asset parses, every topic has 25-40 tags, and no tag repeats within a set.",
+      "Unit: no tag in the asset matches the banned-pattern list (trademarks, follow-for-follow variants).",
+      "Unit: every tag is lower-case, starts with #, and contains no whitespace.",
+      "Unit: tag input normalises (adds #, lower-cases, strips spaces) and rejects duplicates.",
+      "Unit: the copy string is space-separated, in selection order, and contains exactly the selected tags.",
+      "Unit: the counter reports selection size and flags the 30 boundary at 31, not 30.",
+      "Unit: search matches with and without the # prefix, case-insensitively, across built-in and custom sets.",
+      "Unit: copy history keeps ten rows and evicts the oldest.",
+      "Manual on a real device: copy and paste into another app, RTL, large font, dark mode, airplane mode."
+    ]
+  },
+  "release": {
+    "build_type": "release",
+    "minify_enabled": false,
+    "shrink_resources": false,
+    "signed_release_required": true,
+    "generate_apk": true,
+    "generate_aab": true,
+    "submit_to_appgallery": true,
+    "requirements": [
+      "Same signing keystore as the other factory apps (RELEASE_* secrets).",
+      "App Signing MUST be enabled in AppGallery Connect before the first upload (factory rule 11).",
+      "versionCode increases every release.",
+      "No secrets in git."
+    ]
+  },
+  "appgallery": {
+    "default_language": "en",
+    "supported_languages": ["en", "es", "pt", "fr", "de", "it", "tr", "ar", "zh"],
+    "distribution_regions": ["From factory/apps.json defaults.agc.publish_country, pushed with `store --what app-config` before the first submission."],
+    "content_rating_required": true,
+    "free_app": true,
+    "appgallery_description": { "short": {}, "full": {}, "new_features": {} },
+    "keywords": {},
+    "screenshots_required": true,
+    "icon_required": true,
+    "requirements": [
+      "Real screenshots from the tested build only.",
+      "Store copy names no platform and promises no trending data.",
+      "Store name leads with the keyword in every language (see app.store_name).",
+      "Icon and screenshots uploaded for all 9 languages."
+    ]
+  },
+  "assets": {
+    "icon": {
+      "required": true,
+      "description": "A designed icon, not an assembled one: this app's failure was at the impression stage. A bold # as the whole mark, purple on a light ground, legible at 48dp where the original was not."
+    },
+    "screenshots": {
+      "required": true,
+      "source": "Real screenshots from the tested application build",
+      "minimum_required": 4,
+      "recommended_screens": ["Topics grid", "A set with tags selected and the counter", "Custom set being built", "Search results", "Settings"]
+    }
+  },
+  "security": {
+    "requirements": [
+      "No hard-coded ad unit IDs, keys or credentials.",
+      "No exported components beyond the launcher activity.",
+      "Declare no permission other than INTERNET and ACCESS_NETWORK_STATE."
+    ]
+  },
+  "performance": {
+    "requirements": [
+      "The tag asset parses once at startup into memory; it is small enough that this is not a loading state.",
+      "Search filters without stutter across every tag in the app.",
+      "Chip grids recompose per chip, not per screen, when selection changes."
+    ]
+  },
+  "error_handling": {
+    "requirements": [
+      "A malformed or missing tag asset is a build failure, caught by a unit test, never a runtime crash.",
+      "Clipboard failures show a message rather than failing silently.",
+      "Ad failures never block the UI."
+    ]
+  },
+  "acceptance_criteria": [
+    "Release APK and AAB build with the quality gate passing in --strict mode.",
+    "At least 20 topics with 25-40 tags each, and the asset tests pass.",
+    "Copying a set puts exactly the selected tags on the clipboard, space-separated, and pasting into another app on a real device produces them.",
+    "The counter flags the 30-tag boundary correctly.",
+    "A custom set survives an app restart; so do favourites and history.",
+    "All strings in all 9 languages; Arabic renders RTL.",
+    "Banners appear only on Topics and Settings; the interstitial only after a copy; never on the tag screen.",
+    "Airplane mode: every feature works, no empty ad space.",
+    "No platform, company or product is named anywhere in the app or the listing.",
+    "android:allowBackup is false and no permission beyond INTERNET and ACCESS_NETWORK_STATE is declared."
+  ]
+}
