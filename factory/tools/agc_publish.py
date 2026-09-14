@@ -23,7 +23,7 @@ Flow (AppGallery Connect Publishing API v2):
   3. GET  /api/publish/v2/upload-url/for-obs       -> pre-signed OBS PUT url + headers + objectId
   4. PUT  <pre-signed url>                          -> raw file body
   5. PUT  /api/publish/v2/app-file-info?appId=     -> fileType 5 (APK/AAB), fileDestUrl = objectId
-  6. (AAB only) GET /api/publish/v2/aab/complile/status  -> poll until compiled
+  6. (AAB only) GET /api/publish/v2/package/compile/status -> poll until compiled
   7. POST /api/publish/v2/app-submit?appId=        -> submit for review (only with --submit)
 
 Limitations imposed by Huawei: the app must already exist in AppGallery
@@ -221,8 +221,17 @@ class AgcClient:
         pkg_ids = ",".join(str(p) for p in pkg_versions)
         deadline = time.time() + timeout_s
         while True:
-            url = f"{PUBLISH_V2}/aab/complile/status?{urllib.parse.urlencode({'appId': app_id, 'pkgIds': pkg_ids})}"
-            resp = http_json("GET", url, self._auth_headers())
+            # Huawei moved this endpoint. The old path carried their own 'complile'
+            # typo and still resolves for some accounts, so fall back to it rather
+            # than fail a publish on a URL change.
+            params = urllib.parse.urlencode({"appId": app_id, "pkgIds": pkg_ids})
+            try:
+                resp = http_json("GET", f"{PUBLISH_V2}/package/compile/status?{params}",
+                                 self._auth_headers())
+            except PublishError as exc:
+                log(f"package/compile/status unavailable ({exc}); trying the legacy path")
+                resp = http_json("GET", f"{PUBLISH_V2}/aab/complile/status?{params}",
+                                 self._auth_headers())
             states = resp.get("pkgStateList") or []
             statuses = [s.get("aabCompileStatus") for s in states]
             log(f"AAB compile status: {statuses}")

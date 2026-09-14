@@ -55,11 +55,22 @@ first; it is the registry of apps and the source of factory-wide rules.
     most; AppGallery is strong in Latin America and Spain). Never name an app after
     someone else's trademark. The in-app `app_name` string may stay short and brandable;
     it is the store `appName` that has to carry the keyword.
-11. **Every new app enables App Signing in AppGallery Connect before its first upload**
-    (method 1: AGC generates and keeps the signature key). Without it, losing the local
-    keystore makes the app impossible to update forever -- Huawei does not allow changing
-    a signature key, and enrolling later requires the very key you lost. Keep the factory
-    keystore and its passwords backed up in a password manager as well.
+11. **Every new app enables App Signing in AppGallery Connect before its first
+    package upload**, method 1 (AGC generates and keeps the signature key). This is the
+    one step in the factory that cannot be automated, cannot be verified by API, and
+    cannot be undone, so it stays a human checkpoint:
+    - **Before the first upload, not before the first submit.** Huawei hides the method-1
+      option once any package has been uploaded: "If you have uploaded an app package,
+      this option is not displayed... you need to create an app again."
+    - **There is no failure signal.** Huawei does not yet enforce upload-key consistency,
+      so an app with App Signing left off uploads and submits perfectly well. The damage
+      only appears at the next version, which is the point of no return -- this is exactly
+      how the owner lost five published apps.
+    - **Record the proof.** Paste the App Signing SHA-256 from the console into
+      `factory/apps.json` -> `app_signing_sha256`. It must differ from the upload
+      certificate's fingerprint; if they match, AGC is not holding a key of its own and
+      App Signing is not on.
+    - App Signing is mandatory for AAB uploads and optional for APK.
 12. **Small, explained commits.** One concern per commit. Never force-push. Never commit
    secrets, build output, or `.gradle/`.
 
