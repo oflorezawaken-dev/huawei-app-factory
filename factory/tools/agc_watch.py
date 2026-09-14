@@ -151,13 +151,18 @@ def cmd_inspect(slugs: list[str], client_id: str, client_secret: str) -> int:
         for k, v in fields.items():
             if v not in (None, ""):
                 log(f"    {k} = {v!r}")
-        # Anything else that looks like a state, so a renamed field is not missed.
+        # Everything else too: a field that matters may not be named after a state,
+        # and a filtered dump is how you convince yourself of a wrong conclusion.
         info = payload.get("appInfo") or {}
-        extra = {k: v for k, v in info.items()
-                 if any(t in k.lower() for t in ("state", "status", "audit", "release"))
-                 and k not in fields}
-        for k, v in sorted(extra.items()):
-            log(f"    (extra) {k} = {v!r}")
+        for k, v in sorted(info.items()):
+            if k in fields:
+                continue
+            text = repr(v)
+            log(f"    (other) {k} = {text[:160]}{'...' if len(text) > 160 else ''}")
+        for k, v in sorted((payload.get("auditInfo") or {}).items()):
+            if k in fields:
+                continue
+            log(f"    (audit) {k} = {repr(v)[:160]}")
     return 1 if failures else 0
 
 
