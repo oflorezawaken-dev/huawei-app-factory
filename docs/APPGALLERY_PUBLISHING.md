@@ -105,6 +105,9 @@ Re-verify against the official reference before relying on new fields.
 | `No AppGallery app found for package ...` | New app: AGC assigns the package name from the first uploaded package. | Use the App ID (`RECEIPT_LENS_AGC_APP_ID`). |
 | `204144694 [cfs] get siteId failed ... distContryList is empty` | The app has no distribution countries/regions yet, so Huawei cannot pick a storage site for the upload. | In the console: the app → Distribute → Version information → **Countries/Regions** → select and save. Can later be automated with `PUT /publish/v2/app-info` field `publishCountry`. |
 
+| `204144727 The package is being compiled, please try again in 3-5 minutes` | AppGallery compiles an uploaded package before it will accept a submission. | Not an error, a wait. `agc_publish.py` retries `app-submit` on this code for up to 15 minutes; everything else still fails immediately. |
+| `204144649 [cds]update app information failed ... [the app current state can not allow modify.]` | `PUT /publish/v2/app-info` on an app whose version is under review. | Wait for the review to finish. Usefully, this means an in-review app cannot be disturbed by an app-info write: Huawei refuses before changing anything. |
+
 ## Privacy tags: the rejection of 2026-09-07 and the fix
 
 Huawei's review report for ReceiptLens 1.0.0 ("Privacidad del usuario, número 1"): *the app
