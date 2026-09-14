@@ -19,7 +19,7 @@ on:
         required: true
         default: 'all'
         type: choice
-        options: [all, listing, icon, screenshots, app-info, privacy-tags]
+        options: [all, listing, icon, screenshots, app-info, privacy-label, privacy-tags]
       lang:
         description: 'Screenshots/icon: folder under store/screenshots (en, es, ...), empty = the default language. Listing: AGC code (en-US), empty = all.'
         required: false
@@ -106,6 +106,22 @@ jobs:
           else
             args+=(--set "privacyPolicy=$PRIVACY_URL")
           fi
+          [[ "$DRY" == "true" ]] && args+=(--dry-run)
+          python3 factory/tools/agc_update_app_info.py "${args[@]}"
+
+      - name: Privacy label (the console's privacy tags, as data)
+        if: inputs.what == 'privacy-label'
+        run: |
+          set -euo pipefail
+          # app-info returns privacyLabel, so it may also accept it. If it does,
+          # the one console step that has rejected an app in this factory stops
+          # being a console step. The payload is the declaration AppGallery
+          # already approved for HabitCue, not a reconstruction.
+          python3 -c "import sys; sys.path.insert(0, 'factory/tools'); from privacy_tags import petal_ads_label_json; print(petal_ads_label_json())" > /tmp/privacy-label.json
+          echo "payload: $(cat /tmp/privacy-label.json)"
+          args=(--app-id "$AGC_APP_ID"
+                --set "privacyPolicy=$PRIVACY_URL"
+                --set-file "privacyLabel=/tmp/privacy-label.json")
           [[ "$DRY" == "true" ]] && args+=(--dry-run)
           python3 factory/tools/agc_update_app_info.py "${args[@]}"
 

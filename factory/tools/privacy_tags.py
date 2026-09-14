@@ -180,6 +180,30 @@ def baseline(app: dict, rules: dict) -> dict:
     }
 
 
+# The same declaration expressed the way the Publishing API returns and accepts
+# it: Huawei's internal data-item codes, grouped by service-scenario number.
+#
+# These codes are not published anywhere. This block was read back on 2026-09-14
+# from HabitCue, an app AppGallery had already reviewed and approved, whose only
+# data collection is the Petal Ads SDK -- exactly the case of every factory app
+# that handles nothing of its own. Copying an approved declaration is sounder
+# than reconstructing one from labels we cannot map to codes.
+#
+# Scenario 4 = Advertising and marketing (12 items), 5 = Disclosure to third
+# parties (7 items), matching the table privacy_tags.py renders in English.
+PETAL_ADS_LABEL = [
+    {"4": ["D005005", "D011008", "D010004", "D010006", "D011024", "D011025",
+           "D011027", "D011028", "D012004", "D012005", "D012006", "D011023"]},
+    {"5": ["D011008", "D010006", "D011024", "D012004", "D012005", "D012006",
+           "D011023"]},
+]
+
+
+def petal_ads_label_json() -> str:
+    """The Petal Ads declaration as the string app-info expects."""
+    return json.dumps(PETAL_ADS_LABEL, separators=(",", ":"))
+
+
 def validate(app: dict, rules: dict) -> tuple[bool, list[str]]:
     """Return (ok, problems)."""
     problems: list[str] = []

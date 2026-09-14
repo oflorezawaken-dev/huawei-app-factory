@@ -82,8 +82,12 @@ def coerce(value: str):
 def parse_args(argv: list[str]) -> argparse.Namespace:
     p = argparse.ArgumentParser(description="Update AppGallery Connect app-info fields.")
     p.add_argument("--app-id", required=True)
-    p.add_argument("--set", action="append", required=True, dest="fields", metavar="KEY=VALUE",
+    p.add_argument("--set", action="append", default=[], dest="fields", metavar="KEY=VALUE",
                     help="Field to set, e.g. privacyPolicy=https://...")
+    p.add_argument("--set-file", action="append", default=[], dest="field_files",
+                    metavar="KEY=PATH",
+                    help="Field whose value is read verbatim from a file. Use this for "
+                         "values containing commas or quotes, such as privacyLabel.")
     p.add_argument("--dry-run", action="store_true")
     return p.parse_args(argv)
 
@@ -98,6 +102,17 @@ def main(argv: list[str]) -> int:
             return 2
         key, value = item.split("=", 1)
         body[key] = coerce(value)
+
+    for item in args.field_files:
+        if "=" not in item:
+            log(f"ERROR: --set-file expects KEY=PATH, got: {item}")
+            return 2
+        key, path = item.split("=", 1)
+        try:
+            body[key] = open(path, encoding="utf-8").read().strip()
+        except OSError as exc:
+            log(f"ERROR: cannot read {path}: {exc}")
+            return 2
 
     log(f"appId={args.app_id} fields={body}")
     if args.dry_run:
