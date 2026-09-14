@@ -108,6 +108,23 @@ Re-verify against the official reference before relying on new fields.
 | `204144727 The package is being compiled, please try again in 3-5 minutes` | AppGallery compiles an uploaded package before it will accept a submission. | Not an error, a wait. `agc_publish.py` retries `app-submit` on this code for up to 15 minutes; everything else still fails immediately. |
 | `204144649 [cds]update app information failed ... [the app current state can not allow modify.]` | `PUT /publish/v2/app-info` on an app whose version is under review. | Wait for the review to finish. Usefully, this means an in-review app cannot be disturbed by an app-info write: Huawei refuses before changing anything. |
 
+## Writing app-info is not free once an app is live
+
+`PUT /publish/v2/app-info` on a released app opens a **new draft version** next to
+it (`releaseState` goes from 0 to 7, and the console shows "New version - Draft").
+This happens even when every field written is identical to what was already
+there: the write itself is the event, not the change. Measured on habit-cue on
+2026-09-14.
+
+So metadata writes — distribution countries, category, privacy label — belong
+**before the first submission**, while the app is still a draft anyway. Doing
+them afterwards leaves an empty draft hanging off a live app, which has to be
+discarded by hand in the console.
+
+Measured `releaseState` values, from this account's own apps rather than a doc
+page: `0` on the shelf, `4` under review, `7` draft. Anything else is unknown
+and `agc_watch.py` deliberately reports nothing for it.
+
 ## Privacy tags: the rejection of 2026-09-07 and the fix
 
 Huawei's review report for ReceiptLens 1.0.0 ("Privacidad del usuario, número 1"): *the app

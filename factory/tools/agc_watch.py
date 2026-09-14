@@ -57,6 +57,7 @@ NEWLINE = chr(10)
 RELEASE_STATE: dict[int, str] = {
     0: "LIVE",
     4: "IN_REVIEW",
+    7: "DRAFT",
 }
 
 # A version is only interesting once Huawei has said something about it. These are
@@ -269,10 +270,15 @@ def poll_app(slug: str, client_id: str, token: str, repo: str, dry_run: bool) ->
     raw_state = fields.get("releaseState")
     opinion = fields.get("auditOpinion") or ""
 
-    # The number says where the version sits; the comment says what Huawei decided.
-    # Trust the comment for the verdict, because the enum is the part Huawei does
-    # not document and could renumber without telling anyone.
-    if opinion:
+    # The comment says what Huawei decided, and beats an enum Huawei does not
+    # document. But it describes the LAST decision, not necessarily this version:
+    # an app that is live with a new version in flight still carries the old
+    # approval, and reading it then would announce the new version as LIVE while
+    # it sits in review. Only trust it while the version reported is the one on
+    # the shelf.
+    on_shelf = str(fields.get("onShelfVersionNumber") or "")
+    verdict_is_current = bool(opinion) and (not on_shelf or on_shelf == version)
+    if verdict_is_current:
         state = "LIVE" if approved(opinion) else "REJECTED"
     else:
         state = RELEASE_STATE.get(raw_state, "")
