@@ -1,0 +1,57 @@
+name: Factory AppGallery Review Watch
+
+# Daily poll of every registered Android app's AppGallery review state. Opens an
+# issue when a version reaches a state a human must act on, quoting Huawei's own
+# review comment, and stays silent while a version is merely under review.
+#
+# The Android twin of factory-ios-watch.yml. One issue per app+version+state, so
+# a rejection left unfixed for a week does not produce seven issues. See
+# factory/tools/agc_watch.py for why there is no state file, and for why the
+# releaseState table was measured rather than copied from Huawei's docs.
+
+on:
+  schedule:
+    # 13:00 UTC = 08:00 in Bogota, the same slot the iOS watch uses.
+    - cron: '0 13 * * *'
+  workflow_dispatch:
+    inputs:
+      app:
+        description: 'Android app slug (empty = every registered Android app)'
+        required: false
+        default: ''
+      mode:
+        description: 'watch = open issues; dry-run = report only; inspect = dump the raw state fields'
+        required: true
+        default: 'watch'
+        type: choice
+        options: [watch, dry-run, inspect]
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: factory-watch
+  cancel-in-progress: false
+
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    environment: appgallery
+    env:
+      AGC_CLIENT_ID: ${{ secrets.AGC_CLIENT_ID }}
+      AGC_CLIENT_SECRET: ${{ secrets.AGC_CLIENT_SECRET }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Poll AppGallery
+        run: |
+          set -euo pipefail
+          args=()
+          [[ -n "${{ inputs.app }}" ]] && args+=("${{ inputs.app }}")
+          case "${{ inputs.mode || 'watch' }}" in
+            inspect) args+=(--inspect) ;;
+            dry-run) args+=(--dry-run) ;;
+          esac
+          python3 factory/tools/agc_watch.py "${args[@]}"
