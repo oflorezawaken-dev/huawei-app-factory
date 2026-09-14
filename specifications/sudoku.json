@@ -1,0 +1,496 @@
+{
+  "spec_version": "1.0.0",
+  "app": {
+    "name": "Sudoku",
+    "store_name": {
+      "_note": "The store name must lead with the search keyword in every language (factory rule 10). The in-app name stays the short 'Sudoku'. These strings go into store/listing.json appName per language.",
+      "en-US": "Sudoku - Classic Number Puzzles",
+      "es-ES": "Sudoku Clásico - Juego de Números",
+      "pt-PT": "Sudoku Clássico - Jogo de Números",
+      "fr-FR": "Sudoku Classique - Jeu de Chiffres",
+      "de-DE": "Sudoku Klassisch - Zahlenrätsel",
+      "it-IT": "Sudoku Classico - Gioco di Numeri",
+      "tr-TR": "Sudoku - Klasik Sayı Bulmaca",
+      "ar": "سودوكو - لعبة أرقام كلاسيكية",
+      "zh-CN": "数独 - 经典数字游戏"
+    },
+    "package_name": "com.huaweiappfactory.sudoku",
+    "version_name": "1.0.0",
+    "version_code": 1,
+    "type": "app",
+    "category": "Games / Puzzle",
+    "description": "Classic sudoku with four difficulties, pencil notes, hints and statistics. Every puzzle is generated on the device with a guaranteed unique solution. No account, no cloud, no paywall.",
+    "target_audience": "People who search the store for 'sudoku' and want to play immediately: no sign-in, no tutorial wall, no energy meter, no subscription. Huawei phones without Google services included.",
+    "problem_solved": "Most sudoku apps gate difficulty levels, hints or ad-free play behind a subscription, or need an account to keep your streak. This one gives the whole game away for free and keeps every puzzle on the device."
+  },
+  "product_strategy": {
+    "market_opportunity": "A rebuild of the owner's own best-converting app (4.85% CTR, 48.05% details-page conversion, 3,177 downloads between 2026-03-01 and 2026-08-28). The original can never be updated: its keystore was lost and App Signing was never enabled, so it will be delisted once AppGallery raises the minimum target API level.",
+    "competitive_advantage": "Exact search-query match ('sudoku'), instant play with no account, every difficulty and every hint free, fully offline, 9 languages, and ads that never appear on the board.",
+    "main_competitors": [
+      "Sudoku.com (Easybrain)",
+      "Sudoku - Classic Sudoku Puzzle",
+      "Sudoku Master",
+      "Generic ad-heavy sudoku clones on AppGallery"
+    ],
+    "estimated_development_complexity": 4,
+    "estimated_market_potential": 8,
+    "monetization_strategy": "Free, supported by Huawei Petal Ads: banner on Home and Statistics, interstitial only when a puzzle ends, under the factory frequency policy. No ad of any kind on the board screen."
+  },
+  "technical": {
+    "platform": "Android",
+    "language": "Kotlin",
+    "ui": "Jetpack Compose",
+    "architecture": "MVVM",
+    "min_sdk": 26,
+    "target_sdk": 36,
+    "compile_sdk": 36,
+    "offline_first": true,
+    "dependency_injection": "Manual AppContainer (same pattern as the other factory apps)",
+    "database": "Room",
+    "async": "Kotlin Coroutines",
+    "reactive_data": "Kotlin Flow",
+    "background_work": "None. No notifications, no WorkManager.",
+    "skeleton": "Copy apps/habit-cue; keep the Gradle setup, theme shell, navigation pattern, Room setup, settings pattern, 9-language string structure and the real Petal Ads integration. Strip every habit/reminder/notification file, including the WorkManager worker, the notification helper and the POST_NOTIFICATIONS permission."
+  },
+  "features": [
+    {
+      "id": "F001",
+      "name": "Puzzle generator",
+      "description": "On-device generation: build a complete valid solution by randomized backtracking, then remove cells one by one, keeping only removals that leave the puzzle with exactly one solution, until the difficulty's target number of givens is reached. Runs off the main thread with a loading state.",
+      "priority": "P0",
+      "requires_internet": false,
+      "requires_permission": false,
+      "permission": ""
+    },
+    {
+      "id": "F002",
+      "name": "Difficulty levels",
+      "description": "Easy (40-45 givens), Medium (32-36), Hard (28-31), Expert (24-27). Chosen from Home before each new game.",
+      "priority": "P0",
+      "requires_internet": false,
+      "requires_permission": false,
+      "permission": ""
+    },
+    {
+      "id": "F003",
+      "name": "Board and input",
+      "description": "9x9 grid with 3x3 block separators, cell selection, number pad 1-9, erase. Given cells are visually distinct and cannot be edited.",
+      "priority": "P0",
+      "requires_internet": false,
+      "requires_permission": false,
+      "permission": ""
+    },
+    {
+      "id": "F004",
+      "name": "Pencil notes",
+      "description": "Notes mode toggle: tapping a number adds or removes a small candidate mark in the selected cell. Entering a final value clears that cell's notes.",
+      "priority": "P0",
+      "requires_internet": false,
+      "requires_permission": false,
+      "permission": ""
+    },
+    {
+      "id": "F005",
+      "name": "Assistance and mistakes",
+      "description": "Highlight the selected cell's row, column and block; highlight every cell holding the same number; flag a cell that conflicts with another entry. Mistake counter, with an optional limit that ends the game.",
+      "priority": "P0",
+      "requires_internet": false,
+      "requires_permission": false,
+      "permission": ""
+    },
+    {
+      "id": "F006",
+      "name": "Undo and hints",
+      "description": "Undo reverses the last value or note change. Hint fills the selected cell (or a random empty one) with its solution value; three hints per puzzle.",
+      "priority": "P0",
+      "requires_internet": false,
+      "requires_permission": false,
+      "permission": ""
+    },
+    {
+      "id": "F007",
+      "name": "Timer, pause and resume",
+      "description": "Elapsed timer that pauses when the app goes to the background or the player pauses. The game in progress is saved automatically and restored on next launch.",
+      "priority": "P0",
+      "requires_internet": false,
+      "requires_permission": false,
+      "permission": ""
+    },
+    {
+      "id": "F008",
+      "name": "Win screen",
+      "description": "On completion: difficulty, elapsed time, mistakes, whether it is a personal best, and buttons for a new game of the same difficulty or back to Home.",
+      "priority": "P0",
+      "requires_internet": false,
+      "requires_permission": false,
+      "permission": ""
+    },
+    {
+      "id": "F009",
+      "name": "Statistics",
+      "description": "Per difficulty: games played, games won, win rate, best time, average time. Overall: current win streak and longest win streak.",
+      "priority": "P1",
+      "requires_internet": false,
+      "requires_permission": false,
+      "permission": ""
+    },
+    {
+      "id": "F010",
+      "name": "Settings",
+      "description": "Theme (light/dark/system), highlights on/off, mistake limit on/off, timer visible on/off, privacy information, ads information, about.",
+      "priority": "P0",
+      "requires_internet": false,
+      "requires_permission": false,
+      "permission": ""
+    },
+    {
+      "id": "F011",
+      "name": "Petal Ads",
+      "description": "Real Huawei Petal Ads SDK: banner on Home and Statistics; interstitial when a puzzle ends, under the factory frequency policy. Never on the board.",
+      "priority": "P0",
+      "requires_internet": true,
+      "requires_permission": true,
+      "permission": "android.permission.INTERNET, android.permission.ACCESS_NETWORK_STATE"
+    },
+    {
+      "id": "F012",
+      "name": "Localization",
+      "description": "All 9 factory languages with RTL support for Arabic; device language auto-detected. Digits stay Western Arabic numerals on the board in every locale.",
+      "priority": "P0",
+      "requires_internet": false,
+      "requires_permission": false,
+      "permission": ""
+    },
+    {
+      "id": "F013",
+      "name": "Accessibility",
+      "description": "Content descriptions on every cell and control, 48dp touch targets on the number pad, font scaling, screen-reader compatible board navigation.",
+      "priority": "P0",
+      "requires_internet": false,
+      "requires_permission": false,
+      "permission": ""
+    }
+  ],
+  "screens": [
+    {
+      "id": "S001",
+      "name": "Home",
+      "purpose": "Start a game and continue the one in progress.",
+      "components": [
+        "App title",
+        "Continue card with difficulty, elapsed time and progress when a saved game exists",
+        "New game: four difficulty buttons",
+        "Link to Statistics and Settings",
+        "Petal Ads banner (bottom)"
+      ],
+      "navigation_to": ["S002", "S003", "S004"]
+    },
+    {
+      "id": "S002",
+      "name": "Board",
+      "purpose": "Play the puzzle.",
+      "components": [
+        "Top bar: difficulty, timer, mistakes, pause",
+        "9x9 grid with block separators and highlight states",
+        "Action row: undo, erase, notes toggle, hint (with remaining count)",
+        "Number pad 1-9 with per-number remaining count",
+        "No ads of any kind"
+      ],
+      "navigation_to": ["S005"]
+    },
+    {
+      "id": "S003",
+      "name": "Statistics",
+      "purpose": "Show performance per difficulty.",
+      "components": [
+        "Streak tiles: current and longest",
+        "Per-difficulty rows: played, won, win rate, best time, average time",
+        "Empty state before the first finished game",
+        "Petal Ads banner (bottom)"
+      ],
+      "navigation_to": []
+    },
+    {
+      "id": "S004",
+      "name": "Settings",
+      "purpose": "Configure gameplay aids and appearance.",
+      "components": [
+        "Theme selector",
+        "Highlights switch",
+        "Mistake limit switch",
+        "Timer switch",
+        "Privacy information",
+        "Ads information",
+        "About"
+      ],
+      "navigation_to": []
+    },
+    {
+      "id": "S005",
+      "name": "Win",
+      "purpose": "Close the round and offer the next one.",
+      "components": [
+        "Difficulty and elapsed time",
+        "Personal-best badge when applicable",
+        "Mistakes made",
+        "New game (same difficulty)",
+        "Back to Home",
+        "Interstitial trigger point"
+      ],
+      "navigation_to": ["S001", "S002"]
+    }
+  ],
+  "data_model": {
+    "database": "Room",
+    "entities": [
+      {
+        "name": "SavedGame",
+        "fields": [
+          "id (single row)",
+          "difficulty",
+          "givens (81-char string)",
+          "solution (81-char string)",
+          "entries (81-char string)",
+          "notes (serialized per-cell candidate bitmask)",
+          "elapsed_seconds",
+          "mistakes",
+          "hints_used",
+          "updated_at"
+        ]
+      },
+      {
+        "name": "GameResult",
+        "fields": [
+          "id",
+          "difficulty",
+          "won",
+          "elapsed_seconds",
+          "mistakes",
+          "hints_used",
+          "finished_at_epoch_day",
+          "finished_at_millis"
+        ]
+      },
+      {
+        "name": "Preferences (SharedPreferences)",
+        "fields": [
+          "theme_mode",
+          "highlights_enabled",
+          "mistake_limit_enabled",
+          "timer_visible"
+        ]
+      }
+    ],
+    "requirements": [
+      "Database operations off the main thread.",
+      "Exactly one saved game at a time; starting a new game replaces it.",
+      "A finished game is written to GameResult and the SavedGame row is cleared.",
+      "No game data leaves the device."
+    ]
+  },
+  "domain_requirements": {
+    "generator": [
+      "A generated solution grid is valid: every row, column and 3x3 block contains 1-9 exactly once.",
+      "A generated puzzle has exactly one solution, verified by a solver that counts solutions and stops at two.",
+      "The number of givens falls inside the difficulty's declared range.",
+      "Generation is deterministic when given a seed, so tests are reproducible.",
+      "Solving uses the minimum-remaining-values heuristic so Expert generation stays fast enough for a phone."
+    ],
+    "gameplay": [
+      "A given cell can never be modified.",
+      "Entering a value clears that cell's notes; clearing a value leaves notes untouched.",
+      "A conflict is a cell whose value repeats in its row, column or block.",
+      "A mistake is counted once per wrong entry, not per redraw.",
+      "The puzzle is won when every cell matches the solution.",
+      "Undo restores the previous board state including notes, mistakes and hint count."
+    ]
+  },
+  "permissions": [
+    { "permission": "android.permission.INTERNET", "purpose": "Huawei Petal Ads only." },
+    { "permission": "android.permission.ACCESS_NETWORK_STATE", "purpose": "Huawei Petal Ads only." }
+  ],
+  "integrations": {
+    "huawei_services": ["Huawei Petal Ads"],
+    "external_services": [],
+    "analytics": false,
+    "crash_reporting": false,
+    "ads": true
+  },
+  "monetization": {
+    "enabled": true,
+    "provider": "Huawei Petal Ads",
+    "banner": true,
+    "interstitial": true,
+    "rewarded": false,
+    "iap": false,
+    "ad_frequency_rules": "Banners only on Home (S001) and Statistics (S003). Interstitial only when a puzzle ends (S005), not in the first 60 seconds after launch, at least 3 minutes apart, at most one per 4 triggers. Never on the Board screen in any form. Ad unit IDs come from factory/apps.json via BuildConfig; Huawei test IDs in debug."
+  },
+  "localization": {
+    "default_language": "en",
+    "supported_languages": ["en", "es", "pt", "fr", "de", "it", "tr", "ar", "zh"],
+    "auto_detect_device_language": true,
+    "fallback_language": "en",
+    "rtl_languages": ["ar"],
+    "requirements": [
+      "All visible strings in Android string resources; no hard-coded text.",
+      "Times formatted mm:ss, locale-independent.",
+      "Board digits stay Western Arabic numerals in every locale, including Arabic.",
+      "Arabic RTL verified on Home and Statistics; the board itself stays left-to-right."
+    ]
+  },
+  "design": {
+    "theme": "Calm, high-contrast puzzle",
+    "style": "Material 3, generous grid, clear block separators, restrained colour used only for state (selection, highlight, conflict)",
+    "primary_color": "#1565C0",
+    "secondary_color": "#EF6C00",
+    "supports_light_mode": true,
+    "supports_dark_mode": true,
+    "supports_system_theme": true,
+    "accessibility_required": true,
+    "requirements": [
+      "The grid must stay square and fit without scrolling on a 5-inch screen.",
+      "Conflicts marked by colour AND a distinct weight, never colour alone.",
+      "Number pad targets at least 48dp.",
+      "No decorative animation that delays input."
+    ]
+  },
+  "privacy": {
+    "collects_personal_data": true,
+    "_collects_personal_data_note": "True because the mandatory Huawei Petal Ads SDK collects OAID, IP, device and app information. The game itself collects nothing about the player.",
+    "collects_sensitive_data": false,
+    "stores_data_locally": true,
+    "uploads_user_content": false,
+    "requires_privacy_policy": true,
+    "privacy_policy_url": "https://oflorezawaken-dev.github.io/huawei-app-factory/sudoku/privacy/",
+    "allow_backup": false,
+    "requirements": [
+      "Saved game and statistics stay in app-private storage.",
+      "android:allowBackup=false.",
+      "The only network user is the Petal Ads SDK.",
+      "No account, no backend, no analytics, no crash reporting.",
+      "No camera, photos, storage, location or notification permission."
+    ],
+    "appgallery_privacy_tags": {
+      "_note": "Sudoku has no data items of its own: no photos, no user text, not even a habit name. Only the standard Petal Ads block applies, which factory/tools/privacy_tags.py adds automatically.",
+      "App functionality": {}
+    }
+  },
+  "ai": {
+    "enabled": false,
+    "provider": "",
+    "backend_required": false,
+    "features": [],
+    "user_content_sent_to_ai": false,
+    "requirements": ["No AI claims anywhere in the app or store copy. The generator and solver are plain algorithms."]
+  },
+  "offline_behavior": {
+    "requirements": [
+      "Every feature except ads works with no network, including generation.",
+      "First launch works offline.",
+      "Ad failures are silent and leave no empty space."
+    ]
+  },
+  "qa": {
+    "unit_tests_required": true,
+    "ui_tests_required": true,
+    "lint_required": true,
+    "release_build_required": true,
+    "apk_required": true,
+    "aab_required": true,
+    "test_permissions": true,
+    "test_localization": true,
+    "test_dark_mode": true,
+    "test_ads": true,
+    "test_offline_behavior": true,
+    "test_accessibility": true,
+    "additional_tests": [
+      "Unit: a generated solution grid is valid on all rows, columns and blocks.",
+      "Unit: a generated puzzle has exactly one solution, for every difficulty, with fixed seeds.",
+      "Unit: givens count falls in the difficulty's range.",
+      "Unit: the solver solves a known hard puzzle to the known solution.",
+      "Unit: the solution counter returns 2 for a deliberately ambiguous puzzle.",
+      "Unit: conflict detection for row, column and block duplicates.",
+      "Unit: entering a value clears notes; undo restores board, notes, mistakes and hints.",
+      "Unit: win detection, mistake counting, hint budget.",
+      "Unit: statistics — win rate, best time, average time, current and longest streak.",
+      "Manual: generation time for Expert measured on a real device, airplane mode, RTL, large font, process death mid-game."
+    ]
+  },
+  "release": {
+    "build_type": "release",
+    "minify_enabled": false,
+    "shrink_resources": false,
+    "signed_release_required": true,
+    "generate_apk": true,
+    "generate_aab": true,
+    "submit_to_appgallery": true,
+    "requirements": [
+      "Same signing keystore as the other factory apps (RELEASE_* secrets).",
+      "App Signing MUST be enabled in AppGallery Connect before the first upload (factory rule 11).",
+      "versionCode increases every release.",
+      "No secrets in git."
+    ]
+  },
+  "appgallery": {
+    "default_language": "en",
+    "supported_languages": ["en", "es", "pt", "fr", "de", "it", "tr", "ar", "zh"],
+    "distribution_regions": ["Set by the owner in the console before the first upload; exclude Russia and Belarus (AGC blocks settlement there for ad-monetised apps)."],
+    "content_rating_required": true,
+    "free_app": true,
+    "appgallery_description": { "short": {}, "full": {}, "new_features": {} },
+    "keywords": {},
+    "screenshots_required": true,
+    "icon_required": true,
+    "requirements": [
+      "Real screenshots from the tested build only.",
+      "Store copy discloses ads and promises nothing the build does not do.",
+      "Store name leads with the keyword in every language (see app.store_name).",
+      "Icon and screenshots uploaded for all 9 languages, not just English."
+    ]
+  },
+  "assets": {
+    "icon": {
+      "required": true,
+      "description": "A 3x3 sudoku block with a few filled digits, deep blue on a light ground with an orange accent digit; 512x512 PNG rendered to match the launcher vector."
+    },
+    "screenshots": {
+      "required": true,
+      "source": "Real screenshots from the tested application build",
+      "minimum_required": 4,
+      "recommended_screens": ["Board mid-game", "Board with notes and highlights", "Home with difficulties", "Win screen", "Statistics"]
+    }
+  },
+  "security": {
+    "requirements": [
+      "No hard-coded ad unit IDs, keys or credentials.",
+      "No exported components beyond the launcher activity.",
+      "Declare no permission other than INTERNET and ACCESS_NETWORK_STATE."
+    ]
+  },
+  "performance": {
+    "requirements": [
+      "Generation runs off the main thread; Home shows a loading state while it runs.",
+      "Easy through Hard generate in under 1 second on a mid-range device; Expert under 3 seconds.",
+      "Board recomposition stays smooth while typing; no full-grid recomposition per keystroke."
+    ]
+  },
+  "error_handling": {
+    "requirements": [
+      "If generation somehow fails, retry once and then show a readable message with a retry button; never crash.",
+      "Ad failures never block the UI.",
+      "A corrupt saved game is discarded and the player is returned to Home instead of crashing."
+    ]
+  },
+  "acceptance_criteria": [
+    "Release APK and AAB build in Factory Build with the quality gate in --strict mode passing.",
+    "Every generated puzzle in the test suite has exactly one solution and the right number of givens.",
+    "A puzzle can be played from Home to the win screen, with notes, undo, hint and mistake counting behaving as specified.",
+    "Closing and reopening the app restores the game in progress with its timer, notes and mistakes.",
+    "Statistics match a known fixture of finished games, including the streak.",
+    "All strings exist in all 9 languages; Arabic renders RTL while the board stays left-to-right.",
+    "Banners appear only on Home and Statistics; no ad ever appears on the board; the interstitial fires only at the end of a puzzle.",
+    "Airplane mode: every screen works, no empty ad boxes.",
+    "android:allowBackup is false and no permission other than INTERNET and ACCESS_NETWORK_STATE is declared.",
+    "No Firebase, GMS, Google AI or reflection SDK stubs (quality gate)."
+  ]
+}

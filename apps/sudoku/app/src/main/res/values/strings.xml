@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Sudoku</string>
+
+    <!-- Home -->
+    <string name="home_tagline">Classic number puzzle</string>
+    <string name="home_continue">Continue</string>
+    <string name="home_continue_detail">%1$s · %2$s · %3$d%% done</string>
+    <string name="home_new_game">New game</string>
+    <string name="home_statistics">Statistics</string>
+    <string name="home_settings">Settings</string>
+    <string name="home_generating">Building a puzzle…</string>
+    <string name="home_generation_failed">The puzzle could not be built. Please try again.</string>
+    <string name="action_retry">Try again</string>
+
+    <!-- Difficulty -->
+    <string name="difficulty_easy">Easy</string>
+    <string name="difficulty_medium">Medium</string>
+    <string name="difficulty_hard">Hard</string>
+    <string name="difficulty_expert">Expert</string>
+
+    <!-- Board -->
+    <string name="board_mistakes">Mistakes %1$d/%2$d</string>
+    <string name="board_mistakes_open">Mistakes %1$d</string>
+    <string name="board_pause">Pause</string>
+    <string name="board_resume">Resume</string>
+    <string name="board_paused_title">Paused</string>
+    <string name="board_paused_message">The board is hidden while the game is paused.</string>
+    <string name="action_undo">Undo</string>
+    <string name="action_erase">Erase</string>
+    <string name="action_notes">Notes</string>
+    <string name="action_hint">Hint</string>
+    <string name="notes_on">Notes on</string>
+    <string name="notes_off">Notes off</string>
+    <string name="hints_left">%1$d left</string>
+    <string name="no_hints_left">No hints left</string>
+
+    <!-- Leaving a puzzle -->
+    <string name="quit_title">Leave this puzzle?</string>
+    <string name="quit_message">Your progress is saved. You can pick it up from the home screen.</string>
+    <string name="quit_confirm">Leave</string>
+    <string name="quit_cancel">Keep playing</string>
+
+    <!-- End of a puzzle -->
+    <string name="win_title">Solved!</string>
+    <string name="win_time">Time %1$s</string>
+    <string name="win_mistakes">Mistakes %1$d</string>
+    <string name="win_hints">Hints used %1$d</string>
+    <string name="win_personal_best">New best time for %1$s</string>
+    <string name="win_new_game">Play again</string>
+    <string name="win_home">Home</string>
+    <string name="lost_title">Out of mistakes</string>
+    <string name="lost_message">You reached the limit of %1$d mistakes. You can turn the limit off in Settings.</string>
+
+    <!-- Statistics -->
+    <string name="stats_title">Statistics</string>
+    <string name="stats_current_streak">Current streak</string>
+    <string name="stats_longest_streak">Longest streak</string>
+    <string name="stats_played">Played</string>
+    <string name="stats_won">Solved</string>
+    <string name="stats_win_rate">Win rate</string>
+    <string name="stats_best_time">Best time</string>
+    <string name="stats_average_time">Average time</string>
+    <string name="stats_empty">Finish your first puzzle and your times will show up here.</string>
+    <string name="stats_no_value">—</string>
+
+    <!-- Settings -->
+    <string name="settings_title">Settings</string>
+    <string name="settings_theme">Theme</string>
+    <string name="theme_system">System</string>
+    <string name="theme_light">Light</string>
+    <string name="theme_dark">Dark</string>
+    <string name="settings_highlights">Highlights</string>
+    <string name="settings_highlights_desc">Light up the row, column and box of the selected cell, and every cell with the same number.</string>
+    <string name="settings_mistake_limit">Mistake limit</string>
+    <string name="settings_mistake_limit_desc">End the game after %1$d mistakes.</string>
+    <string name="settings_timer">Show timer</string>
+    <string name="settings_timer_desc">Display the elapsed time while you play.</string>
+    <string name="settings_privacy">Privacy</string>
+    <string name="settings_privacy_desc">What this app stores and what the ads collect.</string>
+    <string name="settings_ads">Ads</string>
+    <string name="settings_ads_desc">Where ads appear and why they are here.</string>
+    <string name="settings_about">About</string>
+    <string name="settings_version">Version %1$s</string>
+    <string name="privacy_body">Your games, times and statistics stay on this device, in storage only this app can read. There is no account, no cloud and no backend. The only part of the app that uses the internet is the advertising SDK (Huawei Petal Ads), which sends the advertising identifier (OAID), IP address, and device, network and app information in order to select an ad. Nothing you do inside a puzzle is ever sent anywhere.</string>
+    <string name="ads_body">This game is free and has no subscription or in-app purchase. Ads pay for it. A banner appears on the home and statistics screens, and an ad may appear after a puzzle ends. No ad is ever shown on the board while you are playing.</string>
+    <string name="action_close">Close</string>
+
+    <!-- Accessibility -->
+    <string name="cd_back">Back</string>
+    <string name="cd_cell_empty">Row %1$d, column %2$d, empty</string>
+    <string name="cd_cell_value">Row %1$d, column %2$d, %3$d</string>
+    <string name="cd_cell_given">Row %1$d, column %2$d, %3$d, given</string>
+    <string name="cd_number">Enter %1$d</string>
+    <string name="cd_number_notes">Toggle note %1$d</string>
+</resources>

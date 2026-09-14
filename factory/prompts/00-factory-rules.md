@@ -31,7 +31,13 @@ first; it is the registry of apps and the source of factory-wide rules.
 8. **Verify, don't assume.** Run `gradle :app:testDebugUnitTest` and
    `gradle :app:assembleDebug` inside the app folder and read the output. Fix real
    errors; never delete a test to make CI green unless the test itself is wrong and you
-   explain why in the commit message.
+   explain why in the commit message. Then **run the app on a real phone**, tap through
+   every screen, and take the store screenshots from that build. Unit tests cannot see
+   layout: Sudoku 1.0 shipped a number pad whose ninth key fell off the right edge of a
+   384dp screen (nine 48dp keys need 432dp), and the digit 9 was simply unreachable.
+   Assume ~360dp of usable width: no row of fixed-size controls may assume it fits,
+   every such row measures first and wraps or shrinks, and the main content takes the
+   room the controls leave rather than claiming its own size first.
 9. **Privacy tags are part of every app.** AppGallery requires a personal-data
    declaration ("Privacy tags" under Version information) and rejects releases whose
    tags contradict the app; Petal Ads alone means every factory app collects personal
