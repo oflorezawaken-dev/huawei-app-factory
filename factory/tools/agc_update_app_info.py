@@ -120,6 +120,16 @@ def registry_fields(slug: str) -> dict:
             fields[key] = category[key]
     if not category:
         log(f"WARNING: {slug} has no agc_category in the registry; sending countries only")
+
+    # A new app arrives with deviceTypes=[{"deviceType": 4}] and no appAdapters,
+    # and app-submit then refuses with 204144660 "The appAdapters is necessary !".
+    # Nothing in the console names this field; the value below was read back from
+    # the four apps of this account that have been through review, all of which
+    # carry the same "4,5,15". Sent for every app so the next one does not
+    # rediscover the error at submit time.
+    device_types = (registry["defaults"].get("agc") or {}).get("device_types")
+    if device_types:
+        fields["deviceTypes"] = device_types
     return fields
 
 

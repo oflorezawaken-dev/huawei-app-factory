@@ -175,6 +175,38 @@ tags**, below "Privacy statement" and above "AI function declaration". That page
 also has a required **Generative AI service** radio (`Not involved` for every
 factory app so far) that blocks Submit if left unset.
 
+## What app-submit demands that nothing else mentions
+
+Hashtags 1.0.0 uploaded cleanly and was then refused twice by `app-submit`,
+each time with code `204144660` and a different message. Neither condition is
+visible anywhere before the submit call, and the console shows no warning for
+either. Both are one-time, per-app.
+
+**`[The appAdapters is necessary !]`** — a new app arrives with
+`deviceTypes: [{"deviceType": 4}]`. Every app of this account that has passed
+review carries `[{"deviceType": 4, "appAdapters": "4,5,15"}]`. It is settable
+through `app-info`, so `factory-store.yml what=app-config` now sends it with the
+countries and the category and no new app should meet this error again.
+
+**`[The history of questionnaire feedback content ratings is empty .]`** — the
+**content rating questionnaire**, which has no API. It lives on the version page
+under *Content rating → Rate by age → Set → Fill out questionnaire*: eleven
+sections, thirteen yes/no questions, then a rating to confirm. For a factory app
+the honest answers are No to everything except two, both under *User information
+collection*, and both Yes because the Petal Ads SDK makes them true:
+
+- *37. Does the app require a user to create an account for sign-in or collect
+  users' personal information by other means?* — **Yes**. No account, but the ad
+  SDK reads the OAID and device information.
+- *38. Does the app collect a user's location information or provide services
+  based on a user's location?* — **Yes**. Petal Ads derives approximate location
+  from the IP address.
+
+Answering these two "No" would contradict the privacy tags, which declare both —
+and a privacy-tag contradiction is exactly what got ReceiptLens 1.0 rejected.
+The resulting rating is **3+**; the confirmation dialog then asks whether the app
+is *intended only for kids*, which is a different question and the answer is No.
+
 ## Next automation candidates
 
 - `PUT /publish/v2/app-language-info` to push the 9 localized store descriptions from `specifications/`.
