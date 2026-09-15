@@ -90,12 +90,44 @@ def load_listing(app: dict) -> list[dict]:
         return json.load(fh).get("languages", [])
 
 
+# A live app has more than one appInfo: the one on sale, and the editable one for
+# the next version. Apple exposes no filter[] on this endpoint, so the choice is
+# made here. Both vocabularies appear on the resource (state and appStoreState),
+# and which one Apple populates is not worth betting on -- read whichever is
+# there, the way version_state already does for appStoreVersions.
+APP_INFO_STATE_KEYS = ("state", "appStoreState")
+EDITABLE_APP_INFO_STATES = {
+    "PREPARE_FOR_SUBMISSION", "DEVELOPER_REJECTED", "REJECTED", "METADATA_REJECTED",
+}
+
+
+def app_info_state(attrs: dict) -> str:
+    for key in APP_INFO_STATE_KEYS:
+        if key in attrs:
+            return str(attrs[key])
+    raise ASCError(
+        f"none of {APP_INFO_STATE_KEYS} found on the appInfo. Apple returned: {sorted(attrs)}. "
+        "Check Apple's current appInfos schema rather than guessing another key.")
+
+
 def find_app_info_id(asc_app_id: str, token: str) -> str:
-    data = api_call("GET", f"/v1/apps/{asc_app_id}/appInfos", token=token)
-    rows = data.get("data", [])
+    """The EDITABLE appInfo, not simply the first one Apple lists.
+
+    Taking rows[0] worked while each app had exactly one appInfo. Once ShiftSlip
+    went live it had two, and pushing the listing hit
+    "The field 'name' can not be modified in the current state" -- the live one
+    is read-only, and the update belongs to the one being prepared.
+    """
+    rows = api_call("GET", f"/v1/apps/{asc_app_id}/appInfos?limit=50", token=token).get("data") or []
     if not rows:
         raise ASCError(f"app {asc_app_id} has no appInfos yet; it must be created in App Store Connect first")
-    return rows[0]["id"]
+    editable = [r for r in rows if app_info_state(r.get("attributes") or {}) in EDITABLE_APP_INFO_STATES]
+    if not editable:
+        have = ", ".join(f"{r['id']} ({app_info_state(r.get('attributes') or {})})" for r in rows)
+        raise ASCError(
+            f"no editable appInfo for app {asc_app_id}; Apple has: {have}. An app that is live "
+            f"gets an editable one when a new version exists -- create the version first.")
+    return editable[0]["id"]
 
 
 def find_editable_version(asc_app_id: str, marketing_version: str, token: str) -> str:
