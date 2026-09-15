@@ -287,12 +287,12 @@
       "store_dir": "apps/hashtags/store",
       "privacy_path": "docs/hashtags/privacy",
       "privacy_tags_configured": "2026-09-14",
-      "status": "in_console",
+      "status": "submitted",
       "current_version": {
         "versionCode": 1,
         "versionName": "1.0.0",
-        "status": "planned",
-        "note": "Rebuild of the owner's highest-traffic, worst-converting app: 195,198 impressions produced 127 downloads (0.46% CTR) Mar-Aug 2026, against 4-5% everywhere else. The original cannot be updated -- keystore lost, App Signing never enabled -- and its name carries a trademark that rule 10 now forbids. First app to run through the automated console steps: app-config pushes countries and category before the first submission. AppGallery app created from the console on 2026-09-14 by browser automation: project 'Hashtags' (101653523865041681), app 118993543, package com.huaweiappfactory.hashtags, category App, default language English (US)."
+        "status": "submitted",
+        "note": "Rebuild of the owner's highest-traffic, worst-converting app: 195,198 impressions produced 127 downloads (0.46% CTR) Mar-Aug 2026, against 4-5% everywhere else. The original cannot be updated -- keystore lost, App Signing never enabled -- and its name carries a trademark that rule 10 now forbids. First app to run through the automated console steps: app-config pushes countries and category before the first submission. AppGallery app created from the console on 2026-09-14 by browser automation: project 'Hashtags' (101653523865041681), app 118993543, package com.huaweiappfactory.hashtags, category App, default language English (US). Submitted for review 2026-09-15 with the real ad units; the submit call failed twice first, on deviceTypes.appAdapters and then on the content rating questionnaire, both console-side gaps now closed."
       },
       "known_gaps": {},
       "app_signing_sha256": "75:12:57:A1:DC:96:69:F4:E3:53:CE:A9:76:84:57:C0:E1:40:2C:D7:79:17:33:89:82:56:BE:4E:18:D1:CE:B4",
