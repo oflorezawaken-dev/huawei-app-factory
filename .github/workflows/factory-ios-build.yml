@@ -368,6 +368,28 @@ jobs:
             *) echo "::error::the exported IPA is signed by '$authority', not an Apple Distribution certificate. App Store Connect will refuse it."; exit 1 ;;
           esac
 
+      - name: Verify the binary serves real ads, not Google's test ads
+        run: |
+          set -euo pipefail
+          # The registry had the real IDs, the gate read them from the registry and
+          # passed, the publish guard read the same values and passed -- and both
+          # PriceJar 1.0.0 (5) and ShiftSlip 1.0.0 (2) reached the App Store serving
+          # Google's TEST ads, earning nothing. Config/AdMob.xcconfig reads
+          # $(ADMOB_APP_ID_OVERRIDE:default=<test id>) and CI exported ADMOB_APP_ID,
+          # so the suffixed name was never set and the test default always won.
+          # Every check looked at what we meant; this one looks at the binary.
+          plist="$(echo /tmp/ipa-check/Payload/*.app/Info.plist)"
+          prefix="$(python3 -c "import json; print(json.load(open('$GITHUB_WORKSPACE/factory/apps.json'))['defaults']['ios']['admob_test_id_prefix'])")"
+          got="$(/usr/libexec/PlistBuddy -c 'Print :GADApplicationIdentifier' "$plist" 2>/dev/null || echo '')"
+          if [[ -z "$got" ]]; then
+            echo "::error::the built app has no GADApplicationIdentifier in Info.plist"; exit 1
+          elif [[ "$got" == "$prefix"* ]]; then
+            echo "::error::the built app carries Google's TEST AdMob app ID ($got). It would serve test ads and earn nothing. The real ID never reached the compiler -- check that registry.py exports ADMOB_APP_ID_OVERRIDE and that the repository variables are set."
+            exit 1
+          else
+            echo "GADApplicationIdentifier is a real AdMob app ID"
+          fi
+
       - name: Verify the binary ships the devices the spec declares
         run: |
           set -euo pipefail
