@@ -356,12 +356,26 @@ jobs:
           # count has to be read, not the exit status.
           identities="$(security find-identity -v -p codesigning "$keychain")"
           echo "$identities" | sed 's/^/  /'
-          count="$(echo "$identities" | grep -c 'Apple Distribution' || true)"
-          if [[ "$count" -eq 0 ]]; then
-            echo "::error::the imported certificate is not an Apple Distribution identity. Export the DISTRIBUTION certificate, with its private key, not a development one."
+          # Accept either naming. Apple renamed the App Store distribution
+          # certificate from "iPhone Distribution" to "Apple Distribution", and
+          # both are valid until they expire -- this account's exportable one is
+          # still the older name, while the "Apple Distribution" it had been
+          # signing with is a cloud-managed certificate whose private key Apple
+          # keeps and nobody can export. Requiring the newer string would have
+          # rejected the only certificate that can actually be stored.
+          #
+          # "Developer ID Application" is excluded on purpose: it signs macOS apps
+          # distributed outside the App Store and cannot submit an iOS build.
+          identity="$(echo "$identities" \
+            | grep -E '"(Apple|iPhone) Distribution' \
+            | head -1 | sed -E 's/.*"(.*)".*/\1/')"
+          if [[ -z "$identity" ]]; then
+            echo "::error::the imported .p12 holds no App Store distribution identity. It needs an 'Apple Distribution' or 'iPhone Distribution' certificate WITH its private key -- not a development certificate, not 'Developer ID Application', and not a cloud-managed one (those cannot be exported, Apple keeps the key)."
             exit 1
           fi
+          echo "signing identity: $identity"
           echo "SIGNING_KEYCHAIN=$keychain" >> "$GITHUB_ENV"
+          echo "SIGNING_IDENTITY=$identity" >> "$GITHUB_ENV"
 
       - name: Archive (manual signing, stored certificate)
         env:
@@ -388,7 +402,7 @@ jobs:
             -authenticationKeyIssuerID "$ASC_ISSUER_ID" \
             OTHER_CODE_SIGN_FLAGS="--keychain $SIGNING_KEYCHAIN" \
             CODE_SIGN_STYLE=Manual \
-            CODE_SIGN_IDENTITY="Apple Distribution" \
+            CODE_SIGN_IDENTITY="$SIGNING_IDENTITY" \
             DEVELOPMENT_TEAM="$APPLE_TEAM_ID"
 
       - name: Export IPA

@@ -193,9 +193,21 @@ GitHub, and neither is ever printed.
    Certificates. Filter to *Apple Development* and revoke the runner-generated ones — they are
    numerous and recently dated, one per CI run. Keep any whose private key lives on a Mac you
    actually develop on.
-2. **Make sure you have an Apple Distribution certificate**, with its private key, in this Mac's
-   keychain. If not, create one on that same page and download it; opening the downloaded `.cer`
-   adds it to Keychain Access.
+2. **Find a distribution certificate you can actually export.** In Terminal:
+   ```bash
+   security find-identity -v -p codesigning
+   ```
+   You want a line reading `Apple Distribution: …` or `iPhone Distribution: …`. Both are the App
+   Store certificate; Apple renamed it, and an older one stays valid until it expires. CI accepts
+   either.
+
+   Two entries that look right and are not: `Apple Development` signs debug builds, and
+   `Developer ID Application` signs macOS apps distributed outside the App Store.
+
+   A certificate shown in the portal as **Distribution Managed** cannot be exported at all — that
+   is the cloud-managed one, and Apple keeps its private key. If the portal lists an
+   *iOS Distribution* certificate but `find-identity` does not show it, the private key is on a
+   different Mac; create a fresh certificate from this one instead.
 3. **Export it.** Keychain Access → My Certificates → right-click *Apple Distribution: …* →
    Export → `.p12`. Give it a password you pick. Export the **certificate**, so the private key
    goes with it; exporting only the key or only the public certificate produces a file CI cannot
