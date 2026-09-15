@@ -170,6 +170,58 @@ only iPhone set the gate requires.
 
 ---
 
+## 5b. The signing certificate (one-time setup)
+
+CI signs the archive with a certificate you store, not one it creates. The reason is in
+`man xcodebuild`:
+
+> For **automatically** signed targets, xcodebuild will create and update profiles, app IDs, and
+> **certificates**. For **manually** signed targets, xcodebuild will download missing or updated
+> provisioning profiles.
+
+Automatic signing is why every ephemeral runner minted a new Apple Development certificate until
+the account hit Apple's limit, twice. Manual signing stops that and still gets its profiles
+downloaded, so **only the certificate has to be stored** — there are no profile secrets and
+nothing to renew each year.
+
+### What you do, once
+
+Nothing here is pasted into a chat. The `.p12` and its password go straight from your Mac into
+GitHub, and neither is ever printed.
+
+1. **Clear the backlog.** developer.apple.com → Certificates, Identifiers & Profiles →
+   Certificates. Filter to *Apple Development* and revoke the runner-generated ones — they are
+   numerous and recently dated, one per CI run. Keep any whose private key lives on a Mac you
+   actually develop on.
+2. **Make sure you have an Apple Distribution certificate**, with its private key, in this Mac's
+   keychain. If not, create one on that same page and download it; opening the downloaded `.cer`
+   adds it to Keychain Access.
+3. **Export it.** Keychain Access → My Certificates → right-click *Apple Distribution: …* →
+   Export → `.p12`. Give it a password you pick. Export the **certificate**, so the private key
+   goes with it; exporting only the key or only the public certificate produces a file CI cannot
+   sign with.
+4. **Base64 it into the clipboard**, in Terminal:
+   ```bash
+   base64 -i ~/Desktop/distribution.p12 | pbcopy
+   ```
+5. **Create two secrets** in GitHub → Settings → Environments → **appstore**:
+   - `APPSTORE_CERT_P12_B64` — paste the clipboard
+   - `APPSTORE_CERT_P12_PASSWORD` — the password from step 3
+6. **Delete the `.p12` from your Desktop.** It is a private key.
+
+### What CI does with it
+
+Creates a throwaway keychain for the job, imports the certificate, sets the partition list so
+`codesign` does not block on a UI prompt, and **asserts an Apple Distribution identity is actually
+present** before building — `security find-identity` exits 0 while reporting "0 valid identities
+found", so the count is read rather than the exit status. The keychain is deleted at the end of
+the job whether it succeeded or not.
+
+If the secrets are missing the release job stops immediately and names them. It does not fall
+back to automatic signing: that is the behaviour this replaces.
+
+---
+
 ## 6. What the first end-to-end run cost
 
 PriceJar 1.0.0 was the first app through this lane. Thirteen real failures came
