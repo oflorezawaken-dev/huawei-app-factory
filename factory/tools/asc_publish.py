@@ -241,6 +241,14 @@ def clear_open_review_submission(asc_app_id: str, token: str) -> None:
 # "the app includes references to paid content but the associated In-App
 # Purchase products have not been submitted for review."
 IAP_SUBMITTABLE_STATES = ("READY_TO_SUBMIT", "DEVELOPER_ACTION_NEEDED", "REJECTED")
+# Already through review, or already in Apple's queue from an earlier
+# submission. Nothing to add to this submission and nothing to refuse over:
+# an approved non-consumable stays approved across app updates, and a purchase
+# that is WAITING_FOR_REVIEW cannot be added a second time. Values are from the
+# spec's InAppPurchaseState enum. The first version of this guard knew only
+# "submittable or refuse", which was right for a first submission and would
+# have refused every update of a live app for the rest of its life.
+IAP_SETTLED_STATES = ("APPROVED", "WAITING_FOR_REVIEW", "IN_REVIEW", "PENDING_BINARY_APPROVAL")
 
 # From Apple's OpenAPI spec: ReviewSubmissionItemCreateRequest relates to an
 # inAppPurchaseVersion -- the purchase's version, not the purchase. Two names
@@ -274,6 +282,12 @@ def submittable_in_app_purchases(asc_app_id: str, product_id: str, token: str) -
     submittable = [r for r in rows
                    if str((r.get("attributes") or {}).get("state")) in IAP_SUBMITTABLE_STATES]
     if not submittable:
+        settled = [f"{pid} ({state})" for state, pids in sorted(by_state.items())
+                   if state in IAP_SETTLED_STATES for pid in pids]
+        if settled:
+            log(f"{product_id}: no purchase needs submitting; Apple already holds "
+                + ", ".join(settled))
+            return []
         raise ASCError(
             f"{product_id} is declared in the registry but no in-app purchase of this app is in "
             f"a submittable state {IAP_SUBMITTABLE_STATES}. Apple has: "

@@ -144,6 +144,22 @@ def main() -> int:
                       f"not a relationship Apple accepts here. Apple accepts: {sorted(allowed)}")
         print()
 
+    # State names the publisher branches on. A misspelt or invented state is
+    # not an error Apple ever reports -- it is a branch that never runs, which
+    # is how a guard written for a first submission could silently refuse or
+    # silently wave through every update afterwards.
+    print("in-app purchase states asc_publish.py branches on:")
+    enum = set(spec["components"]["schemas"]["InAppPurchaseState"]["enum"])
+    sys.path.insert(0, TOOLS)
+    import asc_publish  # noqa: E402
+    for group in ("IAP_SUBMITTABLE_STATES", "IAP_SETTLED_STATES"):
+        for state in getattr(asc_publish, group):
+            checked += 1
+            check(f"{group}: {state}", state in enum, f"not in Apple's InAppPurchaseState: {sorted(enum)}")
+    overlap = set(asc_publish.IAP_SUBMITTABLE_STATES) & set(asc_publish.IAP_SETTLED_STATES)
+    check("a state is either submittable or settled, never both", not overlap, str(sorted(overlap)))
+    print()
+
     print(f"{checked} call(s) checked against the spec")
     if failures:
         print(f"\n{len(failures)} shape(s) Apple would refuse:")
