@@ -150,6 +150,7 @@ sido correcto.
 | `apps-ios/price-jar/ipad-out/` | Sigue ahí. Borrar |
 | Registro con un solo tamaño de iPad | Sin cambios |
 | **Envío automatizado a revisión** | **Con red, sin estrenar contra Apple.** Las formas se validan offline (#55), la versión y el IAP los crea la fábrica (#56), y el envío lee de vuelta build y contenido antes del PATCH final (#57). Nada de eso se ha ejercitado aún en un envío real: trátalo como supervisado la primera vez |
+| IDs de AdMob en el log público | **Parcial.** El repositorio es público y GitHub no enmascara las *variables* como sí enmascara los secretos: `FACTORY_VARS` es env a nivel de workflow, y cada paso `run` imprime el entorno que tiene a la vista, así que los IDs de unidad de producción salían en texto plano en el log de **todos** los pasos. Un paso de `::add-mask::` al inicio de cada job lo cierra para el resto del job. **Queda un eco por job**: el bloque `env:` del propio paso de máscara se imprime antes de que su script se ejecute. Cerrar ese último exige mover los seis valores de variables a **secretos** del repositorio, que el dueño tiene que recrear a mano. Los IDs también se pueden extraer del IPA publicado, así que esto es exposición barata, no revelación: el riesgo real es tráfico inválido dirigido a esas unidades |
 
 ---
 
