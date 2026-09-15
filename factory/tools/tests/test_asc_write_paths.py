@@ -606,6 +606,30 @@ def main() -> int:
     check("raises rather than submitting without the product", bool(msg), msg)
     check("names the product and the state Apple reports",
           "com.example.fixture.removeads" in msg and "MISSING_METADATA" in msg, msg)
+    print("\nan update of a live app: the purchase is already APPROVED, so it goes "
+          "in without it -- and is not refused:")
+    # ShiftSlip 1.0.1 was the first update the factory ever submitted. Its
+    # Remove Ads had been approved with 1.0.0, so nothing was in a submittable
+    # state, and the guard written for PriceJar's first submission would have
+    # refused the update for the rest of the app's life.
+    before = len(STATE["submissions"])
+    for state in ("APPROVED", "WAITING_FOR_REVIEW"):
+        STATE["iaps"] = [{"type": "inAppPurchases", "id": "iap1",
+                          "attributes": {"productId": "com.example.fixture.removeads",
+                                         "state": state}}]
+        try:
+            asc_publish.submit_for_review(ASC_APP_ID, None, "com.example.fixture.removeads")
+            msg = ""
+        except asc_publish.ASCError as exc:
+            msg = str(exc)
+        check(f"does not refuse when the purchase is {state}", msg == "", msg)
+        newest = list(STATE["submissions"].values())[-1] if STATE["submissions"] else {}
+        check(f"submits the version alone, with no purchase item, when {state}",
+              len(STATE["submissions"]) == before + 1
+              and newest["attributes"].get("submitted") is True
+              and VERSION_ID in newest["items"] and not newest.get("iaps"),
+              str([(v["attributes"], v["items"], v.get("iaps")) for v in STATE["submissions"].values()]))
+        before = len(STATE["submissions"])
     STATE["iaps"] = [{"type": "inAppPurchases", "id": "iap1",
                       "attributes": {"productId": "com.example.fixture.removeads",
                                      "state": "READY_TO_SUBMIT"}}]
