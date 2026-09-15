@@ -22,6 +22,16 @@ so is any thin variation of them. Research the iOS market on its own terms.
 - Offline-first utility (tools, productivity, finance tracking, health/habit
   tracking, home, study). No social, no chat, no accounts, no backend, no
   user-generated content that needs moderation.
+- **A bundled static reference dataset is allowed** (owner's decision,
+  2026-09-15, after three rounds and two "no candidate" verdicts): physics,
+  chemistry, geography, units, materials, astronomy, nutrition tables that
+  are published constants, and similar data that does not go stale. This
+  opens reference and professional-calculation categories that were excluded
+  by definition. Still forbidden: **law, tax rates, prices, tariffs, exchange
+  rates, schedules** or anything else that changes and would ship wrong
+  offline (stale law is worse than no law); and anything that needs a
+  *network* database or an API at runtime. Say in the proposal where the
+  dataset comes from, its licence, and how big it is.
 - Must be clearly differentiated from the top App Store competitors you find,
   and must not duplicate anything already in `factory/apps.json` (any platform).
 - Avoid categories with special Apple rules or licenses: medical diagnosis,
@@ -109,7 +119,15 @@ one the scoring has to reflect.
 
 ## Method
 
-1. Use web search, dated sources only. Look at:
+1. **Search the storefronts in their own languages first.** The listing ships
+   in nine languages, and two rounds concluded "the niches are small" from
+   English-only queries — the first serious German query then found a
+   6,018-rating leader invisible to any English search. Sweep
+   `apps.apple.com/de`, `/es`, `/it`, `/fr`, `/br` in the local language
+   **before** searching in English, and read competitor reviews directly at
+   `?see-all=reviews` instead of hunting for Reddit threads, which returned SEO
+   content two rounds in a row.
+2. Use web search, dated sources only. Look at:
    - App Store category charts and "best iPhone app for X" articles (what ranks,
      what its reviews complain about);
    - Reddit (r/ios, r/iphone, r/apple, niche subreddits), Apple Support
@@ -119,10 +137,10 @@ one the scoring has to reflect.
    - seasonality and platform gaps (what exists on Android but is weak on iOS
      is fine as a *signal* of demand — building "the Android app but on iOS" is
      not, unless the idea stands on its own for iPhone users).
-2. Shortlist 5 candidates. Score each 1-5 on: demand evidence (App Store
+3. Shortlist 5 candidates. Score each 1-5 on: demand evidence (App Store
    specific), competition weakness, build effort (inverse), monetization fit
    (natural ad pauses AND remove-ads appeal), Apple review risk (inverse).
-3. Pick the best. Be honest if none scores well; say "no strong candidate this
+4. Pick the best. Be honest if none scores well; say "no strong candidate this
    week" and stop.
 
 ## Output
