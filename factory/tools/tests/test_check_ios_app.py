@@ -260,6 +260,25 @@ def main() -> int:
     finally:
         shutil.rmtree(root, ignore_errors=True)
 
+    # --- the ad IDs must reach the compiler, not just the gate ---------------
+    print("\nregistry env exports the names the xcconfig actually reads:")
+    import subprocess as _sp
+    env_out = _sp.run([sys.executable, os.path.join(TOOLS, "registry.py"), "env", "price-jar"],
+                      capture_output=True, text=True,
+                      env=dict(os.environ, FACTORY_ROOT=REAL_ROOT,
+                               FACTORY_VARS=json.dumps({
+                                   "ADMOB_PRICE_JAR_APP_ID": "ca-app-pub-REAL~1",
+                                   "ADMOB_PRICE_JAR_BANNER_UNIT_ID": "ca-app-pub-REAL/2",
+                                   "ADMOB_PRICE_JAR_INTERSTITIAL_UNIT_ID": "ca-app-pub-REAL/3"}))).stdout
+    exported = dict(l.split("=", 1) for l in env_out.splitlines() if "=" in l)
+    # Config/AdMob.xcconfig reads $(ADMOB_APP_ID_OVERRIDE:default=<Google test id>).
+    # Exporting only the un-suffixed name is why two apps shipped serving test ads.
+    for field in ("APP_ID", "BANNER_UNIT_ID", "INTERSTITIAL_UNIT_ID"):
+        plain, override = f"ADMOB_{field}", f"ADMOB_{field}_OVERRIDE"
+        check(f"{override} is exported alongside {plain}, with the same value",
+              exported.get(override) and exported.get(override) == exported.get(plain),
+              f"{plain}={exported.get(plain)!r} {override}={exported.get(override)!r}")
+
     # --- an iPhone-only app is not asked for iPad screenshots ---------------
     # The registry always said the iPad set was "required whenever the app
     # declares iPad support", but `required: true` was read unconditionally, so

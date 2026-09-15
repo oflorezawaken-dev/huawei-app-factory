@@ -110,6 +110,9 @@ def ad_id(slug_upper: str, field: str, registry_value) -> str:
 def env_ios(app: dict, defaults: dict, slug: str, slug_upper: str) -> dict:
     ios_defaults = defaults["ios"]
     admob = app.get("admob") or {}
+    app_id_value = ad_id(slug_upper, "APP_ID", admob.get("app_id"))
+    banner_value = ad_id(slug_upper, "BANNER_UNIT_ID", admob.get("banner_unit_id"))
+    interstitial_value = ad_id(slug_upper, "INTERSTITIAL_UNIT_ID", admob.get("interstitial_unit_id"))
     iap = app.get("iap") or {}
     version = app.get("current_version") or {}
     # The scheme is what xcodebuild is invoked with; it defaults to the app name
@@ -121,10 +124,21 @@ def env_ios(app: dict, defaults: dict, slug: str, slug_upper: str) -> dict:
         "ASC_APP_ID": str(app.get("asc_app_id") or ""),
         "APP_SKU": str(app.get("sku") or slug),
         "APPLE_TEAM_ID": str(app.get("team_id") or ios_defaults.get("team_id") or ""),
-        "ADMOB_APP_ID": ad_id(slug_upper, "APP_ID", admob.get("app_id")),
-        "ADMOB_BANNER_UNIT_ID": ad_id(slug_upper, "BANNER_UNIT_ID", admob.get("banner_unit_id")),
-        "ADMOB_INTERSTITIAL_UNIT_ID": ad_id(slug_upper, "INTERSTITIAL_UNIT_ID",
-                                            admob.get("interstitial_unit_id")),
+        "ADMOB_APP_ID": app_id_value,
+        "ADMOB_BANNER_UNIT_ID": banner_value,
+        "ADMOB_INTERSTITIAL_UNIT_ID": interstitial_value,
+        # The _OVERRIDE twins are what actually reach the compiler. Config/AdMob.xcconfig
+        # reads $(ADMOB_APP_ID_OVERRIDE:default=<Google test id>), and a build setting
+        # resolves an environment variable only under the name the xcconfig names. CI
+        # exported the un-suffixed names, nothing ever set the suffixed ones, and both
+        # PriceJar 1.0.0 (5) and ShiftSlip 1.0.0 (2) shipped to the App Store serving
+        # Google's test ads -- while the quality gate and the publish guard both read
+        # these un-suffixed values from the registry and saw the real IDs. Measured:
+        # env ADMOB_APP_ID leaves the test default in place; env ADMOB_APP_ID_OVERRIDE
+        # replaces it.
+        "ADMOB_APP_ID_OVERRIDE": app_id_value,
+        "ADMOB_BANNER_UNIT_ID_OVERRIDE": banner_value,
+        "ADMOB_INTERSTITIAL_UNIT_ID_OVERRIDE": interstitial_value,
         "IAP_REMOVE_ADS_PRODUCT_ID": str(iap.get("remove_ads_product_id") or ""),
         "MARKETING_VERSION": str(version.get("marketing_version") or ""),
         "CURRENT_PROJECT_VERSION": str(version.get("build") or ""),
