@@ -34,6 +34,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.huaweiappfactory.hashtags.R
+import com.huaweiappfactory.hashtags.ui.components.asTag
 import com.huaweiappfactory.hashtags.ads.AdPlacement
 import com.huaweiappfactory.hashtags.ads.PetalBanner
 import com.huaweiappfactory.hashtags.domain.HashtagSet
@@ -109,7 +110,7 @@ fun TopicsScreen(
                 item {
                     Text(
                         text = state.matchingTags.joinToString(" "),
-                        style = MaterialTheme.typography.bodyMedium,
+                        style = MaterialTheme.typography.bodyMedium.asTag(),
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }

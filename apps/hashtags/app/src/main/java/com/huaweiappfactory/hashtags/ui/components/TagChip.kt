@@ -21,9 +21,18 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.unit.dp
 import com.huaweiappfactory.hashtags.R
+
+/**
+ * A tag is always "#" followed by ASCII, so it is left-to-right text even when
+ * the app is not. Without this, Arabic reorders the leading "#" to the far end
+ * and every chip reads "travel#" -- seen on the phone, not in a preview.
+ */
+fun TextStyle.asTag(): TextStyle = copy(textDirection = TextDirection.Ltr)
 
 /**
  * One tag.
@@ -71,7 +80,7 @@ fun TagChip(
         }
         Text(
             text = tag,
-            style = MaterialTheme.typography.bodyMedium,
+            style = MaterialTheme.typography.bodyMedium.asTag(),
             fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
             color = if (selected) scheme.onSecondaryContainer else scheme.onSurfaceVariant
         )
@@ -94,7 +103,7 @@ fun RemovableTagChip(tag: String, onRemove: () -> Unit, modifier: Modifier = Mod
     ) {
         Text(
             text = tag,
-            style = MaterialTheme.typography.bodyMedium,
+            style = MaterialTheme.typography.bodyMedium.asTag(),
             color = scheme.onPrimaryContainer
         )
         Icon(

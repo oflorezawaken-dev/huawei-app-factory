@@ -279,7 +279,7 @@
       "spec": "specifications/hashtags.json",
       "store_dir": "apps/hashtags/store",
       "privacy_path": "docs/hashtags/privacy",
-      "privacy_tags_configured": "",
+      "privacy_tags_configured": "2026-09-14",
       "status": "in_console",
       "current_version": {
         "versionCode": 1,
@@ -287,13 +287,12 @@
         "status": "planned",
         "note": "Rebuild of the owner's highest-traffic, worst-converting app: 195,198 impressions produced 127 downloads (0.46% CTR) Mar-Aug 2026, against 4-5% everywhere else. The original cannot be updated -- keystore lost, App Signing never enabled -- and its name carries a trademark that rule 10 now forbids. First app to run through the automated console steps: app-config pushes countries and category before the first submission. AppGallery app created from the console on 2026-09-14 by browser automation: project 'Hashtags' (101653523865041681), app 118993543, package com.huaweiappfactory.hashtags, category App, default language English (US)."
       },
-      "known_gaps": {
-        "ad_unit_ids": "No Petal Ads unit IDs yet: the console only issues them after the first package reaches AppGallery. The build falls back to Huawei's test IDs until they exist; publish --submit stays blocked meanwhile."
-      },
+      "known_gaps": {},
+      "app_signing_sha256": "75:12:57:A1:DC:96:69:F4:E3:53:CE:A9:76:84:57:C0:E1:40:2C:D7:79:17:33:89:82:56:BE:4E:18:D1:CE:B4",
       "ads": {
-        "banner_ad_id": "",
-        "interstitial_ad_id": "",
-        "_note": "Filled from the Petal Ads console after the first upload. Public identifiers, not secrets."
+        "banner_ad_id": "h293j7eobg",
+        "interstitial_ad_id": "q43a8evmyw",
+        "_note": "Created in the Petal Ads console on 2026-09-14 by browser automation, site 2039686237031468288. Public identifiers, not secrets."
       },
       "agc_category": {
         "parentType": 13,
