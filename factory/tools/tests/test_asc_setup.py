@@ -93,7 +93,8 @@ class Handler(BaseHTTPRequestHandler):
         # Every filter is ignored on purpose. Apple ignored one on us.
         if path == f"/v1/apps/{ASC_APP_ID}/appStoreVersions":
             return self._json(200, {"data": [{"type": "appStoreVersions", "id": v["id"],
-                                              "attributes": {"versionString": v["versionString"], "platform": v["platform"]}}
+                                              "attributes": {"versionString": v["versionString"], "platform": v["platform"],
+                                                             "appStoreState": v.get("state", "PREPARE_FOR_SUBMISSION")}}
                                              for v in STATE["versions"]]})
         if path == f"/v1/apps/{ASC_APP_ID}/inAppPurchasesV2":
             return self._json(200, {"data": [{"type": "inAppPurchases", "id": i["id"],
@@ -140,6 +141,12 @@ class Handler(BaseHTTPRequestHandler):
         data = self._body().get("data", {})
         rtype = data.get("type")
         if self.path == "/v1/appStoreVersions" and rtype == "appStoreVersions":
+            editable = {"PREPARE_FOR_SUBMISSION", "DEVELOPER_REJECTED", "REJECTED", "METADATA_REJECTED"}
+            if any(v.get("state", "PREPARE_FOR_SUBMISSION") in editable for v in STATE["versions"]):
+                # Verbatim from PriceJar on 2026-09-15. Apple does not say which version is in the way.
+                return self._json(409, {"errors": [{"title": "STATE_ERROR", "detail":
+                    "The provided entity includes a relationship with an invalid value: "
+                    "You cannot create a new version of the App in the current state."}]})
             v = {"id": new_id(), **data["attributes"]}
             STATE["versions"].append(v)
             return self._json(201, {"data": {"type": rtype, "id": v["id"]}})
@@ -191,6 +198,17 @@ class Handler(BaseHTTPRequestHandler):
                     if r["id"] == rid:
                         r.update({k: v for k, v in data["attributes"].items() if k in ("name", "description")})
             return self._json(200, {"data": {"type": rtype, "id": rid}})
+        if rtype == "appStoreVersions":
+            for v in STATE["versions"]:
+                if v["id"] == rid:
+                    if v.get("state", "PREPARE_FOR_SUBMISSION") not in (
+                            "PREPARE_FOR_SUBMISSION", "DEVELOPER_REJECTED", "REJECTED", "METADATA_REJECTED"):
+                        return self._json(409, {"errors": [{"title": "STATE_ERROR",
+                                                            "detail": "The field 'versionString' can not be modified in the current state"}]})
+                    v["versionString"] = data["attributes"]["versionString"]
+                    STATE["patched_versions"] = STATE.get("patched_versions", 0) + 1
+                    return self._json(200, {"data": {"type": rtype, "id": rid}})
+            return self._json(404, {"errors": [{"title": "NOT_FOUND"}]})
         if rtype == "inAppPurchaseAppStoreReviewScreenshots":
             for shot in STATE["review_shot"].values():
                 if shot["id"] == rid:
@@ -312,6 +330,35 @@ def main() -> int:
         check("updates the existing localization in place",
               STATE["localizations"][iap_id]["en-US"]["description"] == "Removes every ad. Forever."
               and len(STATE["posts"]) == before, out)
+    finally:
+        shutil.rmtree(root, ignore_errors=True)
+
+    # --- the registry moved on, but Apple still holds an editable older version ---
+    print("\nan editable 1.0.0 is already there and the registry says 1.0.1:")
+    # PriceJar, 2026-09-15: 1.0.0 was pulled back out of a review submission it
+    # had never been sent in (DEVELOPER_REJECTED), the registry was at 1.0.1,
+    # and POST /v1/appStoreVersions answered 409 without naming the blocker.
+    reset_state()
+    STATE["versions"].append({"id": "v-old", "versionString": "1.0.0", "platform": "IOS", "state": "DEVELOPER_REJECTED"})
+    root = fixture_root()
+    try:
+        reg_path = os.path.join(root, "factory", "apps.json")
+        reg = json.load(open(reg_path))
+        reg["apps"][0]["current_version"]["marketing_version"] = "1.0.1"
+        json.dump(reg, open(reg_path, "w"))
+        code, out = run(root, "--what", "version")
+        check("exits 0 instead of dying on Apple's 409", code == 0, out)
+        check("renamed the editable version in place rather than creating a second one",
+              [v["versionString"] for v in STATE["versions"]] == ["1.0.1"] and STATE["versions"][0]["id"] == "v-old", str(STATE["versions"]))
+        check("no POST /v1/appStoreVersions was attempted", "/v1/appStoreVersions" not in STATE["posts"], str(STATE["posts"]))
+        check("says what it did and why", "renamed" in out and "1.0.0 -> 1.0.1" in out, out)
+        # A live version is not editable and must be left alone: only the editable one is renamed.
+        STATE["versions"].insert(0, {"id": "v-live", "versionString": "0.9.0", "platform": "IOS", "state": "READY_FOR_SALE"})
+        reg["apps"][0]["current_version"]["marketing_version"] = "1.0.2"
+        json.dump(reg, open(reg_path, "w"))
+        code, out = run(root, "--what", "version")
+        check("with a live version listed first, still renames only the editable one",
+              code == 0 and [v["versionString"] for v in STATE["versions"]] == ["0.9.0", "1.0.2"], out)
     finally:
         shutil.rmtree(root, ignore_errors=True)
 
