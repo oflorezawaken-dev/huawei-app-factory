@@ -320,7 +320,19 @@ jobs:
           set -euo pipefail
           [[ -n "$ASC_KEY_ID" && -n "$ASC_ISSUER_ID" ]] || { echo "::error::ASC_KEY_ID/ASC_ISSUER_ID are not configured in the appstore environment."; exit 1; }
           cd "$APP_PATH"
-          # Archive UNSIGNED. Nothing sets CODE_SIGN_IDENTITY, and Xcode's iOS default is
+          # NOTE: this archive is SIGNED again. It was briefly built with
+          # CODE_SIGNING_ALLOWED=NO to stop each ephemeral runner minting an Apple
+          # Development certificate, and that worked -- but an unsigned archive
+          # leaves the two embedded GoogleMobileAds frameworks with signatures the
+          # export cannot repair, and Apple refused the upload with
+          #   90035 Invalid Signature ... Frameworks/GoogleMobileAds.framework
+          # Measured after the fact: in that IPA both frameworks report "does not
+          # satisfy its designated Requirement", while the build that Apple had
+          # accepted reports "satisfies". The certificate problem is real and comes
+          # back with this revert; the fix for it is a stored distribution
+          # certificate and manual signing, not an unsigned archive.
+          #
+          # Nothing sets CODE_SIGN_IDENTITY, and Xcode's iOS default is
           # "Apple Development" in EVERY configuration -- Release is only a name and carries
           # no signing semantics. So with CODE_SIGN_STYLE: Automatic the archive is signed
           # FOR DEVELOPMENT and automatic signing demands an "iOS App Development" profile.
@@ -342,8 +354,7 @@ jobs:
             -allowProvisioningUpdates \
             -authenticationKeyPath "$RUNNER_TEMP/keys/AuthKey.p8" \
             -authenticationKeyID "$ASC_KEY_ID" \
-            -authenticationKeyIssuerID "$ASC_ISSUER_ID" \
-            CODE_SIGNING_ALLOWED=NO
+            -authenticationKeyIssuerID "$ASC_ISSUER_ID"
 
       - name: Export IPA
         env:
@@ -374,6 +385,40 @@ jobs:
             "Apple Distribution"*) echo "signed by $authority" ;;
             *) echo "::error::the exported IPA is signed by '$authority', not an Apple Distribution certificate. App Store Connect will refuse it."; exit 1 ;;
           esac
+          # The authority of the .app is not the whole signature. Apple verifies
+          # every nested bundle, and rejected ShiftSlip 1.0.1 with
+          #   90035 Invalid Signature ... Frameworks/GoogleMobileAds.framework
+          # while this step was still green: the app satisfied its designated
+          # requirement and the two embedded frameworks did not. `--deep` on the
+          # app does not catch it either -- checked, it reports the app as valid.
+          # Each bundle has to be verified on its own.
+          # Read the VERDICT TEXT, not the exit status: codesign prints
+          # "does not satisfy its designated Requirement" and still exits 0, which
+          # is why a first attempt at this check passed the very IPA Apple had
+          # just refused. Measured on both artifacts -- ShiftSlip 1.0.1 build 3,
+          # which Apple rejected, and PriceJar 1.0.0 build 5, which it accepted.
+          app="$(echo /tmp/ipa-check/Payload/*.app)"
+          bad=""
+          for bundle in "$app" "$app"/Frameworks/*.framework "$app"/PlugIns/*.appex; do
+            [[ -e "$bundle" ]] || continue
+            verdict="$(codesign --verify --deep --strict --verbose=2 "$bundle" 2>&1 \
+                        | grep -E 'satisfies its Designated Requirement|does not satisfy' | tail -1)"
+            case "$verdict" in
+              *"does not satisfy"*)
+                bad="$bad $(basename "$bundle")"
+                echo "  FAILS: $(basename "$bundle") -- ${verdict##*: }" ;;
+              *"satisfies its Designated Requirement"*)
+                echo "  ok:    $(basename "$bundle")" ;;
+              *)
+                bad="$bad $(basename "$bundle")"
+                echo "::error::codesign gave no designated-requirement verdict for $(basename "$bundle"); refusing rather than guessing" ;;
+            esac
+          done
+          if [[ -n "$bad" ]]; then
+            echo "::error::these bundles do not satisfy their designated requirement:$bad. Apple refuses the upload with error 90035. An archive built with CODE_SIGNING_ALLOWED=NO produces frameworks the export cannot re-sign correctly."
+            exit 1
+          fi
+          echo "every nested bundle satisfies its designated requirement"
 
       - name: Verify the binary serves real ads, not Google's test ads
         run: |
