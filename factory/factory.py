@@ -76,12 +76,19 @@ def model_for(step: str, override: str) -> str:
     return override or STEP_MODEL.get(step, "")
 
 
-def claude_step(prompt_files: list[str], extra: str, print_only: bool, model: str = "") -> int:
+def claude_step(prompt_files: list[str], extra: str, print_only: bool, model: str = "",
+                note: str = "") -> int:
     parts = [open(os.path.join(PROMPTS, "00-factory-rules.md"), encoding="utf-8").read()]
     for f in prompt_files:
         parts.append(open(os.path.join(PROMPTS, f), encoding="utf-8").read())
     if extra:
         parts.append(extra)
+    # --note is documented as "extra context appended to the prompt", but only
+    # `generate` ever read it: `research` passed a hardcoded "" and the note was
+    # dropped without a word. Appending it here means the flag does what its help
+    # text says for every step, and a typo in a note can no longer be silent.
+    if note:
+        parts.append(note)
     prompt = "\n\n---\n\n".join(parts)
     cmd = ["claude", "-p", prompt, "--allowedTools", "Bash,Read,Edit,Write,Glob,Grep,WebSearch,WebFetch"]
     if model:
@@ -93,6 +100,7 @@ def claude_step(prompt_files: list[str], extra: str, print_only: bool, model: st
     env = dict(os.environ, CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS="0")
     if print_only:
         print("$ claude -p <prompt: " + ", ".join(["00-factory-rules.md"] + prompt_files)
+              + (f", --note ({len(note)} chars)" if note else "")
               + f"> ({len(prompt)} chars)" + (f" --model {model}" if model else ""))
         return 0
     return subprocess.call(cmd, cwd=ROOT, env=env)
@@ -159,28 +167,27 @@ def main(argv: list[str]) -> int:
         # The iOS lane researches the App Store market on its own terms; it
         # never ports the AppGallery apps (owner's decision, 2026-09-07).
         prompt = "10-research-ios.md" if a.ios else "10-research.md"
-        return claude_step([prompt], "", a.print_only, model_for("research", a.model))
+        return claude_step([prompt], "", a.print_only, model_for("research", a.model), a.note)
     if a.command == "spec":
         if not a.proposal:
             sys.exit("spec needs --proposal proposals/<file>.md")
         # The iOS spec template and prompt are not interchangeable with the
         # Android ones: bundle IDs, AdMob, Apple privacy answers, Apple locales.
         prompt = "20-spec-ios.md" if a.ios else "20-spec.md"
-        return claude_step([prompt], f"Slug: {a.slug}\nProposal file: {a.proposal}", a.print_only, model_for("spec", a.model))
+        return claude_step([prompt], f"Slug: {a.slug}\nProposal file: {a.proposal}", a.print_only, model_for("spec", a.model), a.note)
     if a.command == "generate":
         # The iOS generator drives SwiftUI/XcodeGen from apps-ios/_template and
         # carries the build traps found while verifying that template.
         prompt = "30-generate-ios.md" if a.ios else "30-generate.md"
-        extra = f"Slug: {a.slug}" + (f"\n\n{a.note}" if a.note else "")
-        return claude_step([prompt], extra, a.print_only, model_for("generate", a.model))
+        return claude_step([prompt], f"Slug: {a.slug}", a.print_only, model_for("generate", a.model), a.note)
     if a.command == "fix":
         if not a.run_id:
             sys.exit("fix needs --run-id")
-        return claude_step([("40-fix-build-ios.md" if a.ios else "40-fix-build.md")], f"Slug: {a.slug}\nFailing run: {a.run_id}", a.print_only, model_for("fix", a.model))
+        return claude_step([("40-fix-build-ios.md" if a.ios else "40-fix-build.md")], f"Slug: {a.slug}\nFailing run: {a.run_id}", a.print_only, model_for("fix", a.model), a.note)
     if a.command == "listing":
-        return claude_step([("50-listing-ios.md" if a.ios else "50-listing.md")], f"Slug: {a.slug}", a.print_only, model_for("listing", a.model))
+        return claude_step([("50-listing-ios.md" if a.ios else "50-listing.md")], f"Slug: {a.slug}", a.print_only, model_for("listing", a.model), a.note)
     if a.command == "privacy":
-        return claude_step([("60-privacy-ios.md" if a.ios else "60-privacy.md")], f"Slug: {a.slug}", a.print_only, model_for("privacy", a.model))
+        return claude_step([("60-privacy-ios.md" if a.ios else "60-privacy.md")], f"Slug: {a.slug}", a.print_only, model_for("privacy", a.model), a.note)
     if a.command == "privacy-tags":
         if a.init:
             rc = run([py, "factory/tools/privacy_tags.py", "init", a.slug], a.print_only)
