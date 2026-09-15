@@ -60,6 +60,7 @@ STATE = {
     "build_encryption": False,
     # What Apple reports once it has looked at the uploaded image.
     "asset_state": {"state": "COMPLETE", "errors": []},
+    "app_info_state": "PREPARE_FOR_SUBMISSION",
     # What the version actually carries, and what each submission holds. Both
     # used to be unknowable from here, which is how a submission went to review
     # without its in-app purchase and nothing noticed.
@@ -117,7 +118,16 @@ class Handler(BaseHTTPRequestHandler):
         params = dict(p.split("=", 1) for p in query.split("&") if "=" in p)
 
         if path == f"/v1/apps/{ASC_APP_ID}/appInfos":
-            self._json(200, {"data": [{"type": "appInfos", "id": APP_INFO_ID}]})
+            # A LIVE app has two: the one on sale is read-only, and PATCHing it
+            # answers "The field 'name' can not be modified in the current state".
+            # The mock returned a single stateless row, so the suite could not see
+            # the difference -- it listed the live one first, as Apple did.
+            self._json(200, {"data": [
+                {"type": "appInfos", "id": "live-appinfo",
+                 "attributes": {"state": "READY_FOR_DISTRIBUTION"}},
+                {"type": "appInfos", "id": APP_INFO_ID,
+                 "attributes": {"state": STATE["app_info_state"]}},
+            ]})
         elif path == f"/v1/apps/{ASC_APP_ID}/appStoreVersions":
             self._json(200, {"data": [{"type": "appStoreVersions", "id": VERSION_ID,
                                        "attributes": {"versionString": "1.0.0",
@@ -296,6 +306,11 @@ class Handler(BaseHTTPRequestHandler):
             STATE["screenshots"][rid]["checksum"] = data["attributes"].get("sourceFileChecksum")
             self._json(200, {"data": {"type": rtype, "id": rid}})
         elif rtype == "appInfoLocalizations":
+            if rid.startswith("live-"):
+                self._json(409, {"errors": [{
+                    "title": "There is a problem with the request entity",
+                    "detail": "The field 'name' can not be modified in the current state."}]})
+                return
             for loc, row in STATE["app_info_locs"].items():
                 if row["id"] == rid:
                     row["attrs"].update(data.get("attributes", {}))
@@ -446,6 +461,25 @@ def main() -> int:
     code, out = run(METADATA, [SLUG, "--what", "text"])
     check("second run updates in place (no duplicate rows)",
           code == 0 and len(STATE["app_info_locs"]) == before_count, out)
+
+    print("\na live app has a read-only appInfo alongside the editable one:")
+    # Taking rows[0] pushed the listing at the live appInfo and Apple answered
+    # "The field 'name' can not be modified in the current state" -- which is
+    # what stopped ShiftSlip 1.0.1's listing on its first real update.
+    os.environ.update(env)
+    sys.path.insert(0, TOOLS)
+    import asc_metadata as _meta
+    check("picks the editable appInfo, not the first Apple lists",
+          _meta.find_app_info_id(ASC_APP_ID, None) == APP_INFO_ID,
+          f"picked {_meta.find_app_info_id(ASC_APP_ID, None)}")
+    STATE["app_info_state"] = "READY_FOR_DISTRIBUTION"
+    try:
+        _meta.find_app_info_id(ASC_APP_ID, None); msg = ""
+    except _meta.ASCError as exc:
+        msg = str(exc)
+    check("refuses with what Apple actually has when none is editable",
+          "no editable appInfo" in msg and "READY_FOR_DISTRIBUTION" in msg, msg)
+    STATE["app_info_state"] = "PREPARE_FOR_SUBMISSION"
 
     print("\nasc_metadata.py --what screenshots:")
     code, out = run(METADATA, [SLUG, "--what", "screenshots"])
