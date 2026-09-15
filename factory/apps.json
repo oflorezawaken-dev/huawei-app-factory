@@ -315,10 +315,10 @@
       "store_dir": "apps-ios/price-jar/store",
       "privacy_path": "docs/price-jar/privacy",
       "support_path": "docs/price-jar/support",
-      "status": "in_console",
+      "status": "live",
       "current_version": {
-        "marketing_version": "1.0.0",
-        "build": 5,
+        "marketing_version": "1.0.1",
+        "build": 6,
         "status": "planned"
       },
       "admob": {
@@ -347,10 +347,10 @@
       "store_dir": "apps-ios/shift-slip/store",
       "privacy_path": "docs/shift-slip/privacy",
       "support_path": "docs/shift-slip/support",
-      "status": "planned",
+      "status": "live",
       "current_version": {
-        "marketing_version": "1.0.0",
-        "build": 2,
+        "marketing_version": "1.0.1",
+        "build": 3,
         "status": "planned"
       },
       "admob": {
