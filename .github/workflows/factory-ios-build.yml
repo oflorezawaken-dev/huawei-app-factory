@@ -247,7 +247,14 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Load app from registry
-        run: python3 factory/tools/registry.py env "${{ matrix.app }}" >> "$GITHUB_ENV"
+        # --build-overrides ONLY here. It emits the ADMOB_*_OVERRIDE names the
+        # xcconfig reads, and this is the one job whose build must carry the real
+        # ad units. The verify job deliberately does without them: a test or
+        # simulator build registering impressions against real units is invalid
+        # traffic, and AdsConfigurationTests asserts a non-archive build uses
+        # Google's test IDs -- it caught this the first time they were emitted
+        # unconditionally, in both apps.
+        run: python3 factory/tools/registry.py env "${{ matrix.app }}" --build-overrides >> "$GITHUB_ENV"
 
       - name: Select Xcode ${{ env.FACTORY_XCODE_VERSION }}
         uses: maxim-lobanov/setup-xcode@v1

@@ -271,13 +271,27 @@ def main() -> int:
                                    "ADMOB_PRICE_JAR_BANNER_UNIT_ID": "ca-app-pub-REAL/2",
                                    "ADMOB_PRICE_JAR_INTERSTITIAL_UNIT_ID": "ca-app-pub-REAL/3"}))).stdout
     exported = dict(l.split("=", 1) for l in env_out.splitlines() if "=" in l)
-    # Config/AdMob.xcconfig reads $(ADMOB_APP_ID_OVERRIDE:default=<Google test id>).
-    # Exporting only the un-suffixed name is why two apps shipped serving test ads.
+    env_out_build = _sp.run([sys.executable, os.path.join(TOOLS, "registry.py"), "env", "price-jar",
+                             "--build-overrides"],
+                            capture_output=True, text=True,
+                            env=dict(os.environ, FACTORY_ROOT=REAL_ROOT,
+                                     FACTORY_VARS=json.dumps({
+                                         "ADMOB_PRICE_JAR_APP_ID": "ca-app-pub-REAL~1",
+                                         "ADMOB_PRICE_JAR_BANNER_UNIT_ID": "ca-app-pub-REAL/2",
+                                         "ADMOB_PRICE_JAR_INTERSTITIAL_UNIT_ID": "ca-app-pub-REAL/3"}))).stdout
+    exported_build = dict(l.split("=", 1) for l in env_out_build.splitlines() if "=" in l)
+    # Config/AdMob.xcconfig reads $(ADMOB_APP_ID_OVERRIDE:default=<Google test id>),
+    # so the twin is what reaches the compiler. Exporting only the un-suffixed name
+    # is why two apps shipped serving test ads -- and exporting the twin to EVERY
+    # job is why the next build put real ad units into the unit tests, which
+    # AdsConfigurationTests refuses. Only the archive may ask for them.
     for field in ("APP_ID", "BANNER_UNIT_ID", "INTERSTITIAL_UNIT_ID"):
         plain, override = f"ADMOB_{field}", f"ADMOB_{field}_OVERRIDE"
-        check(f"{override} is exported alongside {plain}, with the same value",
-              exported.get(override) and exported.get(override) == exported.get(plain),
-              f"{plain}={exported.get(plain)!r} {override}={exported.get(override)!r}")
+        check(f"{override} is absent by default, so a test build keeps Google's test IDs",
+              override not in exported, f"{override}={exported.get(override)!r}")
+        check(f"--build-overrides emits {override} with the same value as {plain}",
+              exported_build.get(override) and exported_build.get(override) == exported_build.get(plain),
+              f"{plain}={exported_build.get(plain)!r} {override}={exported_build.get(override)!r}")
 
     # --- an iPhone-only app is not asked for iPad screenshots ---------------
     # The registry always said the iPad set was "required whenever the app

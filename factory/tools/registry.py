@@ -107,7 +107,8 @@ def ad_id(slug_upper: str, field: str, registry_value) -> str:
     return str(registry_value or "")
 
 
-def env_ios(app: dict, defaults: dict, slug: str, slug_upper: str) -> dict:
+def env_ios(app: dict, defaults: dict, slug: str, slug_upper: str,
+             build_overrides: bool = False) -> dict:
     ios_defaults = defaults["ios"]
     admob = app.get("admob") or {}
     app_id_value = ad_id(slug_upper, "APP_ID", admob.get("app_id"))
@@ -127,7 +128,12 @@ def env_ios(app: dict, defaults: dict, slug: str, slug_upper: str) -> dict:
         "ADMOB_APP_ID": app_id_value,
         "ADMOB_BANNER_UNIT_ID": banner_value,
         "ADMOB_INTERSTITIAL_UNIT_ID": interstitial_value,
-        # The _OVERRIDE twins are what actually reach the compiler. Config/AdMob.xcconfig
+        # The _OVERRIDE twins are what actually reach the compiler, and they are
+        # emitted only when the caller asks (cmd_env --build-overrides). A test or
+        # simulator build that carried real ad unit IDs would register impressions
+        # against them, which AdMob treats as invalid traffic; AdsConfigurationTests
+        # asserts a non-archive build uses Google's test IDs, and it caught exactly
+        # that regression the first time these were emitted unconditionally. Config/AdMob.xcconfig
         # reads $(ADMOB_APP_ID_OVERRIDE:default=<Google test id>), and a build setting
         # resolves an environment variable only under the name the xcconfig names. CI
         # exported the un-suffixed names, nothing ever set the suffixed ones, and both
@@ -136,9 +142,9 @@ def env_ios(app: dict, defaults: dict, slug: str, slug_upper: str) -> dict:
         # these un-suffixed values from the registry and saw the real IDs. Measured:
         # env ADMOB_APP_ID leaves the test default in place; env ADMOB_APP_ID_OVERRIDE
         # replaces it.
-        "ADMOB_APP_ID_OVERRIDE": app_id_value,
-        "ADMOB_BANNER_UNIT_ID_OVERRIDE": banner_value,
-        "ADMOB_INTERSTITIAL_UNIT_ID_OVERRIDE": interstitial_value,
+        **({"ADMOB_APP_ID_OVERRIDE": app_id_value,
+            "ADMOB_BANNER_UNIT_ID_OVERRIDE": banner_value,
+            "ADMOB_INTERSTITIAL_UNIT_ID_OVERRIDE": interstitial_value} if build_overrides else {}),
         "IAP_REMOVE_ADS_PRODUCT_ID": str(iap.get("remove_ads_product_id") or ""),
         "MARKETING_VERSION": str(version.get("marketing_version") or ""),
         "CURRENT_PROJECT_VERSION": str(version.get("build") or ""),
@@ -163,7 +169,7 @@ def spec_devices(app: dict) -> list[str]:
         return []
 
 
-def cmd_env(slug: str) -> None:
+def cmd_env(slug: str, build_overrides: bool = False) -> None:
     app = find(slug)
     defaults = load()["defaults"]
     slug_upper = slug.upper().replace("-", "_")
@@ -177,8 +183,10 @@ def cmd_env(slug: str) -> None:
         "APP_STORE_DIR": app["store_dir"],
         "APP_PRIVACY_PATH": app["privacy_path"],
     }
-    per_platform = env_ios if platform == "ios" else env_android
-    lines.update(per_platform(app, defaults, slug, slug_upper))
+    if platform == "ios":
+        lines.update(env_ios(app, defaults, slug, slug_upper, build_overrides))
+    else:
+        lines.update(env_android(app, defaults, slug, slug_upper))
     for k, v in lines.items():
         print(f"{k}={v}")
 
@@ -285,8 +293,14 @@ def main(argv: list[str]) -> None:
         cmd_list(platform)
     elif cmd == "get" and len(args) == 2:
         cmd_get(*args)
-    elif cmd == "env" and len(args) == 1:
-        cmd_env(args[0])
+    elif cmd == "env" and 1 <= len(args) <= 2:
+        # --build-overrides is opt-in and only the archive should pass it: it emits
+        # the ADMOB_*_OVERRIDE names the xcconfig reads, and a test build carrying
+        # real ad units would register invalid impressions against them.
+        extra = [a for a in args[1:] if a != "--build-overrides"]
+        if extra:
+            sys.exit(f"registry: unknown argument(s) for env: {extra}")
+        cmd_env(args[0], build_overrides="--build-overrides" in args)
     elif cmd == "changed" and len(args) >= 2:
         platform = args[args.index("--platform") + 1] if "--platform" in args else None
         cmd_changed(args[0], args[1], platform)
