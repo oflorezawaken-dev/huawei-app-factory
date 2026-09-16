@@ -18,6 +18,14 @@
         android:theme="@style/Theme.MyApplication"
         tools:targetApi="34">
 
+        <!-- initOrder puts this ahead of ML Kit's own MLInitializerProvider, which
+             is where the SDK fixes its routing. See MlKitBootstrap. -->
+        <provider
+            android:name=".data.translate.MlKitBootstrap"
+            android:authorities="${applicationId}.MlKitBootstrap"
+            android:exported="false"
+            android:initOrder="100" />
+
         <activity
             android:name=".MainActivity"
             android:exported="true"
