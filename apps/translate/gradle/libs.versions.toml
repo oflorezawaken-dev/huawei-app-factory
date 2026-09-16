@@ -24,6 +24,7 @@ kotlinxCoroutinesCore = "1.10.2"
 datastorePreferences = "1.1.7"
 huaweiAdsLite = "13.4.90.302"
 huaweiMlKit = "3.11.0.302"
+huaweiAgcp = "1.9.6.300"
 workRuntime = "2.10.1"
 orgJson = "20240303"
 
@@ -59,6 +60,7 @@ kotlinx-coroutines-android = { group = "org.jetbrains.kotlinx", name = "kotlinx-
 kotlinx-coroutines-core = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core", version.ref = "kotlinxCoroutinesCore" }
 androidx-datastore-preferences = { group = "androidx.datastore", name = "datastore-preferences", version.ref = "datastorePreferences" }
 huawei-ads-lite = { group = "com.huawei.hms", name = "ads-lite", version.ref = "huaweiAdsLite" }
+huawei-agconnect-plugin = { group = "com.huawei.agconnect", name = "agcp", version.ref = "huaweiAgcp" }
 huawei-ml-translate = { group = "com.huawei.hms", name = "ml-computer-translate", version.ref = "huaweiMlKit" }
 huawei-ml-translate-model = { group = "com.huawei.hms", name = "ml-computer-translate-model", version.ref = "huaweiMlKit" }
 huawei-ml-language-detection = { group = "com.huawei.hms", name = "ml-computer-language-detection", version.ref = "huaweiMlKit" }

@@ -4,6 +4,11 @@ plugins {
   alias(libs.plugins.google.devtools.ksp)
 }
 
+// Turns agconnect-services.json into the resources AGConnect reads at start.
+// The file is a credential and never enters git (root .gitignore); CI writes it
+// from a secret before the build.
+apply(plugin = "com.huawei.agconnect")
+
 val releaseKeystorePath = System.getenv("RELEASE_KEYSTORE_PATH")
 val releaseKeystorePassword = System.getenv("RELEASE_KEYSTORE_PASSWORD")
 val releaseKeyAlias = System.getenv("RELEASE_KEY_ALIAS")
