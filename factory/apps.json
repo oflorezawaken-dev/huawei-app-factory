@@ -309,7 +309,7 @@
       "path": "apps/translate",
       "package": "com.huaweiappfactory.translate",
       "agc_app_id": "119016301",
-      "spec": "",
+      "spec": "specifications/translate.json",
       "store_dir": "apps/translate/store",
       "privacy_path": "docs/translate/privacy",
       "privacy_tags_configured": "",
@@ -323,7 +323,7 @@
       "app_signing_sha256": "8D:19:78:C1:9E:22:7D:BC:D8:73:CB:B9:A3:22:9F:BB:B8:0F:7B:94:40:FB:BB:EC:8E:0C:BA:41:64:99:E9:1A",
       "known_gaps": {
         "ad_unit_ids": "No Petal Ads unit IDs yet: the console only issues them after the first package reaches AppGallery.",
-        "spec": "No specification yet. The spike is one screen; history, the language-pack manager, automatic language detection and the store listing are not written."
+        "screens": "The spike is one screen. History, the language-pack manager, automatic language detection, the store listing and the nine-language strings are specified but not built."
       },
       "ads": {
         "banner_ad_id": "",

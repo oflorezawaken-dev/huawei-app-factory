@@ -1,0 +1,266 @@
+{
+  "spec_version": "1.0",
+  "app": {
+    "name": "Translate",
+    "store_name": {
+      "_note": "Store name leads with the search keyword in every language (factory rule 10), and the descriptor carries the one thing a web page cannot do: work with no connection. The claim is only true once a language pack is downloaded, which the listing says in its first two lines rather than its sixth. The in-app name stays the short 'Translate'.",
+      "en-US": "Translate - Offline Translator",
+      "es-ES": "Traductor - Traduce sin internet",
+      "pt-PT": "Tradutor - Traduza sem internet",
+      "fr-FR": "Traducteur - Traduire hors ligne",
+      "de-DE": "Übersetzer - Offline übersetzen",
+      "it-IT": "Traduttore - Traduci offline",
+      "tr-TR": "Çevirmen - İnternetsiz çeviri",
+      "ar": "مترجم - ترجمة بدون إنترنت",
+      "zh-CN": "翻译 - 离线翻译器"
+    },
+    "package_name": "com.huaweiappfactory.translate",
+    "version_name": "1.0.0",
+    "version_code": 1,
+    "type": "utility",
+    "category": "Tools",
+    "description": "Translate typed or pasted text between 55 languages, on the device. A language pair is downloaded once and then works with no connection at all.",
+    "target_audience": "Travellers, students, migrants and anyone who needs a translation where the data does not reach: on a plane, abroad without roaming, in a basement, or on a prepaid plan where every megabyte is counted.",
+    "problem_solved": "Web translators need a connection exactly where people most need translating. The alternative is paying for roaming or going without."
+  },
+  "product_strategy": {
+    "market_opportunity": "A rebuild of the portfolio's best app. Between 2026-03-01 and 2026-08-28 the original took 245,518 impressions at 4.26% CTR and 30.58% conversion, producing 5,114 downloads -- more than the rest of the portfolio combined. Nothing about it is broken; it cannot be updated because its keystore was lost and App Signing was never enabled. The job is to not lose what already works.",
+    "competitive_advantage": "Genuinely offline after a one-time download, free, no account, no text leaving the device, and an honest language count instead of the old name's promise of everything.",
+    "main_competitors": [
+      "Web translators, which need a connection at the exact moment the user does not have one",
+      "The pre-installed translator on some phones, absent on many and inconsistent across brands"
+    ],
+    "estimated_development_complexity": "Medium. The UI is small; the risk was the engine, and the engine is proven (see proposals/2026-09-16-translate.md).",
+    "estimated_market_potential": "High: the demand is measured, not assumed.",
+    "monetization_strategy": "Free with Petal Ads. No paid tier in 1.0."
+  },
+  "technical": {
+    "platform": "Android",
+    "language": "Kotlin",
+    "ui": "Jetpack Compose",
+    "architecture": "MVVM",
+    "min_sdk": 26,
+    "target_sdk": 36,
+    "compile_sdk": 36,
+    "offline_first": true,
+    "dependency_injection": "Manual AppContainer (same pattern as the other factory apps)",
+    "database": "Room",
+    "async": "Kotlin Coroutines",
+    "reactive_data": "Kotlin Flow",
+    "background_work": "None. No notifications, no WorkManager. Model downloads happen while the user is looking at them.",
+    "skeleton": "apps/translate already exists as the spike: the ML Kit engine, MlKitBootstrap, the ads integration and the theme are in place and verified on a phone. Build the product on top of it rather than starting again."
+  },
+  "features": [
+    "Translate typed or pasted text between any two of the 55 on-device languages.",
+    "Automatic detection of the source language, always overridable, never silent: the detected language is shown, not just applied.",
+    "Language pack manager: what is downloaded, what it costs in megabytes, download and delete.",
+    "History of recent translations, on the device, individually deletable and clearable.",
+    "Copy the result, and share it to another app.",
+    "Swap source and target in one tap.",
+    "No camera, no microphone, no account. Both are obvious v2 features and both are extra SDKs and permissions; v1 earns the right to them."
+  ],
+  "screens": [
+    {
+      "id": "S001",
+      "name": "Translate",
+      "purpose": "The whole app in one screen: pick languages, type, translate, copy.",
+      "requirements": [
+        "Source and target pickers show the language's own name, not a code.",
+        "A pair that is not downloaded shows the size and a download action BEFORE the user types, never an error after.",
+        "The result is selectable text; copy and share sit next to it.",
+        "No ad on this screen."
+      ]
+    },
+    {
+      "id": "S002",
+      "name": "Languages",
+      "purpose": "What is on the phone and what it costs.",
+      "requirements": [
+        "Downloaded packs first, with their size; the rest below.",
+        "Deleting a pack asks once and says what stops working.",
+        "Download progress is real bytes, not a spinner.",
+        "Banner ad."
+      ]
+    },
+    {
+      "id": "S003",
+      "name": "History",
+      "purpose": "Get back a translation without retyping it.",
+      "requirements": [
+        "Newest first, with both languages shown.",
+        "Tapping an entry puts it back on the Translate screen.",
+        "Delete one, or clear all with a confirmation.",
+        "Capped at 100 entries, trimmed in one statement."
+      ]
+    },
+    {
+      "id": "S004",
+      "name": "Settings",
+      "purpose": "Theme, history, and the truth about the app.",
+      "requirements": [
+        "Theme: system, light, dark.",
+        "Turn history off, and clear it.",
+        "A plain statement of what leaves the device and what does not, linking the privacy policy.",
+        "Banner ad."
+      ]
+    }
+  ],
+  "data_model": {
+    "database": "Room",
+    "entities": [
+      "TranslationEntity: id, sourceLang, targetLang, sourceText, translatedText, createdAt",
+      "PreferencesEntity is not used: theme and the history switch live in DataStore/SharedPreferences like the other apps"
+    ],
+    "requirements": [
+      "History is capped at 100 rows and trimmed in a single SQL statement, not by loading and deleting in Kotlin.",
+      "No table stores anything the user did not type."
+    ]
+  },
+  "content_requirements": {
+    "_note": "This app ships no content of its own. Its quality is the engine's, and the honesty of what surrounds it.",
+    "requirements": [
+      "The language list comes from MLTranslateLanguage.getLocalAllLanguages() at runtime -- 55 on the test device -- and is never hard-coded to a number in the UI or the listing.",
+      "Language names are localised through Locale.getDisplayLanguage, so a Spanish user sees 'alemán', not 'de'.",
+      "No screen, string or listing claims the app translates 'everything' or 'any language'."
+    ]
+  },
+  "permissions": [
+    "android.permission.INTERNET -- language pack downloads and ads",
+    "android.permission.ACCESS_NETWORK_STATE -- so a download can say 'no connection' instead of failing silently"
+  ],
+  "integrations": {
+    "huawei_services": [
+      "Petal Ads (com.huawei.hms:ads-lite)",
+      "ML Kit on-device translation (com.huawei.hms:ml-computer-translate + -model)",
+      "ML Kit on-device language detection (com.huawei.hms:ml-computer-language-detection + -model)",
+      "AGConnect core, configured from agconnect-services.json injected by CI from a secret"
+    ],
+    "external_services": [],
+    "analytics": "None",
+    "crash_reporting": "None",
+    "ads": "Huawei Petal Ads"
+  },
+  "monetization": {
+    "enabled": true,
+    "provider": "Huawei Petal Ads",
+    "banner": true,
+    "interstitial": true,
+    "rewarded": false,
+    "iap": false,
+    "ad_frequency_rules": "Banner on Languages (S002) and Settings (S004). Interstitial only after a completed translation, not in the first 60 seconds after launch, at least 3 minutes apart, at most one per 4 triggers -- the same policy as the other apps. Never on the Translate screen while typing or while a result is on screen. Ad unit IDs come from factory/apps.json via BuildConfig; Huawei test IDs in debug."
+  },
+  "localization": {
+    "default_language": "en-US",
+    "supported_languages": ["en-US", "es-ES", "pt-PT", "fr-FR", "de-DE", "it-IT", "tr-TR", "ar", "zh-CN"],
+    "auto_detect_device_language": true,
+    "fallback_language": "en-US",
+    "rtl_languages": ["ar"],
+    "requirements": [
+      "Arabic is verified on the phone, not assumed: Hashtags shipped a chip that rendered '#travel' as 'travel#' because a leading '#' is reordered in an RTL paragraph.",
+      "The store name carries the keyword translated in all nine languages."
+    ]
+  },
+  "design": {
+    "theme": "Material 3",
+    "style": "Plain and quiet: this is a tool someone opens in a hurry, often one-handed, often abroad.",
+    "primary_color": "#1B6C5A",
+    "secondary_color": "#4A635B",
+    "supports_light_mode": true,
+    "supports_dark_mode": true,
+    "supports_system_theme": true,
+    "accessibility_required": true,
+    "requirements": [
+      "The result text is at least as large as the input text.",
+      "Language pickers are full-width targets, not 40dp chips: ~360dp of usable width is the budget (factory rule 8).",
+      "Download size is stated in megabytes before the download starts, never after."
+    ]
+  },
+  "privacy": {
+    "collects_personal_data": true,
+    "_collects_personal_data_note": "Through Petal Ads only (OAID, IP, device and app information). The translated text never leaves the device: translation is on-device, and the only network calls the app itself makes are model downloads.",
+    "collects_sensitive_data": false,
+    "stores_data_locally": true,
+    "uploads_user_content": false,
+    "requires_privacy_policy": true,
+    "privacy_policy_url": "https://oflorezawaken-dev.github.io/huawei-app-factory/translate/privacy/",
+    "allow_backup": false,
+    "requirements": [
+      "The policy must say that model downloads go to Huawei, that the region is set explicitly, and that typed text is never transmitted.",
+      "History is off-limits to backup: allowBackup=false."
+    ],
+    "appgallery_privacy_tags": "Standard Petal Ads block under Advertising and marketing and Disclosure to third parties. Nothing under App functionality: the app sends none of the user's text anywhere."
+  },
+  "ai": {
+    "enabled": true,
+    "provider": "Huawei ML Kit, on-device",
+    "backend_required": false,
+    "features": ["Text translation", "Language detection"],
+    "user_content_sent_to_third_party": false,
+    "_note": "The model runs on the phone. Huawei serves the model file; it does not see the text."
+  },
+  "offline_behavior": {
+    "requirements": [
+      "Once a pair is downloaded, translation works with the network switched off. Verified on a Samsung SM-A045M with wifi and data disabled.",
+      "The first download of a pair needs a connection, and the app says so before the user needs it, not after.",
+      "History, settings and the language list work offline always.",
+      "Ad failures are silent and leave no empty space."
+    ]
+  },
+  "qa": {
+    "unit_tests_required": true,
+    "instrumented_tests_required": false,
+    "device_test_required": true,
+    "requirements": [
+      "The translation engine is behind an interface so ViewModels are testable without HMS Core on the JVM. The interface is not a licence to ship a stand-in: factory rule 2.",
+      "Tested on a real phone in every listed language, including Arabic, with the store screenshots taken from that build.",
+      "One test run with the network off, proving the offline claim the store name makes."
+    ]
+  },
+  "release": {
+    "track": "AppGallery",
+    "package_type": "apk",
+    "app_signing": "Enabled, method 1, 2026-09-16. AGC holds the signing key.",
+    "requirements": [
+      "agconnect-services.json is written by CI from a secret before the build and never committed.",
+      "Real Petal Ads unit IDs in the package before any submission; the publish workflow greps the dex for Huawei test IDs."
+    ]
+  },
+  "appgallery": {
+    "agc_app_id": "119016301",
+    "category": "Tools",
+    "privacy_tags_required": true,
+    "content_rating": "3+, questionnaire answered as for every factory app: No everywhere except the two user-information questions, which are Yes because the ad SDK makes them true."
+  },
+  "assets": {
+    "icon": "512x512 PNG, matching the adaptive launcher icon.",
+    "screenshots": "Five per language, nine languages, captured from the real app on the phone."
+  },
+  "security": {
+    "requirements": [
+      "No credential in the repository: agconnect-services.json, the keystore and its passwords are GitHub secrets.",
+      "The ML Kit API key is read from the AGConnect config at runtime, so there is one credential rather than two."
+    ]
+  },
+  "performance": {
+    "requirements": [
+      "Translation of a short sentence returns in under a second on the test device once the pair is loaded.",
+      "The translator is released when the pair changes or the screen is destroyed."
+    ]
+  },
+  "error_handling": {
+    "requirements": [
+      "A missing pair is a state with an action, not an error message.",
+      "A failed download says whether it was the network or the service, and offers a retry.",
+      "A translation failure never clears what the user typed."
+    ]
+  },
+  "acceptance_criteria": [
+    "Typing English and choosing Spanish returns correct Spanish with the network off, after one download.",
+    "The language list is read from the SDK at runtime and shown with localised names.",
+    "A pair that is not on the phone shows its size before it is needed.",
+    "Arabic renders right-to-left with no reordered punctuation, verified on the phone.",
+    "History survives a restart, is capped at 100, and can be turned off and cleared.",
+    "No ad appears on the Translate screen.",
+    "check_app.py --strict passes."
+  ]
+}
