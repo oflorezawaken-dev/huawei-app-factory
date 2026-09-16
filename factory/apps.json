@@ -320,8 +320,8 @@
         "status": "planned",
         "note": "Rebuild of the portfolio's best app: 245,518 impressions, 4.26% CTR, 5,114 downloads Mar-Aug 2026 -- more downloads than the rest of the portfolio combined. Gated on an engine the factory had never landed; the gate passed on 2026-09-16, translating en->es on a Samsung SM-A045M with wifi and data off. AGC app created 2026-09-16 in the 'Hashtags' project, package com.huaweiappfactory.translate, category App, default language English (US)."
       },
+      "app_signing_sha256": "8D:19:78:C1:9E:22:7D:BC:D8:73:CB:B9:A3:22:9F:BB:B8:0F:7B:94:40:FB:BB:EC:8E:0C:BA:41:64:99:E9:1A",
       "known_gaps": {
-        "app_signing": "App Signing method 1 is selected but the upload certificate has not been submitted. It must be done BEFORE the first package upload; the file input lives in an iframe the accessibility tree cannot reach, so a human uploads upload_certificate.pem by hand.",
         "ad_unit_ids": "No Petal Ads unit IDs yet: the console only issues them after the first package reaches AppGallery.",
         "spec": "No specification yet. The spike is one screen; history, the language-pack manager, automatic language detection and the store listing are not written."
       },
