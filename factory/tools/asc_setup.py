@@ -38,9 +38,9 @@ import urllib.request
 from decimal import Decimal, InvalidOperation
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from asc_client import ASCError, log, make_token, mask_in_ci, resolve_app  # noqa: E402
+from asc_client import ASCError, log, make_token, mask_in_ci, resolve_app, version_state  # noqa: E402
 from asc_metadata import (  # noqa: E402
-    ASSET_PENDING, api_call, asset_delivery_state, load_listing, md5_of)
+    ASSET_PENDING, EDITABLE_VERSION_STATES, api_call, asset_delivery_state, load_listing, md5_of)
 from registry import ROOT  # noqa: E402
 
 PLATFORM = "IOS"
@@ -61,14 +61,43 @@ def find_version(asc_app_id: str, marketing_version: str, token: str) -> str | N
     return None
 
 
+def find_editable_version(asc_app_id: str, token: str) -> tuple[str, str] | None:
+    """(id, versionString) of the one version Apple lets us edit, if any."""
+    rows = api_call("GET", f"/v1/apps/{asc_app_id}/appStoreVersions?limit=200", token=token).get("data") or []
+    for row in rows:
+        attrs = row.get("attributes") or {}
+        if attrs.get("platform", PLATFORM) == PLATFORM and version_state(attrs) in EDITABLE_VERSION_STATES:
+            return row["id"], str(attrs.get("versionString") or "")
+    return None
+
+
 def ensure_version(asc_app_id: str, marketing_version: str, token: str, dry_run: bool = False) -> str:
-    """The appStoreVersion for the registry's marketing version, created if absent."""
+    """The appStoreVersion for the registry's marketing version, created if absent.
+
+    Apple keeps at most one editable version per platform. When one exists under
+    another version string -- PriceJar 1.0.0, pulled back out of a submission it
+    was never sent in, with the registry already at 1.0.1 -- POST answers 409
+    "You cannot create a new version of the App in the current state" and says
+    nothing about why. versionString is a PATCHable attribute of an editable
+    version (AppStoreVersionUpdateRequest in the spec), so that version is
+    renamed rather than fought with: same id, same attached build, same listing.
+    """
     existing = None if dry_run else find_version(asc_app_id, marketing_version, token)
     if existing:
         log(f"version {marketing_version} exists ({existing})")
         return existing
+    editable = None if dry_run else find_editable_version(asc_app_id, token)
+    if editable:
+        version_id, current = editable
+        api_call("PATCH", f"/v1/appStoreVersions/{version_id}", {
+            "data": {"type": "appStoreVersions", "id": version_id,
+                     "attributes": {"versionString": marketing_version}}}, token)
+        log(f"renamed the editable appStoreVersion {current} -> {marketing_version} ({version_id}); "
+            "Apple allows one editable version and refuses to create a second")
+        return version_id
     if dry_run:
-        log(f"[dry-run] would create appStoreVersion {marketing_version} ({PLATFORM})")
+        log(f"[dry-run] would create appStoreVersion {marketing_version} ({PLATFORM}), or rename the "
+            "editable one if Apple already holds one under another version string")
         return "dry-run"
     created = api_call("POST", "/v1/appStoreVersions", {
         "data": {"type": "appStoreVersions",
