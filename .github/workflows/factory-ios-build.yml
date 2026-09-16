@@ -55,6 +55,37 @@ jobs:
     outputs:
       apps: ${{ steps.plan.outputs.apps }}
     steps:
+      # This repository is public, and GitHub does not mask repository
+      # *variables* the way it masks secrets. Every `run` step prints the
+      # environment in scope, so the workflow-level FACTORY_VARS put the
+      # production AdMob unit IDs in plain text in the public log of every
+      # step of every run. They are also extractable from the shipped IPA, so
+      # this is not a disclosure of something otherwise unknowable -- but a
+      # public log makes them greppable, and the concrete risk is invalid
+      # traffic aimed at those units, which is how an AdMob account gets
+      # flagged. Register them as masks before any other step runs.
+      #
+      # Known limit: this step's OWN environment block is printed before its
+      # script executes, so one echo per job survives. Closing that last one
+      # means moving the values from repository variables to repository
+      # secrets, which GitHub masks on its own. Documented in
+      # docs/IOS_FIRST_RUN_RETROSPECTIVE.md; not done here because it needs
+      # the owner to re-create them by hand.
+      - name: Mask the ad IDs so the rest of the job cannot print them
+        run: |
+          set -euo pipefail
+          python3 - <<'MASK'
+          import json, os
+          masked = 0
+          for key, value in json.loads(os.environ.get("FACTORY_VARS") or "{}").items():
+              value = str(value).strip()
+              # Anything shorter than 8 characters is not an identifier, and
+              # masking a value like "1" would redact half the log.
+              if len(value) >= 8:
+                  print(f"::add-mask::{value}")
+                  masked += 1
+          print(f"masked {masked} repository variable value(s) for this job")
+          MASK
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
@@ -92,6 +123,37 @@ jobs:
       matrix:
         app: ${{ fromJson(needs.plan.outputs.apps) }}
     steps:
+      # This repository is public, and GitHub does not mask repository
+      # *variables* the way it masks secrets. Every `run` step prints the
+      # environment in scope, so the workflow-level FACTORY_VARS put the
+      # production AdMob unit IDs in plain text in the public log of every
+      # step of every run. They are also extractable from the shipped IPA, so
+      # this is not a disclosure of something otherwise unknowable -- but a
+      # public log makes them greppable, and the concrete risk is invalid
+      # traffic aimed at those units, which is how an AdMob account gets
+      # flagged. Register them as masks before any other step runs.
+      #
+      # Known limit: this step's OWN environment block is printed before its
+      # script executes, so one echo per job survives. Closing that last one
+      # means moving the values from repository variables to repository
+      # secrets, which GitHub masks on its own. Documented in
+      # docs/IOS_FIRST_RUN_RETROSPECTIVE.md; not done here because it needs
+      # the owner to re-create them by hand.
+      - name: Mask the ad IDs so the rest of the job cannot print them
+        run: |
+          set -euo pipefail
+          python3 - <<'MASK'
+          import json, os
+          masked = 0
+          for key, value in json.loads(os.environ.get("FACTORY_VARS") or "{}").items():
+              value = str(value).strip()
+              # Anything shorter than 8 characters is not an identifier, and
+              # masking a value like "1" would redact half the log.
+              if len(value) >= 8:
+                  print(f"::add-mask::{value}")
+                  masked += 1
+          print(f"masked {masked} repository variable value(s) for this job")
+          MASK
       - uses: actions/checkout@v4
 
       - name: Load app from registry
@@ -244,6 +306,37 @@ jobs:
       matrix:
         app: ${{ fromJson(needs.plan.outputs.apps) }}
     steps:
+      # This repository is public, and GitHub does not mask repository
+      # *variables* the way it masks secrets. Every `run` step prints the
+      # environment in scope, so the workflow-level FACTORY_VARS put the
+      # production AdMob unit IDs in plain text in the public log of every
+      # step of every run. They are also extractable from the shipped IPA, so
+      # this is not a disclosure of something otherwise unknowable -- but a
+      # public log makes them greppable, and the concrete risk is invalid
+      # traffic aimed at those units, which is how an AdMob account gets
+      # flagged. Register them as masks before any other step runs.
+      #
+      # Known limit: this step's OWN environment block is printed before its
+      # script executes, so one echo per job survives. Closing that last one
+      # means moving the values from repository variables to repository
+      # secrets, which GitHub masks on its own. Documented in
+      # docs/IOS_FIRST_RUN_RETROSPECTIVE.md; not done here because it needs
+      # the owner to re-create them by hand.
+      - name: Mask the ad IDs so the rest of the job cannot print them
+        run: |
+          set -euo pipefail
+          python3 - <<'MASK'
+          import json, os
+          masked = 0
+          for key, value in json.loads(os.environ.get("FACTORY_VARS") or "{}").items():
+              value = str(value).strip()
+              # Anything shorter than 8 characters is not an identifier, and
+              # masking a value like "1" would redact half the log.
+              if len(value) >= 8:
+                  print(f"::add-mask::{value}")
+                  masked += 1
+          print(f"masked {masked} repository variable value(s) for this job")
+          MASK
       - uses: actions/checkout@v4
 
       - name: Load app from registry
