@@ -126,6 +126,25 @@ class Handler(BaseHTTPRequestHandler):
                     {"type": "inAppPurchasePricePoints", "id": "pp-usa-299", "attributes": {"customerPrice": "2.99"}},
                     {"type": "inAppPurchasePricePoints", "id": "pp-usa-399", "attributes": {"customerPrice": "3.99"}},
                 ]})
+        if path.startswith("/v1/inAppPurchasePriceSchedules/") and path.endswith("/manualPrices"):
+            # Apple attaches a schedule to a newly created purchase by itself,
+            # so this is the branch a real run takes. Serve what the schedule
+            # holds, so the tool compares it with the registry instead of
+            # returning silently and letting Apple's own price stand.
+            schedule = path.split("/")[3]
+            point = None
+            for sched in STATE["price_schedule"].values():
+                if sched.get("id", "ps1") == schedule and sched.get("point"):
+                    point = sched["point"]
+            if point is None:
+                return self._json(200, {"data": [], "included": []})
+            price = {"pp-usa-199": "1.99", "pp-usa-299": "2.99", "pp-usa-399": "3.99"}.get(point)
+            return self._json(200, {
+                "data": [{"type": "inAppPurchasePrices", "id": "price1",
+                          "relationships": {"inAppPurchasePricePoint":
+                                             {"data": {"type": "inAppPurchasePricePoints", "id": point}}}}],
+                "included": [{"type": "inAppPurchasePricePoints", "id": point,
+                              "attributes": {"customerPrice": price}}]})
         if path == "/v1/territories":
             return self._json(200, {"data": [{"type": "territories", "id": t} for t in ("USA", "CAN", "ESP", "DEU")]})
         if path.startswith("/v1/inAppPurchaseAppStoreReviewScreenshots/"):
@@ -138,7 +157,8 @@ class Handler(BaseHTTPRequestHandler):
         if not self._authed():
             return self._json(401, {"errors": [{"title": "NOT_AUTHORIZED"}]})
         STATE["posts"].append(self.path)
-        data = self._body().get("data", {})
+        body = self._body()
+        data = body.get("data", {})
         rtype = data.get("type")
         if self.path == "/v1/appStoreVersions" and rtype == "appStoreVersions":
             editable = {"PREPARE_FOR_SUBMISSION", "DEVELOPER_REJECTED", "REJECTED", "METADATA_REJECTED"}
@@ -171,11 +191,15 @@ class Handler(BaseHTTPRequestHandler):
             return self._json(201, {"data": {"type": rtype, "id": "av1"}})
         if self.path == "/v1/inAppPurchasePriceSchedules":
             rel = data["relationships"]
-            body = self._last_body = None  # noqa
             iap_id = rel["inAppPurchase"]["data"]["id"]
             if rel["baseTerritory"]["data"]["id"] != "USA":
                 return self._json(409, {"errors": [{"title": "base territory"}]})
-            STATE["price_schedule"][iap_id] = {"manual": rel["manualPrices"]["data"]}
+            included = {row["id"]: row for row in (body.get("included") or [])}
+            placeholder = rel["manualPrices"]["data"][0]["id"]
+            point = ((((included.get(placeholder) or {}).get("relationships") or {})
+                      .get("inAppPurchasePricePoint") or {}).get("data") or {}).get("id")
+            STATE["price_schedule"][iap_id] = {"id": "ps1", "manual": rel["manualPrices"]["data"],
+                                                "point": point}
             return self._json(201, {"data": {"type": rtype, "id": "ps1"}})
         if self.path == "/v1/inAppPurchaseAppStoreReviewScreenshots":
             iap_id = data["relationships"]["inAppPurchaseV2"]["data"]["id"]
@@ -359,6 +383,38 @@ def main() -> int:
         code, out = run(root, "--what", "version")
         check("with a live version listed first, still renames only the editable one",
               code == 0 and [v["versionString"] for v in STATE["versions"]] == ["0.9.0", "1.0.2"], out)
+    finally:
+        shutil.rmtree(root, ignore_errors=True)
+
+    # --- a schedule Apple made for us, at a price nobody chose -----------------
+    print("\nApple already attached a price schedule:")
+    # The real run hit this: Apple gives a new purchase a schedule of its own,
+    # ensure_iap_price saw one and returned without a word, and the price the
+    # owner decided was never applied. Silence is the bug, not the schedule.
+    reset_state()
+    root = fixture_root(price_usd="2.99")
+    try:
+        code, out = run(root, "--what", "iap")
+        check("first run creates the schedule at the registry's price", code == 0 and "2.99" in out, out)
+        code, out = run(root, "--what", "iap")
+        check("second run says what Apple already charges instead of staying silent",
+              code == 0 and "already set" in out and "2.99" in out, out)
+    finally:
+        shutil.rmtree(root, ignore_errors=True)
+
+    print("\nthe attached schedule charges something else:")
+    reset_state()
+    root = fixture_root(price_usd="2.99")
+    try:
+        code, out = run(root, "--what", "iap")                      # creates at 2.99
+        check("set up at 2.99 first", code == 0, out)
+        reg_path = os.path.join(root, "factory", "apps.json")
+        reg = json.load(open(reg_path))
+        reg["apps"][0]["iap"]["price_usd"] = "3.99"                 # owner changed their mind
+        json.dump(reg, open(reg_path, "w"))
+        code, out = run(root, "--what", "iap")
+        check("refuses instead of pretending the new price is live", code != 0, out)
+        check("names both prices so the owner can act", "2.99" in out and "3.99" in out, out)
     finally:
         shutil.rmtree(root, ignore_errors=True)
 
