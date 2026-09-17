@@ -49,11 +49,24 @@ def write_plist(path: str, data: dict) -> None:
         plistlib.dump(data, fh)
 
 
-def write_png(path: str, width: int, height: int, alpha: bool = False) -> None:
-    """A real, valid PNG of solid black - enough for header and alpha checks."""
+def write_png(path: str, width: int, height: int, alpha: bool = False, flat: bool = False) -> None:
+    """A real, valid PNG.
+
+    Two colours by default, because the icon rule now refuses a single flat
+    colour -- a 1024x1024 opaque square of nothing is exactly what the template
+    placeholder is, and it passed the size-and-alpha check all the way to a
+    submitted version. `flat=True` writes that placeholder on purpose, for the
+    case that has to fail.
+    """
     os.makedirs(os.path.dirname(path), exist_ok=True)
     color_type, channels = (6, 4) if alpha else (2, 3)
-    raw = (b"\x00" + b"\x00" * (width * channels)) * height
+    if flat:
+        raw = (b"\x00" + b"\x00" * (width * channels)) * height
+    else:
+        dark = b"\x00" * channels
+        light = (b"\xc0" * 3 + b"\xff") if alpha else b"\xc0" * 3
+        band = dark * (width // 2) + light * (width - width // 2)
+        raw = (b"\x00" + band) * height
 
     def chunk(tag: bytes, payload: bytes) -> bytes:
         return (struct.pack(">I", len(payload)) + tag + payload
@@ -395,6 +408,14 @@ def main() -> int:
     broken("Google's test ad unit IDs", "admob_unit_ids", with_test_admob_ids,
            factory_vars=TEST_ID_VARS)
     broken("icon with an alpha channel", "icon", with_alpha_icon)
+
+    def flat_icon(root: str) -> None:
+        build_fixture(root)
+        # The template's placeholder: right size, opaque, and nothing on it.
+        write_png(os.path.join(root, "apps-ios", SLUG, "Sources", "Assets.xcassets",
+                               "AppIcon.appiconset", "icon-1024.png"), 1024, 1024, flat=True)
+
+    broken("icon that is one flat colour, the template placeholder", "icon", flat_icon)
     broken("vague permission string", "usage_descriptions", with_vague_permission)
     broken("fatalError stub", "no_stubs", with_stub)
     broken("bundle ID does not match the registry", "identity", with_wrong_bundle_id)
