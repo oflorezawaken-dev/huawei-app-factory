@@ -1,0 +1,4 @@
+This app needs agconnect-services.json at build time: it calls Huawei ML Kit,
+which takes both its API key and its service routing from that file. The file
+itself is a credential and is git-ignored; CI writes it from the
+AGCONNECT_SERVICES_JSON secret when this marker is present.

@@ -1,0 +1,161 @@
+plugins {
+  alias(libs.plugins.android.application)
+  alias(libs.plugins.kotlin.compose)
+  alias(libs.plugins.google.devtools.ksp)
+}
+
+// Turns agconnect-services.json into the resources AGConnect reads at start.
+// The file is a credential and never enters git (root .gitignore); CI writes it
+// from a secret before the build.
+apply(plugin = "com.huawei.agconnect")
+
+val releaseKeystorePath = System.getenv("RELEASE_KEYSTORE_PATH")
+val releaseKeystorePassword = System.getenv("RELEASE_KEYSTORE_PASSWORD")
+val releaseKeyAlias = System.getenv("RELEASE_KEY_ALIAS")
+val releaseKeyPassword = System.getenv("RELEASE_KEY_PASSWORD")
+val hasReleaseSigning = listOf(
+  releaseKeystorePath,
+  releaseKeystorePassword,
+  releaseKeyAlias,
+  releaseKeyPassword
+).all { !it.isNullOrBlank() }
+
+// Huawei Petal Ads unit IDs come from the environment (CI exports them from
+// factory/apps.json) or gradle.properties; never hard-coded. When absent we fall
+// back to Huawei's documented TEST ad units so debug builds show test ads.
+fun adId(envName: String, testId: String): Pair<String, Boolean> {
+  val fromEnv = System.getenv(envName)
+  val fromProps = project.findProperty(envName) as String?
+  val real = listOf(fromEnv, fromProps).firstOrNull { !it.isNullOrBlank() }
+  return if (real != null) real to false else testId to true
+}
+// The ML Kit API key authorises the model download. It is a credential, so it
+// comes from the environment or gradle.properties and never from git; an empty
+// key builds fine and fails loudly at runtime rather than silently translating
+// nothing.
+val mlKitApiKey: String = (System.getenv("ML_KIT_API_KEY")
+  ?: project.findProperty("ML_KIT_API_KEY") as String?).orEmpty()
+
+val (petalBannerId, bannerIsTest) = adId("PETAL_BANNER_AD_ID", "testw6vs28auh3")
+val (petalInterstitialId, interstitialIsTest) = adId("PETAL_INTERSTITIAL_AD_ID", "teste9ih9j0rc3")
+val petalUsingTestIds = bannerIsTest || interstitialIsTest
+if (petalUsingTestIds && hasReleaseSigning) {
+  logger.warn("WARNING: signed release is being built with Huawei TEST ad unit IDs. Set PETAL_BANNER_AD_ID / PETAL_INTERSTITIAL_AD_ID before publishing.")
+}
+
+// agconnect-services.json carries the ML Kit API key AND the routing. Without it
+// the app builds and installs perfectly, then fails at the first model download
+// with HTTP 405 -- measured on the phone. A release that cannot translate is
+// exactly the failure ReceiptLens shipped, so a signed build refuses to exist
+// rather than being found out by a user.
+val agConnectConfig = file("agconnect-services.json")
+if (!agConnectConfig.exists()) {
+  if (hasReleaseSigning) {
+    throw GradleException(
+      "agconnect-services.json is missing from apps/translate/app. A signed release " +
+        "without it builds fine and then cannot download a single language model. " +
+        "CI writes it from the AGCONNECT_SERVICES_JSON secret; locally, download it " +
+        "from AppGallery Connect. It must never be committed."
+    )
+  }
+  logger.warn(
+    "WARNING: agconnect-services.json is missing; this build cannot download language models."
+  )
+}
+
+android {
+  namespace = "com.huaweiappfactory.translate"
+  compileSdk { version = release(36) { minorApiLevel = 1 } }
+
+  defaultConfig {
+    applicationId = "com.huaweiappfactory.translate"
+    minSdk = 26
+    targetSdk = 36
+    versionCode = 1
+    versionName = "1.0.0"
+
+    buildConfigField("String", "PETAL_BANNER_AD_ID", "\"$petalBannerId\"")
+    buildConfigField("String", "PETAL_INTERSTITIAL_AD_ID", "\"$petalInterstitialId\"")
+    buildConfigField("boolean", "PETAL_ADS_USING_TEST_IDS", "$petalUsingTestIds")
+    buildConfigField("String", "ML_KIT_API_KEY", "\"$mlKitApiKey\"")
+
+    testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+  }
+
+  signingConfigs {
+    if (hasReleaseSigning) {
+      create("release") {
+        storeFile = file(requireNotNull(releaseKeystorePath))
+        storePassword = requireNotNull(releaseKeystorePassword)
+        keyAlias = requireNotNull(releaseKeyAlias)
+        keyPassword = requireNotNull(releaseKeyPassword)
+      }
+    }
+  }
+
+  buildTypes {
+    release {
+      isCrunchPngs = false
+      isMinifyEnabled = false
+      proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+      if (hasReleaseSigning) {
+        signingConfig = signingConfigs.getByName("release")
+      }
+    }
+  }
+  compileOptions {
+    sourceCompatibility = JavaVersion.VERSION_11
+    targetCompatibility = JavaVersion.VERSION_11
+  }
+  buildFeatures {
+    compose = true
+    buildConfig = true
+  }
+  dependenciesInfo {
+    includeInApk = false
+    includeInBundle = false
+  }
+}
+
+dependencies {
+  implementation(platform(libs.androidx.compose.bom))
+  implementation(libs.androidx.activity.compose)
+  implementation(libs.androidx.compose.material.icons.core)
+  implementation(libs.androidx.compose.material.icons.extended)
+  implementation(libs.androidx.compose.material3)
+  implementation(libs.androidx.compose.ui)
+  implementation(libs.androidx.compose.ui.graphics)
+  implementation(libs.androidx.compose.ui.tooling.preview)
+  implementation(libs.androidx.core.ktx)
+  implementation(libs.androidx.lifecycle.runtime.compose)
+  implementation(libs.androidx.lifecycle.runtime.ktx)
+  implementation(libs.androidx.lifecycle.viewmodel.compose)
+  implementation(libs.androidx.navigation.compose)
+  implementation(libs.androidx.room.ktx)
+  implementation(libs.androidx.room.runtime)
+  implementation(libs.kotlinx.coroutines.android)
+  implementation(libs.kotlinx.coroutines.core)
+  implementation(libs.huawei.ads.lite)
+  // Real on-device translation. ml-computer-translate is the API; the -model
+  // artifacts are the on-device engines, without which the SDK can only reach
+  // the cloud. Rule 2: this is the dependency, called directly, or the feature
+  // does not ship.
+  implementation(libs.huawei.ml.translate)
+  implementation(libs.huawei.ml.translate.model)
+  implementation(libs.huawei.ml.language.detection)
+  implementation(libs.huawei.ml.language.detection.model)
+  // Android's org.json is a stub in unit tests ("not mocked"), and the shipped
+  // tag asset is JSON that must be validated before it can ship. The real
+  // implementation, test-only, is the smallest way to test the product.
+  testImplementation(libs.org.json)
+  testImplementation(libs.junit)
+  testImplementation(libs.kotlinx.coroutines.test)
+  androidTestImplementation(platform(libs.androidx.compose.bom))
+  androidTestImplementation(libs.androidx.compose.ui.test.junit4)
+  androidTestImplementation(libs.androidx.espresso.core)
+  androidTestImplementation(libs.androidx.junit)
+  androidTestImplementation(libs.androidx.runner)
+  debugImplementation(libs.androidx.compose.ui.test.manifest)
+  debugImplementation(libs.androidx.compose.ui.tooling)
+  "ksp"(libs.androidx.room.compiler)
+}

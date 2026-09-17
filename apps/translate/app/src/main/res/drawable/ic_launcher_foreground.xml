@@ -1,0 +1,48 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!--
+      A latin A beside the character wen, the two writing systems the app moves
+      between. Drawn as strokes rather than set in a typeface so the launcher
+      icon and the 512px store icon are the same geometry, and so it survives
+      the adaptive-icon safe zone: everything sits inside the middle 66dp.
+    -->
+
+    <!-- A: two legs and a crossbar. -->
+    <path
+        android:strokeColor="#1B6C5A"
+        android:strokeWidth="6"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M 30,68 L 40,38 L 50,68" />
+    <path
+        android:strokeColor="#1B6C5A"
+        android:strokeWidth="6"
+        android:strokeLineCap="round"
+        android:pathData="M 34,58 L 46,58" />
+
+    <!-- Wen: a dot and a bar above two crossing diagonals. -->
+    <path
+        android:strokeColor="#1B6C5A"
+        android:strokeWidth="6"
+        android:strokeLineCap="round"
+        android:pathData="M 72,36 L 72,41" />
+    <path
+        android:strokeColor="#1B6C5A"
+        android:strokeWidth="6"
+        android:strokeLineCap="round"
+        android:pathData="M 60,46 L 84,46" />
+    <path
+        android:strokeColor="#1B6C5A"
+        android:strokeWidth="6"
+        android:strokeLineCap="round"
+        android:pathData="M 82,54 L 62,70" />
+    <path
+        android:strokeColor="#1B6C5A"
+        android:strokeWidth="6"
+        android:strokeLineCap="round"
+        android:pathData="M 62,54 L 82,70" />
+</vector>
