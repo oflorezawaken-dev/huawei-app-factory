@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SiteCalc Support</title>
+<style>
+  :root { color-scheme: light dark; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    max-width: 760px; margin: 0 auto; padding: 2rem 1.25rem 4rem; line-height: 1.6;
+    color: #1a1c19; background: #fbfaf5;
+  }
+  @media (prefers-color-scheme: dark) {
+    body { color: #eae7dd; background: #12140f; }
+    a { color: #e5b568; }
+    .callout { background: #182018; border-color: #2c3529; }
+  }
+  h1 { font-size: 1.6rem; margin-bottom: 0.25rem; }
+  .updated { color: #6b7280; font-size: 0.9rem; margin-bottom: 2rem; }
+  h2 { font-size: 1.15rem; margin-top: 2rem; }
+  a { color: #1B5E3F; }
+  .callout { background: #eaf1e7; border: 1px solid #cddac6; border-radius: 10px; padding: 1rem 1.25rem; margin: 1.5rem 0; }
+  ul, ol { padding-left: 1.25rem; }
+  footer { margin-top: 3rem; font-size: 0.85rem; color: #6b7280; }
+</style>
+</head>
+<body>
+
+<h1>SiteCalc Support</h1>
+<p class="updated">Last updated: September 17, 2026 (version 1.0.0)</p>
+
+<div class="callout">
+Everything in SiteCalc lives on your iPhone. There is no account to sign into and nothing to sync, so most
+questions are answered below.
+</div>
+
+<h2>What SiteCalc does</h2>
+<p>SiteCalc is a tape measure that does the arithmetic: feet, inches and fractions down to 1/64, mixed
+freely with metres, centimetres and millimetres, added, subtracted, multiplied and divided in one
+expression. On top of the tape sit four solvers &mdash; right angle/roof, stairs, area and volume, and
+material estimating &mdash; and any job's tape, solver results and material lists can be saved and exported
+to PDF or CSV.</p>
+
+<h2>Entering a measurement</h2>
+<p>Type a value in the calculator using feet ('), inches ("), and a fraction with a slash (e.g.
+<code>12' 6-3/8"</code>), or switch to metric in Settings and enter metres, centimetres or millimetres
+instead. Each result you keep lands as a new line on the current job's tape, where it can be labelled or
+corrected at any time &mdash; the tape is not a single throwaway answer, it is a running record.</p>
+
+<h2>Using a solver</h2>
+<p>Open a solver from the Solvers tab: <strong>Roof</strong> works out rise, run, diagonal, pitch (both
+rise-per-foot and degrees) and rafter/hip/valley lengths from whichever two values you know;
+<strong>Stairs</strong> works out riser count, riser height, tread depth, total run and stringer length
+against the riser and tread limits you set yourself in Settings; <strong>Area/Volume</strong> covers rooms,
+walls, slabs, footings, columns, circles and arcs; <strong>Materials</strong> turns any of that geometry
+into concrete bags or cubic yards/metres, stud counts at a spacing you choose, drywall sheets, tiles with a
+waste percentage, paint by a coverage rate you enter, decking and roofing squares. A solver result can be
+saved straight onto a job's tape from its own screen.</p>
+
+<h2>SiteCalc will not check my riser height against code</h2>
+<p>That is deliberate. SiteCalc ships no building-code limit, span table or load table of any kind, because
+a bundled number would be a stale regulatory value baked into an app with no way to update it when your
+jurisdiction's code changes. Go to <strong>Settings &rarr; Stair Limits</strong> and enter your own maximum
+riser height and minimum tread depth; the Stairs solver checks every calculation against exactly those
+numbers, and against nothing else, until you change them.</p>
+
+<h2>Exporting a job</h2>
+<p>Open a job and tap <strong>Export</strong>, choose PDF, CSV, or both, and share the file through the
+standard iOS share sheet &mdash; to Files, Mail, Messages or any app that accepts a document. Exporting has
+no limit and requires no purchase; it is free every time, for as long as you use SiteCalc.</p>
+
+<h2>Removing the sample job</h2>
+<p>The example job SiteCalc can load on first run is always named as a sample. Go to
+<strong>Settings &rarr; Remove Sample Job</strong> to delete it in one tap; your own jobs are never touched
+by this.</p>
+
+<h2>Starting over</h2>
+<p>Settings &rarr; <strong>Delete All Data</strong> permanently removes every job, tape entry and material
+list on this iPhone after you type DELETE to confirm. This cannot be undone, so export anything you want to
+keep first.</p>
+
+<h2>About the ads and Remove Ads</h2>
+<p>SiteCalc is free, funded by a small banner on the Jobs list, a job's own detail screen, and Settings, and
+by at most one full-screen ad after an export file has been saved and its share sheet dismissed. No ad ever
+appears in the calculator, on the tape, or inside any of the four solvers.
+Settings &rarr; <strong>Remove Ads</strong> turns every ad off permanently with a one-time purchase; it
+does not unlock any feature, because none of SiteCalc's calculators, solvers, or PDF/CSV export is ever
+locked. <strong>Restore Purchases</strong> on the same screen recovers Remove Ads after a reinstall or on a
+new device signed into the same Apple ID.</p>
+
+<h2>Still stuck?</h2>
+<p>Email <a href="mailto:orlandoflorez@montechelo.net">orlandoflorez@montechelo.net</a> and describe what
+you were doing, what you expected, and what happened instead; a screenshot helps. We read every message.</p>
+
+<p>See also the <a href="../privacy/">Privacy Policy</a>.</p>
+
+<footer>SiteCalc &middot; Huawei App Factory &middot; source at
+<a href="https://github.com/oflorezawaken-dev/huawei-app-factory">github.com/oflorezawaken-dev/huawei-app-factory</a></footer>
+
+</body>
+</html>
