@@ -160,6 +160,28 @@ jobs:
           chmod 600 "$keystore_path"
           echo "RELEASE_KEYSTORE_PATH=$keystore_path" >> "$GITHUB_ENV"
 
+      - name: Materialize agconnect-services.json
+        env:
+          AGCONNECT_SERVICES_JSON: ${{ secrets.AGCONNECT_SERVICES_JSON }}
+        run: |
+          set -euo pipefail
+          # Only apps that call an HMS service beyond ads need this file; it is a
+          # credential, so it lives in a secret and never in the repository.
+          # An app that needs it and does not get it builds perfectly and then
+          # cannot reach the service at all, which is why the Gradle build fails
+          # loudly rather than shipping a release that quietly does nothing.
+          if [[ ! -f "$APP_PATH/app/agconnect-services.json.required" ]]; then
+            echo "$APP_SLUG does not require agconnect-services.json; skipping."
+            exit 0
+          fi
+          if [[ -z "$AGCONNECT_SERVICES_JSON" ]]; then
+            echo "::error::$APP_SLUG requires agconnect-services.json but the AGCONNECT_SERVICES_JSON secret is empty."
+            exit 1
+          fi
+          printf '%s' "$AGCONNECT_SERVICES_JSON" > "$APP_PATH/app/agconnect-services.json"
+          python3 -c "import json,sys; json.load(open(sys.argv[1]))" "$APP_PATH/app/agconnect-services.json"
+          echo "Wrote $APP_PATH/app/agconnect-services.json"
+
       - name: Signed release APK
         run: cd "$APP_PATH" && gradle :app:assembleRelease
 

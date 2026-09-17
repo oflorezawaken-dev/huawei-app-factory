@@ -43,6 +43,26 @@ if (petalUsingTestIds && hasReleaseSigning) {
   logger.warn("WARNING: signed release is being built with Huawei TEST ad unit IDs. Set PETAL_BANNER_AD_ID / PETAL_INTERSTITIAL_AD_ID before publishing.")
 }
 
+// agconnect-services.json carries the ML Kit API key AND the routing. Without it
+// the app builds and installs perfectly, then fails at the first model download
+// with HTTP 405 -- measured on the phone. A release that cannot translate is
+// exactly the failure ReceiptLens shipped, so a signed build refuses to exist
+// rather than being found out by a user.
+val agConnectConfig = file("agconnect-services.json")
+if (!agConnectConfig.exists()) {
+  if (hasReleaseSigning) {
+    throw GradleException(
+      "agconnect-services.json is missing from apps/translate/app. A signed release " +
+        "without it builds fine and then cannot download a single language model. " +
+        "CI writes it from the AGCONNECT_SERVICES_JSON secret; locally, download it " +
+        "from AppGallery Connect. It must never be committed."
+    )
+  }
+  logger.warn(
+    "WARNING: agconnect-services.json is missing; this build cannot download language models."
+  )
+}
+
 android {
   namespace = "com.huaweiappfactory.translate"
   compileSdk { version = release(36) { minorApiLevel = 1 } }
