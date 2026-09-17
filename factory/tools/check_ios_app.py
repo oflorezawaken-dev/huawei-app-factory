@@ -42,6 +42,7 @@ import os
 import plistlib
 import re
 import struct
+import zlib
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -178,6 +179,68 @@ def png_info(path: str) -> tuple[int, int, bool] | None:
     color_type = head[25]
     # 4 = gray+alpha, 6 = RGB+alpha; a tRNS chunk adds transparency to 0/2/3.
     return w, h, color_type in (4, 6) or b"tRNS" in rest
+
+
+def png_distinct_colours(path: str, sample_step: int = 8) -> int | None:
+    """How many distinct colours a PNG actually contains, or None if unreadable.
+
+    The icon rule used to check the size and the alpha channel and nothing
+    else, so `apps-ios/_template`'s placeholder -- a single flat green square,
+    no mark on it at all -- passed as a finished App Store icon and was on its
+    way to review. A file can be exactly 1024x1024, perfectly opaque, and
+    blank.
+
+    Decoded here rather than with an image library because the factory is
+    standard library only. Every eighth pixel is enough to tell a design from
+    a fill.
+    """
+    try:
+        with open(path, "rb") as fh:
+            raw = fh.read()
+        if raw[:8] != b"\x89PNG\r\n\x1a\n":
+            return None
+        pos, idat, width, height, depth, colour = 8, b"", 0, 0, 0, 0
+        while pos + 8 <= len(raw):
+            length = struct.unpack(">I", raw[pos:pos + 4])[0]
+            tag = raw[pos + 4:pos + 8]
+            if tag == b"IHDR":
+                width, height, depth, colour = struct.unpack(">IIBB", raw[pos + 8:pos + 18])
+            elif tag == b"IDAT":
+                idat += raw[pos + 8:pos + 8 + length]
+            pos += 12 + length
+        if depth != 8 or colour not in (0, 2, 4, 6) or not idat:
+            return None                       # palettes and 16-bit: not ours to judge
+        pixel = {0: 1, 2: 3, 4: 2, 6: 4}[colour]
+        stride = width * pixel
+        data = zlib.decompress(idat)
+        seen, previous, offset = set(), bytearray(stride), 0
+        for _ in range(height):
+            if offset >= len(data):
+                break
+            filt = data[offset]
+            offset += 1
+            line = bytearray(data[offset:offset + stride])
+            offset += stride
+            for x in range(stride):
+                a = line[x - pixel] if x >= pixel else 0
+                b = previous[x]
+                c = previous[x - pixel] if x >= pixel else 0
+                if filt == 1:
+                    line[x] = (line[x] + a) & 255
+                elif filt == 2:
+                    line[x] = (line[x] + b) & 255
+                elif filt == 3:
+                    line[x] = (line[x] + (a + b) // 2) & 255
+                elif filt == 4:
+                    p = a + b - c
+                    pa, pb, pc = abs(p - a), abs(p - b), abs(p - c)
+                    line[x] = (line[x] + (a if pa <= pb and pa <= pc else b if pb <= pc else c)) & 255
+            for x in range(0, width, sample_step):
+                seen.add(bytes(line[x * pixel:x * pixel + pixel]))
+            previous = line
+        return len(seen)
+    except Exception:
+        return None
 
 
 def jpeg_size(path: str) -> tuple[int, int] | None:
@@ -401,11 +464,25 @@ def main(argv: list[str]) -> int:
         if not got:
             continue
         w, h, alpha = got
-        icon_ok = (w, h) == (1024, 1024) and not alpha
-        icon_detail = f"{os.path.relpath(icon, ROOT)} size=({w}, {h}) alpha={alpha}"
+        # A flat square is not an icon. The template ships a placeholder that is
+        # one solid colour, SiteCalc inherited it, and the size-and-alpha check
+        # waved it through all the way to a submitted version. Counting colours
+        # is crude on purpose: PriceJar's jar uses three and must pass, so the
+        # bar is "somebody drew something", not "somebody drew something good".
+        colours = png_distinct_colours(icon)
+        drawn = colours is None or colours > 1
+        icon_ok = (w, h) == (1024, 1024) and not alpha and drawn
+        icon_detail = (f"{os.path.relpath(icon, ROOT)} size=({w}, {h}) alpha={alpha} "
+                       f"colours={'unread' if colours is None else colours}")
         if icon_ok:
             break
-    report("icon", icon_ok, icon_detail + (" - App Store icons must have no alpha channel" if not icon_ok else ""),
+    icon_problem = ""
+    if not icon_ok and icons:
+        if alpha:
+            icon_problem = " - App Store icons must have no alpha channel"
+        elif not drawn:
+            icon_problem = " - this icon is one flat colour; it is the template placeholder, not a design"
+    report("icon", icon_ok, icon_detail + icon_problem,
            gap_key="icon")
 
     # Screenshots follow the fastlane deliver layout (one folder per language);
