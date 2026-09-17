@@ -330,6 +330,12 @@
         "interstitial_ad_id": "",
         "_note": "Filled from the Petal Ads console after the first upload. Public identifiers, not secrets."
       },
+      "agc_category": {
+        "parentType": 13,
+        "childType": 24,
+        "grandChildType": 10022,
+        "_note": "Tools. Same IDs as receipt-lens, habit-cue and hashtags, measured from their app-info; Huawei publishes no name-to-ID table."
+      },
       "ml_kit": {
         "engine": "com.huawei.hms:ml-computer-translate 3.11.0.302, on-device",
         "languages_on_device": 55,
