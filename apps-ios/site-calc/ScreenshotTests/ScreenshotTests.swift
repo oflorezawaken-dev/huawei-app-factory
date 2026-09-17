@@ -24,6 +24,7 @@ final class ScreenshotTests: XCTestCase {
         try estimateMaterial()
         try saveAJob()
         captureSettings()
+        captureRemoveAds()
     }
 
     // MARK: - screens
@@ -108,6 +109,21 @@ final class ScreenshotTests: XCTestCase {
     private func captureSettings() {
         tab("tab.settings").tap()
         capture(named: "06-settings")
+    }
+
+    /// Apple asks for a screenshot of the purchase itself when an in-app
+    /// purchase goes to review. Captured from the real screen rather than
+    /// mocked up, for the same reason as every other asset here.
+    private func captureRemoveAds() {
+        let open = app.buttons["settings.ads.remove"]
+        guard open.waitForExistence(timeout: 10) else {
+            XCTFail("Settings has no Remove Ads row to open")
+            return
+        }
+        open.tap()
+        XCTAssertTrue(app.descendants(matching: .any)["removeAds.unlocksNothing"].waitForExistence(timeout: 10),
+                      "the Remove Ads screen never appeared")
+        capture(named: "07-removeads")
     }
 
     /// The unit tests prove KeypadLayout computes a keypad that fits. They
