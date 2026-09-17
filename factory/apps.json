@@ -414,7 +414,7 @@
       "platform": "ios",
       "path": "apps-ios/site-calc",
       "bundle_id": "com.proapps.sitecalc",
-      "asc_app_id": "",
+      "asc_app_id": "6813099045",
       "sku": "site-calc",
       "spec": "specifications/site-calc.json",
       "store_dir": "apps-ios/site-calc/store",
