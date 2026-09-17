@@ -215,9 +215,40 @@ def price_point_for(iap_id: str, price_usd: str, token: str) -> str:
                    f"{sorted(set(candidates), key=lambda s: Decimal(s))[:12]} ...")
 
 
+def current_price(schedule_id: str, token: str) -> str | None:
+    """What the existing schedule actually charges in the base territory."""
+    rows = api_call("GET", f"/v1/inAppPurchasePriceSchedules/{schedule_id}/manualPrices"
+                            f"?include=inAppPurchasePricePoint&limit=200", token=token)
+    points = {row["id"]: (row.get("attributes") or {}).get("customerPrice")
+              for row in (rows.get("included") or [])
+              if row.get("type") == "inAppPurchasePricePoints"}
+    for row in rows.get("data") or []:
+        point = (((row.get("relationships") or {}).get("inAppPurchasePricePoint") or {})
+                 .get("data") or {}).get("id")
+        if point and points.get(point) is not None:
+            return str(points[point])
+    return None
+
+
 def ensure_iap_price(iap_id: str, price_usd: str, token: str) -> None:
-    if _to_one(f"/v2/inAppPurchases/{iap_id}/iapPriceSchedule", token):
-        return
+    existing = _to_one(f"/v2/inAppPurchases/{iap_id}/iapPriceSchedule", token)
+    if existing:
+        # Returning silently here was the bug: Apple attaches a schedule to a
+        # new purchase on its own, so this branch is the normal one, and the
+        # step reported nothing while the price was whatever Apple had picked.
+        # A price is the one thing about a purchase the owner actually decided.
+        schedule_id = existing.get("id")
+        charged = current_price(schedule_id, token) if schedule_id else None
+        if charged is None:
+            log(f"  price schedule {schedule_id} exists but reports no price; check it in App Store Connect")
+            return
+        if Decimal(charged) == Decimal(price_usd):
+            log(f"  price schedule already set: {charged} USD base, as the registry says")
+            return
+        raise ASCError(
+            f"the price schedule charges {charged} USD in {BASE_TERRITORY} and the registry says "
+            f"{price_usd}. Apple does not allow replacing a schedule from the API -- change the "
+            f"price in App Store Connect, or change iap.price_usd to match what is there.")
     point = price_point_for(iap_id, price_usd, token)
     api_call("POST", "/v1/inAppPurchasePriceSchedules", {
         "data": {"type": "inAppPurchasePriceSchedules",
