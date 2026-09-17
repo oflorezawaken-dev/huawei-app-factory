@@ -25,10 +25,12 @@ struct KeypadRow: View {
     let keys: [KeypadKey]
     let preferredColumns: Int
     let availableWidth: CGFloat
+    var availableHeight: CGFloat?
 
     var body: some View {
         let metrics = KeypadLayout.arrange(keyCount: keys.count, preferredColumns: preferredColumns,
-                                            availableWidth: availableWidth)
+                                            availableWidth: availableWidth,
+                                            availableHeight: availableHeight)
         let rows = stride(from: 0, to: keys.count, by: metrics.columns).map { start in
             Array(keys[start..<min(start + metrics.columns, keys.count)])
         }
@@ -39,9 +41,17 @@ struct KeypadRow: View {
                         Button(action: key.action) {
                             Text(key.label)
                                 .font(.system(.body, design: .monospaced))
-                                .frame(width: metrics.keySize, height: metrics.keySize)
+                                .frame(maxWidth: .infinity, maxHeight: .infinity)
                         }
                         .buttonStyle(.bordered)
+                        // The frame goes on the BUTTON, not on its label. On the
+                        // label, `.bordered` then adds its own padding around it
+                        // and every key ships ~22pt wider than the width
+                        // KeypadLayout measured -- six of them overflowed a
+                        // 424pt row and half the keypad hung off the right edge
+                        // of the store screenshot. The measurement was right and
+                        // the drawing ignored it.
+                        .frame(width: metrics.keySize, height: metrics.keySize)
                         .accessibilityIdentifier(key.id)
                         .accessibilityLabel(LocalizedStringKey(key.accessibilityLabelKey))
                     }
@@ -57,12 +67,32 @@ struct KeypadRow: View {
 struct KeypadView: View {
     let viewModel: CalculatorViewModel
     let availableWidth: CGFloat
+    /// The height the keypad may occupy. The caller measures it; the keypad
+    /// divides it between its four rows. Without it the digit grid sized its
+    /// square keys from the width alone and grew to 424pt on a 440pt phone,
+    /// pushing the equals bar off the bottom of the screen where no tap and no
+    /// accessibility scroll could reach it.
+    let availableHeight: CGFloat
+
+    /// The equals bar plus the three inter-row gaps, which are not the grid's
+    /// to spend.
+    private var heightForKeyRows: CGFloat {
+        max(availableHeight - KeypadLayout.minKeySize - 8 * 3, KeypadLayout.minKeySize)
+    }
 
     var body: some View {
+        // The two single-row groups take a row each; the digit grid takes the
+        // rest, since it is the one that wraps.
+        let unitRowHeight = min(KeypadLayout.maxKeySize, heightForKeyRows * 0.18)
+        let gridHeight = heightForKeyRows - unitRowHeight * 2
+
         VStack(spacing: 8) {
-            KeypadRow(keys: unitKeys, preferredColumns: 6, availableWidth: availableWidth)
-            KeypadRow(keys: utilityKeys, preferredColumns: 6, availableWidth: availableWidth)
-            KeypadRow(keys: digitKeys, preferredColumns: 4, availableWidth: availableWidth)
+            KeypadRow(keys: unitKeys, preferredColumns: 6, availableWidth: availableWidth,
+                      availableHeight: unitRowHeight)
+            KeypadRow(keys: utilityKeys, preferredColumns: 6, availableWidth: availableWidth,
+                      availableHeight: unitRowHeight)
+            KeypadRow(keys: digitKeys, preferredColumns: 4, availableWidth: availableWidth,
+                      availableHeight: gridHeight)
             Button(action: viewModel.equals) {
                 Text("keypad.equals")
                     .frame(maxWidth: .infinity, minHeight: KeypadLayout.minKeySize)

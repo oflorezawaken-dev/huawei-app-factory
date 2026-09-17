@@ -16,9 +16,9 @@ struct RoofSolverView: View {
     @State private var showingSaveSheet = false
 
     private var result: RoofSolver.Result? {
-        let rise = InputParsing.length(riseText, settings: settings)
-        let run = InputParsing.length(runText, settings: settings)
-        let diagonal = InputParsing.length(diagonalText, settings: settings)
+        let rise = InputParsing.length(riseText, settings: settings, defaultUnit: .feet)
+        let run = InputParsing.length(runText, settings: settings, defaultUnit: .feet)
+        let diagonal = InputParsing.length(diagonalText, settings: settings, defaultUnit: .feet)
         let pitch = InputParsing.rational(pitchText)
         return try? RoofSolver.solve(rise: rise, run: run, diagonal: diagonal, pitchPer12: pitch)
     }
@@ -26,11 +26,11 @@ struct RoofSolverView: View {
     var body: some View {
         Form {
             Section("roof.inputs") {
-                TextField("roof.rise", text: $riseText).keyboardType(.decimalPad)
+                TextField(fieldLabel("roof.rise", .feet), text: $riseText).keyboardType(.decimalPad)
                     .accessibilityIdentifier("roof.rise")
-                TextField("roof.run", text: $runText).keyboardType(.decimalPad)
+                TextField(fieldLabel("roof.run", .feet), text: $runText).keyboardType(.decimalPad)
                     .accessibilityIdentifier("roof.run")
-                TextField("roof.diagonal", text: $diagonalText).keyboardType(.decimalPad)
+                TextField(fieldLabel("roof.diagonal", .feet), text: $diagonalText).keyboardType(.decimalPad)
                     .accessibilityIdentifier("roof.diagonal")
                 TextField("roof.pitchPer12", text: $pitchText).keyboardType(.decimalPad)
                     .accessibilityIdentifier("roof.pitch")
@@ -59,6 +59,7 @@ struct RoofSolverView: View {
                 }
             }
         }
+        .keyboardDoneToolbar()
         .navigationTitle("solvers.roof")
         .sheet(isPresented: $showingSaveSheet) {
             if let result {

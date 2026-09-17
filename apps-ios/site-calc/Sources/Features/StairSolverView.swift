@@ -17,9 +17,9 @@ struct StairSolverView: View {
     @State private var minTreadText = ""
     @State private var showingSaveSheet = false
 
-    private var maxRiserHeight: Length? { InputParsing.length(maxRiserText, settings: settings) }
-    private var minTreadDepth: Length? { InputParsing.length(minTreadText, settings: settings) }
-    private var totalRise: Length? { InputParsing.length(totalRiseText, settings: settings) }
+    private var maxRiserHeight: Length? { InputParsing.length(maxRiserText, settings: settings, defaultUnit: .inches) }
+    private var minTreadDepth: Length? { InputParsing.length(minTreadText, settings: settings, defaultUnit: .inches) }
+    private var totalRise: Length? { InputParsing.length(totalRiseText, settings: settings, defaultUnit: .inches) }
 
     private var canSolve: Bool { totalRise != nil && maxRiserHeight != nil && minTreadDepth != nil }
 
@@ -38,12 +38,12 @@ struct StairSolverView: View {
     var body: some View {
         Form {
             Section("stair.inputs") {
-                TextField("stair.totalRise", text: $totalRiseText).keyboardType(.decimalPad)
+                TextField(fieldLabel("stair.totalRise", .inches), text: $totalRiseText).keyboardType(.decimalPad)
                     .accessibilityIdentifier("stair.totalRise")
-                TextField("stair.maxRiser", text: $maxRiserText).keyboardType(.decimalPad)
+                TextField(fieldLabel("stair.maxRiser", .inches), text: $maxRiserText).keyboardType(.decimalPad)
                     .accessibilityIdentifier("stair.maxRiser")
                     .onChange(of: maxRiserText) { _, _ in settings.maxRiserHeight = maxRiserHeight }
-                TextField("stair.minTread", text: $minTreadText).keyboardType(.decimalPad)
+                TextField(fieldLabel("stair.minTread", .inches), text: $minTreadText).keyboardType(.decimalPad)
                     .accessibilityIdentifier("stair.minTread")
                     .onChange(of: minTreadText) { _, _ in settings.minTreadDepth = minTreadDepth }
                 Text("stair.statement.yourLimits").font(.footnote).foregroundStyle(.secondary)
@@ -82,6 +82,7 @@ struct StairSolverView: View {
                 }
             }
         }
+        .keyboardDoneToolbar()
         .navigationTitle("solvers.stair")
         .onAppear {
             if maxRiserText.isEmpty, let existing = settings.maxRiserHeight {

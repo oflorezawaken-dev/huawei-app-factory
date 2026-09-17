@@ -43,6 +43,16 @@ final class DimensionTests: XCTestCase {
     /// calculator that rounded 1/8 down to 0 at 1/4 precision would quietly
     /// lose an eighth on every cut, and one that used banker's rounding would
     /// do it on alternate cuts, which is worse because it looks random.
+    func testAFractionOnItsOwnHasNoLeadingZero() {
+        XCTAssertEqual(LengthFormatting.feetInchFraction(Length(Rational(3, 8), .inches), precision: .eighth),
+                       "3/8\"")
+        // But a whole-inch part is still shown, and so is a foot part.
+        XCTAssertEqual(LengthFormatting.feetInchFraction(Length(Rational(59, 8), .inches), precision: .eighth),
+                       "7-3/8\"")
+        XCTAssertEqual(LengthFormatting.feetInchFraction(Length(Rational(99, 8), .inches), precision: .eighth),
+                       "1' 0-3/8\"")
+    }
+
     func testHalvesRoundAwayFromZero() {
         XCTAssertEqual(Rational(1, 8).rounded(toNearestFractionOf: 4), Rational(1, 4))
         XCTAssertEqual(Rational(-1, 8).rounded(toNearestFractionOf: 4), Rational(-1, 4))

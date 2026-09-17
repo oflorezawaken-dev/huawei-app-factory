@@ -24,6 +24,11 @@ enum LengthFormatting {
         let body: String
         if fractionPart.isZero {
             body = "\(inches)\""
+        } else if inches == 0 && feet == 0 {
+            // Three eighths of an inch reads as 3/8", not 0-3/8". The leading
+            // zero is correct and looks like a typo, and it went out in a store
+            // screenshot ("would fall 0-3/8\" short of the total rise").
+            body = "\(fractionPart.numerator)/\(fractionPart.denominator)\""
         } else {
             body = "\(inches)-\(fractionPart.numerator)/\(fractionPart.denominator)\""
         }

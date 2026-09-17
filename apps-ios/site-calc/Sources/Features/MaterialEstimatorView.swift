@@ -81,14 +81,14 @@ struct MaterialEstimatorView: View {
             Section("material.category") {
                 Picker("material.category", selection: $category) {
                     ForEach(MaterialCategory.allCases) { c in
-                        Text(LocalizedStringKey("material.category.\(c.rawValue)")).tag(c)
+                        Text(localized("material.category." + c.rawValue)).tag(c)
                     }
                 }
                 .accessibilityIdentifier("material.categoryPicker")
             }
 
             Section("material.inputs") {
-                Text(LocalizedStringKey("material.hint.\(category.rawValue)"))
+                Text(localized("material.hint." + category.rawValue))
                     .font(.footnote).foregroundStyle(.secondary)
                     .accessibilityIdentifier("material.hint")
                 TextField("material.field.a", text: $a).keyboardType(.decimalPad)
@@ -117,6 +117,7 @@ struct MaterialEstimatorView: View {
                 }
             }
         }
+        .keyboardDoneToolbar()
         .navigationTitle("solvers.materials")
         .sheet(isPresented: $showingSaveSheet) {
             let saved = SavedMaterialList(title: "solvers.materials".localized, lines: draftLines)

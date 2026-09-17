@@ -43,10 +43,17 @@ struct CalculatorView: View {
                     }
                     .listStyle(.plain)
                     .frame(maxHeight: .infinity)
-                    .frame(minHeight: 120)
                     .accessibilityIdentifier("calculator.tape")
 
-                    KeypadView(viewModel: viewModel, availableWidth: geo.size.width - 16)
+                    // The keypad is measured against a fixed share of the
+                    // screen and the tape takes what is left, which is the way
+                    // round the spec asks for. The reverse -- a greedy tape
+                    // with a 120pt floor and a keypad sized only by width --
+                    // put the equals bar below the bottom edge.
+                    KeypadView(viewModel: viewModel,
+                               availableWidth: geo.size.width - 16,
+                               availableHeight: geo.size.height * 0.62)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
             }
             .navigationTitle("tab.calculator")

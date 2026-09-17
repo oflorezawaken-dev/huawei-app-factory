@@ -2,3 +2,6 @@
 *.xcodeproj/
 build/
 DerivedData/
+screenshots-out/
+screenshots-out-ipad/
+*.xcresult/

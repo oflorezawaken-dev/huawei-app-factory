@@ -61,14 +61,14 @@ struct AreaVolumeView: View {
             Section("areaVolume.shape") {
                 Picker("areaVolume.shape", selection: $shape) {
                     ForEach(AreaVolumeShape.allCases) { s in
-                        Text(LocalizedStringKey("areaVolume.shape.\(s.rawValue)")).tag(s)
+                        Text(localized("areaVolume.shape." + s.rawValue)).tag(s)
                     }
                 }
                 .accessibilityIdentifier("areaVolume.shapePicker")
             }
 
             Section("areaVolume.inputs") {
-                Text(LocalizedStringKey("areaVolume.hint.\(shape.rawValue)"))
+                Text(localized("areaVolume.hint." + shape.rawValue))
                     .font(.footnote).foregroundStyle(.secondary)
                     .accessibilityIdentifier("areaVolume.hint")
                 ForEach(fieldLabels, id: \.self) { label in
@@ -99,6 +99,7 @@ struct AreaVolumeView: View {
                 }
             }
         }
+        .keyboardDoneToolbar()
         .navigationTitle("solvers.areaVolume")
         .onChange(of: shape) { _, _ in a = ""; b = ""; c = ""; d = "" }
         .sheet(isPresented: $showingSaveSheet) {
@@ -139,7 +140,7 @@ struct AreaVolumeView: View {
             default: return $d
             }
         }()
-        TextField(LocalizedStringKey("areaVolume.field.\(key)"), text: binding)
+        TextField(localized("areaVolume.field." + key), text: binding)
             .keyboardType(.decimalPad)
             .accessibilityIdentifier("areaVolume.field.\(key)")
     }

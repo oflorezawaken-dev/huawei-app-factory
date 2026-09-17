@@ -42,12 +42,12 @@ struct SettingsView: View {
                         TextField("stair.maxRiser", text: $maxRiserText).keyboardType(.decimalPad)
                             .accessibilityIdentifier("settings.maxRiser")
                             .onChange(of: maxRiserText) { _, new in
-                                settings.maxRiserHeight = InputParsing.length(new, settings: settings)
+                                settings.maxRiserHeight = InputParsing.length(new, settings: settings, defaultUnit: .inches)
                             }
                         TextField("stair.minTread", text: $minTreadText).keyboardType(.decimalPad)
                             .accessibilityIdentifier("settings.minTread")
                             .onChange(of: minTreadText) { _, new in
-                                settings.minTreadDepth = InputParsing.length(new, settings: settings)
+                                settings.minTreadDepth = InputParsing.length(new, settings: settings, defaultUnit: .inches)
                             }
                     }
 
