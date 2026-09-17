@@ -93,6 +93,12 @@ class TranslateViewModel(
         }
         viewModelScope.launch {
             val ready = engine.isPairReady(s.effectiveSource, s.target)
+            // The engine is the truth; our own record of what was downloaded is
+            // only a convenience for the Languages screen. When they disagree --
+            // a pair fetched by an older build, or an install that kept its
+            // models -- believe the engine and repair the record, rather than
+            // telling the user nothing is downloaded while the app translates.
+            if (ready) prefs.rememberPair(s.effectiveSource, s.target)
             _state.update { it.copy(pairReady = ready) }
         }
     }
