@@ -111,10 +111,12 @@ final class ScreenshotTests: XCTestCase {
         let new = app.buttons["jobs.new"]
         XCTAssertTrue(new.waitForExistence(timeout: 10), "the jobs screen never appeared")
         new.tap()
-        let name = app.textFields["jobs.newName"]
-        XCTAssertTrue(name.waitForExistence(timeout: 5), "the new-job sheet never appeared")
-        name.tap()
-        name.typeText("Kitchen extension")
+        XCTAssertTrue(app.textFields["jobs.newName"].waitForExistence(timeout: 5),
+                      "the new-job sheet never appeared")
+        // Through the verified helper: a raw typeText here passed locally and
+        // failed on CI, and the failure surfaced ten lines later as "the saved
+        // job never appeared", which points at saving rather than at typing.
+        type("Kitchen extension", into: "jobs.newName")
         app.buttons["jobs.newSave"].tap()
         XCTAssertTrue(app.buttons["jobs.row.Kitchen extension"].waitForExistence(timeout: 10),
                       "the saved job never appeared in the list")
