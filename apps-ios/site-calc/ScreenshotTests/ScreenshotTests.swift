@@ -13,11 +13,13 @@ final class ScreenshotTests: XCTestCase {
     override func setUpWithError() throws {
         continueAfterFailure = false
         app = XCUIApplication()
-        app.launchArguments += ["-FactoryUITest", "-AppleLanguages", "(en)", "-AppleLocale", "en_US"]
+        app.launchArguments += ["-FactoryUITest", "-FactoryUITestFirstRun",
+                                 "-AppleLanguages", "(en)", "-AppleLocale", "en_US"]
         app.launch()
     }
 
     func testCaptureMainScreens() throws {
+        try loadTheSampleJob()
         try buildATape()
         try solveARoof()
         try solveAStair()
@@ -28,6 +30,19 @@ final class ScreenshotTests: XCTestCase {
     }
 
     // MARK: - screens
+
+    /// First Run offers a worked sample job -- a tape, a roof result and a
+    /// material list. Taking it is what a new user does and what a reviewer
+    /// sees, and it is the difference between a Jobs screen that shows the
+    /// app working and one that shows an empty list.
+    private func loadTheSampleJob() throws {
+        let load = app.buttons["firstRun.loadSample"]
+        XCTAssertTrue(load.waitForExistence(timeout: 15), "First Run never appeared")
+        capture(named: "07-firstrun")
+        load.tap()
+        XCTAssertTrue(app.tabBars.buttons.element(boundBy: 0).waitForExistence(timeout: 15),
+                      "the app never got past First Run")
+    }
 
     /// 14' 3-5/8" + 9' 11-3/4". The headline sum from the spec, entered the way
     /// a user enters it: digits, a unit key, a fraction, an operator.
@@ -46,7 +61,7 @@ final class ScreenshotTests: XCTestCase {
         XCTAssertTrue(app.staticTexts["calculator.result"].waitForExistence(timeout: 10),
                       "the calculator never produced a result")
         assertEveryKeyIsOnScreen()
-        capture(named: "03-calculator")
+        capture(named: "04-calculator")
     }
 
     private func solveARoof() throws {
@@ -56,7 +71,7 @@ final class ScreenshotTests: XCTestCase {
         type("7", into: "roof.pitch")
         XCTAssertTrue(app.descendants(matching: .any)["roof.result.pitchDegrees"].waitForExistence(timeout: 10),
                       "the roof solver never produced a result")
-        capture(named: "04-roof")
+        capture(named: "05-roof")
         back()
     }
 
@@ -67,7 +82,7 @@ final class ScreenshotTests: XCTestCase {
         type("10", into: "stair.minTread")
         let solve = app.buttons["stair.solve"]
         if solve.waitForExistence(timeout: 5), solve.isEnabled { solve.tap() }
-        capture(named: "05-stair")
+        capture(named: "06-stair")
         XCTAssertTrue(app.descendants(matching: .any)["stair.result.riserCount"].waitForExistence(timeout: 10),
                       "the stair solver never produced a result")
         back()
@@ -87,7 +102,7 @@ final class ScreenshotTests: XCTestCase {
             .matching(NSPredicate(format: "identifier BEGINSWITH %@", "material.line."))
         XCTAssertTrue(lines.element(boundBy: 0).waitForExistence(timeout: 10),
                       "the estimator produced no material line")
-        capture(named: "02-materials")
+        capture(named: "03-materials")
         back()
     }
 
@@ -103,12 +118,29 @@ final class ScreenshotTests: XCTestCase {
         app.buttons["jobs.newSave"].tap()
         XCTAssertTrue(app.buttons["jobs.row.Kitchen extension"].waitForExistence(timeout: 10),
                       "the saved job never appeared in the list")
+        let sample = app.descendants(matching: .any)
+            .matching(NSPredicate(format: "identifier BEGINSWITH %@", "jobs.sampleBadge."))
+        XCTAssertTrue(sample.element(boundBy: 0).waitForExistence(timeout: 10),
+                      "the sample job is missing, so the Jobs screenshot would be an empty list")
         capture(named: "01-jobs")
+
+        // The sample job's own screen: a tape, a solved roof and a material
+        // list in one place. This is the app being a tool, which is the
+        // guideline 4.2 argument made in pictures.
+        let sampleRow = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", "jobs.row."))
+        for index in 0..<sampleRow.count where sampleRow.element(boundBy: index).identifier != "jobs.row.Kitchen extension" {
+            sampleRow.element(boundBy: index).tap()
+            break
+        }
+        XCTAssertTrue(app.textFields["jobDetail.name"].waitForExistence(timeout: 10),
+                      "the job detail screen never appeared")
+        capture(named: "02-jobdetail")
+        back()
     }
 
     private func captureSettings() {
         tab("tab.settings").tap()
-        capture(named: "06-settings")
+        capture(named: "08-settings")
     }
 
     /// Apple asks for a screenshot of the purchase itself when an in-app
@@ -123,7 +155,7 @@ final class ScreenshotTests: XCTestCase {
         open.tap()
         XCTAssertTrue(app.descendants(matching: .any)["removeAds.unlocksNothing"].waitForExistence(timeout: 10),
                       "the Remove Ads screen never appeared")
-        capture(named: "07-removeads")
+        capture(named: "09-removeads")
     }
 
     /// The unit tests prove KeypadLayout computes a keypad that fits. They
