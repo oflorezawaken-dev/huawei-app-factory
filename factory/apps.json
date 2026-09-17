@@ -366,6 +366,38 @@
       },
       "known_gaps": {},
       "proposal": "proposals/2026-09-09-shift-slip-ios.md"
+    },
+    {
+      "slug": "site-calc",
+      "name": "SiteCalc",
+      "platform": "ios",
+      "path": "apps-ios/site-calc",
+      "bundle_id": "com.proapps.sitecalc",
+      "asc_app_id": "",
+      "sku": "site-calc",
+      "spec": "specifications/site-calc.json",
+      "store_dir": "apps-ios/site-calc/store",
+      "privacy_path": "docs/site-calc/privacy",
+      "support_path": "docs/site-calc/support",
+      "status": "planned",
+      "current_version": {
+        "marketing_version": "1.0.0",
+        "build": 1,
+        "status": "planned"
+      },
+      "admob": {
+        "app_id": "",
+        "banner_unit_id": "",
+        "interstitial_unit_id": "",
+        "_note": "Set as GitHub Actions repository variables, not here: factory rule 5 keeps ad unit IDs out of git. ADMOB_<SLUG>_APP_ID / _BANNER_UNIT_ID / _INTERSTITIAL_UNIT_ID, slug upper-cased with - as _. Workflows pass them in as FACTORY_VARS. Left empty so a pull request, which cannot read variables, falls back to the template's Google test IDs -- which is exactly what the quality gate expects on a PR."
+      },
+      "iap": {
+        "remove_ads_product_id": "com.proapps.sitecalc.removeads",
+        "price_usd": "4.99",
+        "_note": "USA base price for the Remove Ads non-consumable; Apple equalises the other territories. asc_setup.py resolves it to a price point and creates the schedule. Set to 4.99 rather than the 2.99 of the other two apps by owner decision: the proposal's monetisation case is that the purchase, not the banner, carries this app, and a year of the incumbent's subscription is 39.99."
+      },
+      "known_gaps": {},
+      "proposal": "proposals/2026-09-15-site-calc-ios.md"
     }
   ]
 }

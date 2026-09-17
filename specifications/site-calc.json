@@ -1,0 +1,741 @@
+{
+  "spec_version": "1.0.0",
+  "app": {
+    "name": "SiteCalc",
+    "bundle_id": "com.proapps.sitecalc",
+    "sku": "site-calc",
+    "marketing_version": "1.0.0",
+    "build": 1,
+    "category_primary": "Utilities",
+    "category_secondary": "Productivity",
+    "description": "SiteCalc does the arithmetic a tape measure forces on anyone who builds: feet, inches and fractions down to 1/64, added, subtracted, multiplied and divided in one expression, mixed freely with metres, centimetres and millimetres. Every entry lands on a scrollable tape that can be labelled and corrected afterwards, so the answer is never a single number with no history behind it. On top of that sit four solvers - right angle and roof (rise, run, diagonal, pitch in rise-per-foot and degrees, common rafter, hip and valley), stair layout (riser count, riser height, tread depth, total run, stringer length), area and volume (rooms, walls, slabs, footings, columns, circles, arcs) and material estimating off that geometry (concrete in cubic yards, cubic metres and bag counts, studs at a spacing the user chooses, drywall sheets, tile with a waste percentage, paint from a coverage rate the user enters, decking, roofing squares). Work is saved as a named job with its tape and its material lists, and any job exports to PDF or CSV for free, forever. Everything runs on the iPhone in SwiftData with no account, no sign-in, no cloud and no server. Two things SiteCalc deliberately does not do: it ships no regulatory limit of any kind - no riser or tread maxima, no span or load tables, no ampacity charts - because the user's own limits are the only ones that are current, and it has no currency field anywhere, so no cost, quoting or invoicing feature exists. Free, with an AdMob banner on the jobs and settings screens and one full-screen ad after an export file has already been written to disk; a one-time purchase removes all advertising and unlocks nothing, because nothing is locked.",
+    "target_audience": "Carpenters, framers, remodellers, roofers, deck builders, drywall and tile installers, site foremen and serious DIY builders in the United States, Canada and the United Kingdom - the markets where construction arithmetic is still done in feet, inches and fractions. The user already knows what a construction calculator is, has either owned a handheld one or used the subscription app, opens the tool dozens of times in a working day, and is paid by the hour while doing it. Secondary: apprentices and trade-school students who need the arithmetic before they can afford the hardware. Metric-only markets are served correctly by the same engine but are not the demand case; the proposal measured that directly and it is recorded as the main open risk.",
+    "problem_solved": "Base-12 mixed-fraction arithmetic - 14 ft 3-5/8 in plus 9 ft 11-3/4 in, divided by 16 in on centre - is what a builder does all day, and no ordinary calculator understands it. The tools that do are rented: the category leader charges a monthly or yearly subscription with no one-time option anywhere in its catalogue, and the nearest free alternative paywalls its addition button and has no rafter, stair, area, volume or estimating functions at all. SiteCalc gives the whole arithmetic away permanently, including the export the incumbents charge for. The second problem is trust: a wrong rafter length is cut into a real board, so correctness here is safety-adjacent, and the app answers it with an exact arithmetic type, solvers validated against published worked examples, and a line under every result restating the inputs it came from."
+  },
+  "product_strategy": {
+    "market_opportunity": "Demand is measured, not inferred, and it is concentrated in one language. Construction Master Pro Calc holds 4.8 stars over 39,790 ratings with 1.12M+ downloads and was updated 2026-09-02; Construction Master 5 Calc holds 4.8 over 13,210; Concrete Calculator Plus holds 4.8 over 25,770 but has been stale since 2024-03-15 and does concrete only; Feet & Inches Tape Calculator holds 4.4 over 9,262 (all figures fetched from apps.apple.com on 2026-09-15). The paywall opening is unusually old: the leader moved to subscription in mid-2024, the one-star complaints about it run continuously from 2023 into July 2026, and twenty-seven months later no free replacement has shipped - because the dimensional-math engine is genuinely fiddly to build, which is the same fact that makes this app impossible to mistake for a template reskin. The counterweight, stated as an open risk and not hidden: every construction calculator found in the German, Spanish, Italian, French and Brazilian storefronts has between 0 and 6 ratings, and almost all carry 2026 App Store IDs, so eight of the nine factory locales are simultaneously empty of demand and already clone-flooded. Listing effort belongs on en-US, en-GB and en-CA.",
+    "competitive_advantage": "Four things the incumbents cannot copy without giving up revenue. (1) The dimensional arithmetic itself is free and permanent, against a subscription with no one-time or lifetime option in the whole catalogue - and the audience's complaint is not that it costs money, it is that it is rented. (2) A scrollable, labellable, correctable tape, against a handheld-style single-number display; this is the loudest usability complaint in the category. (3) PDF and CSV export of a job, free forever and behind no purchase, which is also the backup story for an app with no cloud. (4) Four solvers plus a material estimator in one app, where the free alternative paywalls its addition button and the single-purpose free apps do one shape each. Two deliberate non-advantages, both scope discipline: no regulatory values of any kind, because a stale limit in an offline app is worse than none, and no money features at all, which separates SiteCalc cleanly from the account's two existing money apps.",
+    "main_competitors": [
+      "Construction Master Pro Calc (Calculated Industries, id370406446) - 4.8 stars, 39,790 ratings, 1.12M+ downloads, v12.11.22 updated 2026-09-02. Free download, 4.99 USD per month or 39.99 USD per year, 14-day trial, no one-time option. The 1-star reviews are the demand evidence: 'the subscription is nearly equivalent to buying a new calculator EVERY YEAR' (2024-03-26), 'they moved to a subscription that I think is way over-priced' (2026-07-18)",
+      "Construction Master 5 Calc (Calculated Industries, id370412148) - 4.8 stars, 13,210 ratings; subscription only, no one-time or lifetime option",
+      "Feet & Inches Tape Calculator (Tue Nguyen Minh, id1434258634) - 4.4 stars, 9,262 ratings, updated 2025-11-26; free, but the free version locks the addition button behind a purchase, and it has no rafter, stair, area, volume or material-estimating functions",
+      "Concrete Calculator Plus (id1494386815) - 4.8 stars, 25,770 ratings, free, but stale since 2024-03-15 and single-purpose",
+      "Material Estimator (id376071081) and Pipe Trades Pro (id596142100), same developer as the leader - 3,123 and 4,300 ratings, same subscription structure",
+      "The 2026 entrant flood (6786981827, 6757513389, 6753908597, 6755673080) - 0, 8, 19 and 66 ratings, none combining dimensional arithmetic with saved jobs and export; the guideline 4.3 risk and also the evidence that nobody has closed the opening"
+    ],
+    "estimated_development_complexity": 4,
+    "estimated_market_potential": 4,
+    "monetization_strategy": "Free app funded by Google AdMob, with the ad placement treated as a product constraint rather than a revenue knob: one adaptive anchored banner on the Jobs list, the job detail screen and Settings/Reference, and exactly one interstitial placement, presented only after a PDF or CSV has already been written to disk. Nothing else carries advertising - not the calculator, not the tape, not the roof or stair solver, not the area, volume or estimating screens - because this is a tool held in a gloved hand on a jobsite and an ad between a builder and a number is a miscut board. A one-time non-consumable Remove Ads purchase removes all advertising forever and unlocks nothing: every calculation, every solver, every job and both export formats are free with or without it. The purchase case is the strongest in four research rounds - the app is opened dozens of times a working day by someone paid by the hour, and the audience is already primed to pay once and resents paying monthly. The USD base price is deliberately not set in this spec; it is an owner decision at the console step, and iap.price_usd in the registry is left unset so asc_setup.py refuses loudly rather than guessing."
+  },
+  "technical": {
+    "platform": "iOS",
+    "language": "Swift",
+    "ui": "SwiftUI",
+    "architecture": "MVVM with @Observable",
+    "persistence": "SwiftData",
+    "min_ios": "17.0",
+    "devices": [
+      "iPhone"
+    ],
+    "project_generator": "XcodeGen",
+    "offline_first": true
+  },
+  "features": [
+    {
+      "id": "F001",
+      "name": "Exact dimensional number type",
+      "description": "The core of the app and the part that must never be wrong. A unit-aware value holding an exact rational number of inches (Int numerator over Int denominator, reduced), so feet, inches, fractions from 1/2 to 1/64, decimal feet, decimal inches, metres, centimetres and millimetres are one type that can be added, subtracted, multiplied and divided in a single expression. No binary floating point anywhere in the value: Double and Float are banned from this module and from the tape. Multiplication of two lengths yields an area, of three a volume, and dividing a length by a length yields a dimensionless count, so 291-3/8 in divided by 16 in on centre is a count and not a length. Square roots and trigonometry are the only floating-point operations in the app; they live at the solver boundary, are computed in Double and converted straight back to the dimensional type, and the full-precision result is retained for chaining while the display shows the nearest unit of the user's chosen fraction precision. Rounding is for display only and never replaces the stored value: 2,400 mm entered in metric is still exactly 2,400 mm after being shown as 7 ft 10-1/2 in.",
+      "priority": "P0",
+      "requires_internet": false,
+      "requires_permission": false,
+      "permission": ""
+    },
+    {
+      "id": "F002",
+      "name": "Calculator and scrollable tape",
+      "description": "The home screen. A keypad in the shape a builder expects - digits, decimal point, fraction entry, feet, inch, yard, metre, centimetre, millimetre, the four operators, equals, clear, backspace, on-centre, percent and memory - over a tape that keeps every entry of the session. Each tape line shows the value as entered, the operator applied and the running result, and can be given a label ('back wall', 'header') or corrected after the fact, at which point every line below it recomputes and the correction is shown rather than silently applied. The tape is the answer to the single loudest usability complaint about the handheld calculators it replaces, which show one number at a time. The tape scrolls, survives backgrounding, and can be saved into a job (F008) or cleared. No advertising of any kind is drawn on this screen in any state.",
+      "priority": "P0",
+      "requires_internet": false,
+      "requires_permission": false,
+      "permission": ""
+    },
+    {
+      "id": "F003",
+      "name": "Imperial and metric in one expression",
+      "description": "Any entry can be typed in feet-inch-fraction, decimal feet, decimal inches, metres, centimetres or millimetres, and units mix inside a single expression; the result is shown in the user's preferred display unit with a one-tap swap to the other system. Conversion uses the exact definition of the international inch (25.4 mm exactly), so every conversion is a rational operation and not an approximation. Fraction precision is selectable per user from 1/2 to 1/64 and applies to display only.",
+      "priority": "P0",
+      "requires_internet": false,
+      "requires_permission": false,
+      "permission": ""
+    },
+    {
+      "id": "F004",
+      "name": "Right-angle and roof solver",
+      "description": "Enter any two of rise, run and diagonal, or a pitch plus one length, and the solver returns the rest: rise, run, diagonal, pitch expressed both as rise-per-twelve-inches and in degrees, common rafter length, and hip or valley length for an equal-pitch intersection. Pure geometry with no lookup: the hip length is the diagonal over the square of the run plus the square of the rise, not a table entry. Every result is accompanied by a 'from what you entered' line restating the inputs and the formula shape, because the output of this screen gets cut into a real board. The solver ships no limit, allowance or regulatory value; it answers the geometry it was given. Unit-tested against published worked examples (F016). No advertising of any kind is drawn on this screen.",
+      "priority": "P0",
+      "requires_internet": false,
+      "requires_permission": false,
+      "permission": ""
+    },
+    {
+      "id": "F005",
+      "name": "Stair layout solver",
+      "description": "Total rise in, layout out: number of risers, exact riser height, tread depth, total run and stringer length. The maximum riser height and minimum tread depth are fields the user fills in themselves - they start empty, the app bundles no default for either, and the Solve action stays disabled until the user supplies them. This is deliberate and is the whole reason the app can be offline: regulatory limits differ by jurisdiction and change over time, and a stale number shipped inside an offline app is worse than no number at all. The riser height is reported exactly (111 in over 15 risers is 7.400 in, not 7-3/8 in), and where the exact height is not representable at the user's fraction precision the screen shows the exact value, the nearest fraction, and the total difference that rounding every riser would accumulate over the flight - because unequal risers are the single most common way a stair goes wrong. A 'from what you entered' line restates the total rise and the two limits used. No advertising of any kind is drawn on this screen.",
+      "priority": "P0",
+      "requires_internet": false,
+      "requires_permission": false,
+      "permission": ""
+    },
+    {
+      "id": "F006",
+      "name": "Area and volume",
+      "description": "Rooms and walls (with openings subtracted), rectangular and circular footings, columns, slabs, circles, segments and arcs, in square and cubic feet, yards, metres and centimetres, from dimensions typed in any supported unit. Results feed straight into the material estimator without retyping, and every shape shows the dimensions it used. No advertising of any kind is drawn on this screen.",
+      "priority": "P0",
+      "requires_internet": false,
+      "requires_permission": false,
+      "permission": ""
+    },
+    {
+      "id": "F007",
+      "name": "Material estimator",
+      "description": "Quantities, never money. Concrete in cubic feet, cubic yards, cubic metres and bag counts at a published bag yield the user can override; studs, joists or rafters at a spacing the user chooses, reported as spaces and as pieces including both ends, with the remainder stated; drywall and sheathing in sheets of a chosen sheet size; tile and flooring in pieces with a waste percentage the user sets; paint in containers from a coverage rate the user types, with no coverage rate bundled; decking boards from board width and gap; roofing in squares. Every line is a count or a quantity with its unit - there is no currency field, no unit rate field, no total and no export column anywhere in the app that holds money. Rounding is always up to a whole purchasable unit, shown alongside the exact quantity so the user can see what the rounding added. The estimator output attaches to a job (F008) and exports with it. No advertising of any kind is drawn on this screen.",
+      "priority": "P0",
+      "requires_internet": false,
+      "requires_permission": false,
+      "permission": ""
+    },
+    {
+      "id": "F008",
+      "name": "Jobs",
+      "description": "A named job holds a tape, any solver results saved into it, and its material lists, in SwiftData on the device. Jobs are listed newest first with their last-edited date and line count, can be renamed, duplicated and deleted (deletion confirms and names how many lines go with it), and carry an optional free-text note. Nothing about a job leaves the phone and nothing about a job identifies a customer beyond whatever the user chose to type as its name. The Jobs list and the job detail screen are two of the three screens that carry a banner.",
+      "priority": "P0",
+      "requires_internet": false,
+      "requires_permission": false,
+      "permission": ""
+    },
+    {
+      "id": "F009",
+      "name": "Free PDF and CSV export",
+      "description": "Any job exports to a printable PDF or an RFC 4180 CSV through the system share sheet, free forever, behind no purchase and checking no entitlement - this is the part the incumbents charge for, and with no cloud in this version it is also the only backup. The PDF renders the job name, the date, the tape with its labels and running results, each solver result with the inputs it came from, and the material list; the CSV is UTF-8 with a BOM, ISO 8601 dates, a period as the decimal separator regardless of locale, and one row per tape line and per material line, each carrying both the exact decimal value in inches and millimetres and the formatted display value. Neither format contains a money column, because no money value exists to put in one. The file is written to the app container and its existence on disk is verified before anything else happens - the interstitial in F013 is gated on that check.",
+      "priority": "P0",
+      "requires_internet": false,
+      "requires_permission": false,
+      "permission": ""
+    },
+    {
+      "id": "F010",
+      "name": "Keypad that measures before it draws",
+      "description": "This app's keypad is denser than the Sudoku number pad whose ninth key fell off a 384dp screen and became unreachable, so the layout rule is inverted from the usual one: the keypad row measures the width it has been offered and then wraps or shrinks its keys to fit, never assuming a width and never letting a key fall outside the safe area. Keys never shrink below 44x44 points; when the available width cannot hold a row at that size the row wraps to the next line, and when wrapping is exhausted the keypad scrolls horizontally with both edges visible. The tape takes the height the keypad leaves rather than claiming its own first, and keeps a scrollable minimum so the running result is always visible above the keys. The narrowest layout that must work is 320x568 points - an iPhone SE in Display Zoom - and the widest is 430 points; both are verified on a real device before any screenshot is taken.",
+      "priority": "P0",
+      "requires_internet": false,
+      "requires_permission": false,
+      "permission": ""
+    },
+    {
+      "id": "F011",
+      "name": "Sample job on first run",
+      "description": "First launch offers one worked sample job - a small deck with a tape, a roof result and a material list - so the app is a populated tool in ten seconds rather than an empty keypad, which is also what an App Store reviewer sees first. The offer can be declined. The sample job is flagged in the model, badged 'Sample' wherever it appears, marked in a column of its own in the CSV, and removed entirely by a single Settings action that touches nothing the user typed.",
+      "priority": "P0",
+      "requires_internet": false,
+      "requires_permission": false,
+      "permission": ""
+    },
+    {
+      "id": "F012",
+      "name": "Remove Ads purchase",
+      "description": "A StoreKit 2 non-consumable, com.proapps.sitecalc.removeads, that permanently removes the banner and the interstitial. The entitlement is read from Transaction.currentEntitlements at launch and observed through Transaction.updates, so it survives reinstall with no account. Restore Purchases sits in Settings and on the purchase sheet. The purchase unlocks no feature and hides no content: every calculation, solver, job and both export formats are identical before and after it. Failure and cancellation are reported plainly and never leave the UI in a bought-but-not-applied state.",
+      "priority": "P0",
+      "requires_internet": false,
+      "requires_permission": false,
+      "permission": ""
+    },
+    {
+      "id": "F013",
+      "name": "Advertising",
+      "description": "Google AdMob through the GoogleMobileAds Swift package, and nothing else in the app touches the network. One adaptive anchored banner, inset above the tab bar inside the safe area, on the Jobs list, the job detail screen and Settings/Reference only. Exactly one interstitial placement: after an export file has been written and its existence on disk confirmed, at most once per app session, never within four minutes of another ad, and never on a cold start. No ad object exists on the calculator, the tape, the roof solver, the stair solver, the area and volume screen, the material estimator, first run or the purchase flow - not hidden, not present. The ad SDK is started only after the ATT response has been received. Unit IDs and the AdMob app ID come from Config/AdMob.xcconfig, whose values CI overrides from the registry at build time; GADApplicationIdentifier in Info.plist is $(ADMOB_APP_ID) and no ID is ever a literal in tracked source. No dimension, job name, solver result or file ever reaches an ad request.",
+      "priority": "P0",
+      "requires_internet": true,
+      "requires_permission": false,
+      "permission": ""
+    },
+    {
+      "id": "F014",
+      "name": "Settings and reference",
+      "description": "Display unit and fraction precision (1/2 to 1/64), the user's own stair limits, the default stud spacing, sheet size, waste percentage and bag yield, Remove Ads and Restore Purchases, export, remove sample job, delete all data behind a typed confirmation, a plain statement of what leaves the device and what does not, an explanation of why ads exist, links to the privacy policy and support pages, and the version and build. The reference section holds only published product constants that do not expire - nominal against actual softwood lumber dimensions, standard sheet sizes, bag yields for 40, 60 and 80 lb bags, 27 cubic feet to the cubic yard, 100 square feet to the roofing square - each labelled with its source and each editable by the user. It holds no regulatory limit, no span or load table and no ampacity chart, and the app asserts this with a test rather than a promise. This screen carries a banner.",
+      "priority": "P0",
+      "requires_internet": false,
+      "requires_permission": false,
+      "permission": ""
+    },
+    {
+      "id": "F015",
+      "name": "Accessibility and localisation",
+      "description": "Light and dark appearance, Dynamic Type to the accessibility sizes, VoiceOver labels on every control with dimensional values spoken as words rather than symbols ('fourteen feet three and five eighths inches'), 44x44 point minimum targets on every key, and an accessibility identifier on every control from the first commit because the screenshot UI test addresses controls by identifier and never by coordinates. Nine languages in a Localizable.xcstrings catalogue with a mirrored right-to-left layout for Arabic and locale-correct number formatting; numeric entry accepts both the comma and the period as the decimal separator in every locale. Dimensional figures are set in a monospaced-digit font so the tape lines up.",
+      "priority": "P0",
+      "requires_internet": false,
+      "requires_permission": false,
+      "permission": ""
+    },
+    {
+      "id": "F016",
+      "name": "Correctness harness",
+      "description": "Correctness here is safety-adjacent - a wrong beam or rafter length is cut into a real board - so the validation suite is a feature of the product and not an afterthought. Every solver is checked against worked examples published in trade references and manufacturer literature, each test naming its source, and the dimensional type is checked by property tests over generated input as well as by fixed cases. The suite covers associativity and commutativity of dimensional addition, exactness of conversion round-trips, the display-rounding bound, the dimensional algebra of the type system (length times length is an area; length divided by length is a count), and every published example in F004, F005, F006 and F007. The acceptance criteria in qa name the concrete numbers these tests must reproduce.",
+      "priority": "P0",
+      "requires_internet": false,
+      "requires_permission": false,
+      "permission": ""
+    }
+  ],
+  "screens": [
+    {
+      "id": "S001",
+      "name": "Calculator",
+      "purpose": "The home tab and the tool itself: dimensional entry, a running result, and the tape underneath it.",
+      "components": [
+        "Running result in the largest type on the screen, in the display unit and fraction precision from Settings",
+        "Scrollable tape of the session, newest line nearest the keypad, each line showing entry, operator, running result and optional label",
+        "Tap a tape line to label or correct it; corrected lines recompute everything below and show that they were corrected",
+        "Keypad: digits, decimal point, fraction, feet, inch, yard, metre, centimetre, millimetre, plus, minus, times, divide, equals, clear, backspace, on-centre, percent, memory",
+        "Keypad measures the offered width first, then wraps or shrinks; keys never below 44x44 points and never outside the safe area",
+        "Unit and fraction-precision swap in the toolbar",
+        "Save tape into a job, and clear tape",
+        "No advertising of any kind, in any state"
+      ],
+      "navigation_to": [
+        "S002",
+        "S003",
+        "S008"
+      ]
+    },
+    {
+      "id": "S002",
+      "name": "Tape Line Editor",
+      "purpose": "Label or correct one entry after the fact without losing the rest of the tape.",
+      "components": [
+        "The entry as typed, editable in any supported unit",
+        "Free-text label field",
+        "Operator picker",
+        "Preview of what the running result becomes, and of how many lines below will recompute",
+        "Delete this line",
+        "No advertising of any kind"
+      ],
+      "navigation_to": [
+        "S001"
+      ]
+    },
+    {
+      "id": "S003",
+      "name": "Solvers",
+      "purpose": "The second tab: the four solvers, each one tap away from the calculator.",
+      "components": [
+        "Roof and right angle",
+        "Stair layout",
+        "Area and volume",
+        "Material estimator",
+        "Recently used solver results, tappable back into their solver",
+        "No advertising of any kind"
+      ],
+      "navigation_to": [
+        "S004",
+        "S005",
+        "S006",
+        "S007"
+      ]
+    },
+    {
+      "id": "S004",
+      "name": "Roof and Right Angle Solver",
+      "purpose": "Turn any two of rise, run, diagonal and pitch into all of them, plus common rafter and hip or valley length.",
+      "components": [
+        "Rise, run, diagonal and pitch fields, any two of which solve the rest",
+        "Pitch shown both as rise per twelve inches and in degrees",
+        "Common rafter length, and hip or valley length for an equal-pitch intersection",
+        "'From what you entered' line restating every input used",
+        "Send result to the tape, or save into a job",
+        "Statement that the solver answers geometry only and applies no limit or allowance of its own",
+        "No advertising of any kind"
+      ],
+      "navigation_to": [
+        "S001",
+        "S003",
+        "S008"
+      ]
+    },
+    {
+      "id": "S005",
+      "name": "Stair Layout Solver",
+      "purpose": "Total rise in, full layout out, using only limits the user typed.",
+      "components": [
+        "Total rise field",
+        "Maximum riser height and minimum tread depth fields, empty on first use with no bundled default, and a short line explaining that the user's own limits are the only current ones",
+        "Solve action, disabled until both limits are filled in",
+        "Riser count, exact riser height, tread depth, total run, stringer length",
+        "Exact riser height alongside its nearest fraction and the total difference rounding every riser would accumulate over the flight",
+        "'From what you entered' line restating the total rise and both limits",
+        "Send result to the tape, or save into a job",
+        "No advertising of any kind"
+      ],
+      "navigation_to": [
+        "S001",
+        "S003",
+        "S008"
+      ]
+    },
+    {
+      "id": "S006",
+      "name": "Area and Volume",
+      "purpose": "Shapes to quantities, in whichever unit system the user is working in.",
+      "components": [
+        "Shape picker: room, wall with openings, slab, footing, column, circle, segment, arc",
+        "Dimension fields accepting any supported unit",
+        "Result in square or cubic feet, yards, metres and centimetres",
+        "The dimensions each result used, restated",
+        "Send to the material estimator without retyping, send to the tape, or save into a job",
+        "No advertising of any kind"
+      ],
+      "navigation_to": [
+        "S001",
+        "S003",
+        "S007",
+        "S008"
+      ]
+    },
+    {
+      "id": "S007",
+      "name": "Material Estimator",
+      "purpose": "Geometry to quantities of material - counts and volumes, never money.",
+      "components": [
+        "Concrete: cubic feet, cubic yards, cubic metres and bag count at an editable published bag yield",
+        "Framing: spacing chosen by the user, spaces and pieces including both ends, with the remainder stated",
+        "Sheets: drywall and sheathing at a chosen sheet size",
+        "Tile and flooring: pieces at a waste percentage the user sets",
+        "Paint: containers from a coverage rate the user types, with none bundled",
+        "Decking from board width and gap; roofing in squares",
+        "Exact quantity alongside the rounded-up purchasable count, so the rounding is visible",
+        "No currency field, no unit rate field and no money total anywhere on this screen",
+        "Save the list into a job",
+        "No advertising of any kind"
+      ],
+      "navigation_to": [
+        "S003",
+        "S006",
+        "S008"
+      ]
+    },
+    {
+      "id": "S008",
+      "name": "Jobs",
+      "purpose": "The third tab: every saved job, newest first.",
+      "components": [
+        "Job rows with name, last-edited date and line count",
+        "New job, rename, duplicate",
+        "Swipe to delete with a confirmation naming how many lines go with it",
+        "Sample badge on the sample job while it exists",
+        "Empty state offering the sample job or a first job",
+        "AdMob adaptive anchored banner above the tab bar",
+        "Tab bar"
+      ],
+      "navigation_to": [
+        "S009",
+        "S011",
+        "S012"
+      ]
+    },
+    {
+      "id": "S009",
+      "name": "Job Detail",
+      "purpose": "One job's tape, solver results and material lists in one place, and the way out to export.",
+      "components": [
+        "Job name, note and last-edited date",
+        "Saved tape with labels and running results",
+        "Saved solver results, each with the inputs it came from",
+        "Material lists",
+        "Export this job",
+        "Continue this job on the calculator",
+        "AdMob adaptive anchored banner above the tab bar",
+        "Tab bar"
+      ],
+      "navigation_to": [
+        "S001",
+        "S008",
+        "S010"
+      ]
+    },
+    {
+      "id": "S010",
+      "name": "Export",
+      "purpose": "Get a job out as a PDF or a CSV, free, and only then show an ad.",
+      "components": [
+        "Format choice: PDF, CSV, or both",
+        "What the file will contain, listed before it is written",
+        "Statement that export is free and checks no purchase",
+        "Write the file, then present the system share sheet",
+        "AdMob interstitial, presented only after the file's existence on disk has been confirmed and the share sheet has been dismissed; at most once per session, never within four minutes of another ad, never on a cold start",
+        "No advertising of any kind before the file exists, and none during the share sheet"
+      ],
+      "navigation_to": [
+        "S009"
+      ]
+    },
+    {
+      "id": "S011",
+      "name": "Settings and Reference",
+      "purpose": "The user's own defaults, the purchase, the data, the reference constants, and the honest account of what the app does.",
+      "components": [
+        "Display unit and fraction precision from 1/2 to 1/64",
+        "The user's own maximum riser height and minimum tread depth",
+        "Default stud spacing, sheet size, waste percentage and bag yield",
+        "Remove Ads row with owned state, and Restore Purchases",
+        "Export",
+        "Remove sample job",
+        "Delete all data behind a typed confirmation",
+        "Reference: nominal against actual lumber dimensions, standard sheet sizes, bag yields, 27 cubic feet to the cubic yard, 100 square feet to the roofing square - each with its source and each editable",
+        "A line stating that the app holds no regulatory limit of any kind and that the user's own limits are used",
+        "What stays on this iPhone, and why you see ads",
+        "Privacy policy and support links",
+        "Version and build",
+        "AdMob adaptive anchored banner above the tab bar",
+        "Tab bar"
+      ],
+      "navigation_to": [
+        "S010",
+        "S012"
+      ]
+    },
+    {
+      "id": "S012",
+      "name": "Remove Ads",
+      "purpose": "Offer the one-time purchase and say plainly what it does and does not do.",
+      "components": [
+        "What the purchase removes: the banner on three screens and the one ad after an export",
+        "What it unlocks: nothing, because nothing is locked",
+        "Buy and Restore Purchases",
+        "Plain reporting of cancellation and failure",
+        "No advertising of any kind"
+      ],
+      "navigation_to": [
+        "S011"
+      ]
+    },
+    {
+      "id": "S013",
+      "name": "First Run",
+      "purpose": "Say what the app is in three lines, take the two settings that matter, and offer the sample job.",
+      "components": [
+        "Three lines: do feet-and-inch arithmetic, solve the roof and the stairs, keep it as a job and export it free",
+        "Honest note that everything stays on this iPhone, that there is no account, and that the app holds no regulatory limits and no money features",
+        "Display unit and fraction precision, prefilled from the device locale",
+        "Load the sample job, or start empty",
+        "No advertising, and no tracking prompt on this screen"
+      ],
+      "navigation_to": [
+        "S001",
+        "S008"
+      ]
+    }
+  ],
+  "permissions": [
+    {
+      "key": "NSUserTrackingUsageDescription",
+      "usage_description": "Allow tracking so the ads that keep SiteCalc's calculations and exports free can be more relevant. Your measurements, jobs and exported files never leave this iPhone either way.",
+      "requested_when": "Once, on the first launch after First Run completes and before the GoogleMobileAds SDK is started. Never during First Run itself, never behind a saved job, a completed calculation or any other action a reviewer might not perform, and never more than once.",
+      "works_if_denied": "The entire app. Nothing is gated on the answer; ads simply become non-personalised, which lowers revenue and changes nothing the user sees except relevance."
+    }
+  ],
+  "integrations": {
+    "swift_packages": [
+      "GoogleMobileAds"
+    ],
+    "apple_frameworks": [
+      "SwiftUI",
+      "SwiftData",
+      "PDFKit",
+      "StoreKit",
+      "AppTrackingTransparency",
+      "AdSupport",
+      "UniformTypeIdentifiers",
+      "Foundation"
+    ],
+    "analytics": false,
+    "crash_reporting": false,
+    "ads": true
+  },
+  "monetization": {
+    "enabled": true,
+    "provider": "Google AdMob",
+    "banner": true,
+    "interstitial": true,
+    "rewarded": false,
+    "remove_ads_iap": true,
+    "iap_product_id": "com.proapps.sitecalc.removeads",
+    "banner_screens": [
+      "S008 Jobs",
+      "S009 Job Detail",
+      "S011 Settings and Reference"
+    ],
+    "interstitial_moments": [
+      "S010 Export, presented only after the PDF or CSV has already been written to disk and its existence confirmed with a file-system check, and after the share sheet has been dismissed; at most one per app session, never within four minutes of any other ad, and never on a cold start"
+    ],
+    "ads_never_on": [
+      "S001 Calculator and the tape, in any state - this is a tool held in a gloved hand on a jobsite and an ad between a builder and a number is a miscut board, not a bad review",
+      "S002 Tape Line Editor",
+      "S003 Solvers hub",
+      "S004 Roof and Right Angle Solver",
+      "S005 Stair Layout Solver",
+      "S006 Area and Volume",
+      "S007 Material Estimator",
+      "Any moment while a calculation result is on screen, anywhere in the app",
+      "S010 Export before the file exists on disk, and throughout the share sheet",
+      "S013 First Run and onboarding",
+      "S012 Remove Ads purchase and restore flow",
+      "Cold start, before any screen has been drawn",
+      "Before the ATT response has been received",
+      "Anywhere at all once the Remove Ads purchase is owned"
+    ],
+    "att_requested_when": "On the first launch after First Run completes, before the GoogleMobileAds SDK is started, and never more than once. Not after a first saved job, a first completed calculation or any other action: App Review rejected PriceJar 1.0.0 under guideline 2.1 - 'unable to locate the App Tracking Transparency permission request' - because the prompt fired only after the user saved their first entry and a reviewer who never saved one never saw it. Apple also asks for the prompt before any data that could track the user is collected, and starting the ad SDK at launch is collection. Onboarding is where the user is told what the app is, so asking immediately after it keeps the intent of never asking before the user knows what this is, while staying somewhere a review pass reaches in its first thirty seconds."
+  },
+  "localization": {
+    "default_language": "en-US",
+    "supported_languages": [
+      "en-US",
+      "es-ES",
+      "pt-PT",
+      "fr-FR",
+      "de-DE",
+      "it",
+      "tr",
+      "ar-SA",
+      "zh-Hans"
+    ],
+    "string_catalog": "Localizable.xcstrings",
+    "rtl_languages": [
+      "ar-SA"
+    ]
+  },
+  "design": {
+    "theme": "Graphite and hi-vis orange - a site tool, not an office app. Dark by default in feel, with the running result carrying the only saturated colour on the screen.",
+    "style": "Plain SwiftUI with system materials, large monospaced-digit numerals and a keypad with visible key separation for gloved hands. The running result is the largest thing on the calculator because it is what the user opened the app for; the tape sits directly under it in the same digit font so columns line up. Colour never carries meaning alone: a corrected tape line, a rounded-up material count and the 'this is exact / this is rounded' distinction each carry a word and a shape as well as a tint. Deliberately unlike PriceJar's green-and-amber shopping identity and ShiftSlip's navy-and-brass work log - different palette, different icon language, different screens - because a reviewer comparing three apps on one account must not see a reskin.",
+    "primary_color": "#2B2F33",
+    "secondary_color": "#E8621A",
+    "supports_light_mode": true,
+    "supports_dark_mode": true,
+    "supports_dynamic_type": true,
+    "accessibility_required": true,
+    "store_screenshot_order": "Guideline 4.2 is the real review risk here: a reviewer may first read this as 'a calculator', which is close to Apple's own canonical example of minimum functionality. The screenshot order is part of the mitigation and is not a free choice - lead with a saved job and an exported material list, then the stair and roof solvers, and only then the keypad, so the first frame shows a tool rather than a number pad."
+  },
+  "privacy": {
+    "collects_personal_data": true,
+    "collects_sensitive_data": false,
+    "stores_data_locally": true,
+    "uploads_user_content": false,
+    "requires_privacy_policy": true,
+    "privacy_policy_url": "https://oflorezawaken-dev.github.io/huawei-app-factory/site-calc/privacy/",
+    "support_url": "https://oflorezawaken-dev.github.io/huawei-app-factory/site-calc/support/",
+    "privacy_manifest": {
+      "collected_data_types": [
+        {
+          "NSPrivacyCollectedDataType": "NSPrivacyCollectedDataTypeDeviceID",
+          "NSPrivacyCollectedDataTypeLinked": false,
+          "NSPrivacyCollectedDataTypeTracking": true,
+          "NSPrivacyCollectedDataTypePurposes": [
+            "NSPrivacyCollectedDataTypePurposeThirdPartyAdvertising"
+          ],
+          "why": "The AdMob SDK reads the advertising identifier when ATT is granted, and a vendor identifier otherwise."
+        },
+        {
+          "NSPrivacyCollectedDataType": "NSPrivacyCollectedDataTypeAdvertisingData",
+          "NSPrivacyCollectedDataTypeLinked": false,
+          "NSPrivacyCollectedDataTypeTracking": true,
+          "NSPrivacyCollectedDataTypePurposes": [
+            "NSPrivacyCollectedDataTypePurposeThirdPartyAdvertising"
+          ],
+          "why": "Ad impressions, clicks and the placement they occurred in are reported to AdMob."
+        },
+        {
+          "NSPrivacyCollectedDataType": "NSPrivacyCollectedDataTypeProductInteraction",
+          "NSPrivacyCollectedDataTypeLinked": false,
+          "NSPrivacyCollectedDataTypeTracking": true,
+          "NSPrivacyCollectedDataTypePurposes": [
+            "NSPrivacyCollectedDataTypePurposeThirdPartyAdvertising"
+          ],
+          "why": "AdMob records interaction with the ad units it serves. SiteCalc itself sends no product-interaction data anywhere."
+        }
+      ],
+      "accessed_api_types": [
+        {
+          "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryUserDefaults",
+          "NSPrivacyAccessedAPITypeReasons": [
+            "CA92.1"
+          ],
+          "why": "Display unit and fraction precision, the user's own stair limits and estimator defaults, the first-run flag, the ad frequency-cap timestamps and the cached Remove Ads entitlement are stored in this app's own UserDefaults and read back by the same app."
+        },
+        {
+          "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryFileTimestamp",
+          "NSPrivacyAccessedAPITypeReasons": [
+            "C617.1"
+          ],
+          "why": "The PDF and CSV export writes a file into the app container, checks that it exists before anything else happens, and shows its creation timestamp to the user in the share sheet."
+        }
+      ],
+      "tracking": true,
+      "tracking_domains": [
+        "googleads.g.doubleclick.net",
+        "pagead2.googlesyndication.com"
+      ],
+      "note": "Only the AdMob SDK reaches the network. Jobs, tapes, solver results, material lists and exported files live in the app's own container and are never uploaded; no dimension or job name is ever passed to an ad request. The final tracking-domain list must match what the shipped GoogleMobileAds version declares in its own privacy manifest; verify against the SDK bundle at build time rather than copying this list blindly."
+    },
+    "app_privacy_answers": {
+      "data_used_to_track_you": [
+        "Identifiers > Device ID - YES. Tick 'Used to Track You'. Reason: the AdMob SDK reads the IDFA when ATT is granted and uses it for cross-app advertising.",
+        "Usage Data > Advertising Data - YES. Tick 'Used to Track You'. Reason: ad impressions and clicks are reported to Google and used to select future ads.",
+        "Usage Data > Product Interaction - YES. Tick 'Used to Track You'. Reason: AdMob records interaction with its own ad units."
+      ],
+      "data_linked_to_you": [
+        "Nothing. Leave every 'Linked to You' box unticked. SiteCalc has no account, no sign-in, no email capture and no server, so no data point can be tied to an identity."
+      ],
+      "data_not_linked_to_you": [
+        "Identifiers > Device ID - tick, purpose 'Third-Party Advertising'.",
+        "Usage Data > Advertising Data - tick, purpose 'Third-Party Advertising'.",
+        "Usage Data > Product Interaction - tick, purpose 'Third-Party Advertising'.",
+        "Do NOT tick Financial Info. SiteCalc has no currency field, no rate field and no money value of any kind - there is nothing financial in the app to declare.",
+        "Do NOT tick Contact Info. Job names are typed by the user for their own record and stay on the device; the app never asks for a name, an email or a customer.",
+        "Do NOT tick Location. The app requests no location permission and links no location framework.",
+        "Do NOT tick Health & Fitness, Sensitive Info, Contacts, Search History, Browsing History, Diagnostics or Other Data.",
+        "User Content: not collected. Jobs, tapes and material lists are written only to this iPhone's SwiftData store; exported PDFs and CSVs are handed to the user's own share sheet and never uploaded by the app.",
+        "Purchases: not collected. The Remove Ads purchase is processed by Apple; the app receives only an entitlement and stores no purchase data."
+      ],
+      "console_checklist": [
+        "1. App Store Connect > App Privacy > Get Started (or Edit).",
+        "2. Answer 'Do you or your third-party partners collect data from this app?' with YES - the AdMob SDK does, even though SiteCalc itself does not.",
+        "3. Under Identifiers, tick 'Device ID'. Purpose: Third-Party Advertising. Linked to the user: NO. Used for tracking: YES.",
+        "4. Under Usage Data, tick 'Advertising Data' and 'Product Interaction'. Purpose for both: Third-Party Advertising. Linked to the user: NO. Used for tracking: YES.",
+        "5. Tick nothing else. In particular do not tick Financial Info (there is no money anywhere in this app), Contact Info (job names are the user's own text) or Location.",
+        "6. Confirm the Privacy Policy URL is https://oflorezawaken-dev.github.io/huawei-app-factory/site-calc/privacy/ and the Support URL is https://oflorezawaken-dev.github.io/huawei-app-factory/site-calc/support/.",
+        "7. Publish the answers, then re-read them against PrivacyInfo.xcprivacy and the privacy policy page. All three must say the same thing; a contradiction is a rejection.",
+        "8. Re-check this questionnaire before every release that adds an SDK, a permission or a data-writing feature - and before any release that adds sync or sharing, which would change every answer here."
+      ]
+    }
+  },
+  "qa": {
+    "unit_tests_required": true,
+    "screenshot_ui_test_required": true,
+    "release_build_required": true,
+    "ipa_required": true,
+    "test_permissions": true,
+    "test_localization": true,
+    "test_dark_mode": true,
+    "test_ads": true,
+    "test_offline_behavior": true,
+    "test_accessibility": true,
+    "acceptance_criteria": [
+      "Dimensional addition is exact: 14 ft 3-5/8 in + 9 ft 11-3/4 in = 24 ft 3-3/8 in, held internally as exactly 291.375 in, unit-tested at every fraction precision from 1/2 to 1/64. At least 120 fixed cases cover addition, subtraction, multiplication by a scalar, division by a scalar and division by a length, mixing feet-inch-fraction, decimal feet, decimal inches, metres, centimetres and millimetres inside one expression.",
+      "The dimensional value uses no binary floating point: a build check fails if 'Double' or 'Float' appears in the dimensional-type module or in the tape module, and the type's stored representation is an exact reduced rational number of inches. A property test over 200,000 generated pairs asserts that (a + b) + c equals a + (b + c) and a + b equals b + a exactly, with no tolerance.",
+      "Square root and trigonometry are confined to the solver boundary: a test asserts that only the solver modules import Foundation's math functions, and that for 10,000 randomly generated solver inputs the displayed value differs from the exact value by at most half of the display precision - no more than 1/128 in when the user is working at 1/64.",
+      "Conversion round-trips exactly, because rounding is display-only and never replaces the stored value: 2,400 mm displays as 7 ft 10-1/2 in at 1/16 precision and converts back to exactly 2,400 mm. A test runs the round trip over 5,000 values from 1 mm to 100 m and asserts bit-identical return, and a second test asserts the inch is treated as exactly 25.4 mm.",
+      "On-centre layout is a count, not a length: 291.375 in divided by 16 in on centre reports 18.2109375 spaces, resolving to 19 spaces and 20 pieces including both ends, with the final remainder reported as 3-3/8 in. Unit-tested, together with the type rule that length divided by length is dimensionless and length times length is an area.",
+      "The roof solver reproduces its published worked example exactly: run 15 ft 0 in at a 7/12 pitch gives rise 8 ft 9 in, common rafter 17 ft 4-3/8 in (208.387 in), pitch 30.26 degrees, and an equal-pitch hip or valley of 22 ft 11-3/8 in (275.363 in). At least 30 further solver cases are taken from published worked examples in trade references and manufacturer literature, each test naming its source in the test name, and each asserted to the nearest 1/16 in and to 0.01 degrees.",
+      "The stair solver reproduces its published worked example exactly: a total rise of 9 ft 3 in (111 in) with a user-entered maximum riser of 7-3/4 in gives 15 risers at exactly 7.400 in each, 14 treads at a user-entered 10 in giving a total run of 11 ft 8 in, and a stringer length of 14 ft 10-11/16 in (178.664 in). At least 20 further stair cases come from published worked examples, each naming its source.",
+      "The stair solver never hides accumulated rounding: for the 111 in case the screen shows the exact riser height 7.400 in, its nearest 1/16 fraction 7-3/8 in, and the statement that 15 risers at 7-3/8 in fall 3/8 in short of the total rise. A unit test asserts the reported shortfall equals 111 in minus 15 times the rounded riser height for 500 generated cases, and a UI test asserts all three figures are on screen together.",
+      "The stair solver ships no limit of its own: the maximum riser and minimum tread fields are empty on a fresh install, the Solve action is disabled until both are filled, and a test scans the app bundle, the string catalogue and the source for any bundled numeric default for either field and fails on a hit.",
+      "The app contains no regulatory value at all: a test scans the bundle, every resource file and the string catalogue in all 9 languages for the phrases in qa.banned_phrases.code_authority and fails on any hit, and the same list is applied to store/listing.json by the quality gate. The reference section contains only the published product constants named in F014, each carrying its source string.",
+      "There is no money anywhere in the app: no currency field, no rate field and no money column in either export. A test fails the build if NumberFormatter.Style.currency, .currency, FormatStyle.Currency or Locale.currency appears in any source file, and a second test scans the string catalogue in all 9 languages and store/listing.json for the phrases in qa.banned_phrases.money.",
+      "Area, volume and estimating reproduce their worked examples: a 20 ft by 30 ft slab at 4 in thick is 200.00 cubic feet and 7.41 cubic yards, needing 334 bags at a 0.60 cubic foot yield; with a 10 per cent waste the same slab is 8.15 cubic yards and 367 bags. 40 ft of wall at 8 ft is 320 square feet, 10 sheets of 4 ft by 8 ft exactly and 11 sheets at 10 per cent waste. A 12 ft by 15 ft floor in 12 in tile at 10 per cent waste is exactly 198 tiles - and this case is a regression test for the exactness rule as much as for the estimator, because 180 times 1.1 in binary floating point is 198.00000000000003, which rounds up to 199 and buys a tile that is not needed. 1,200 square feet at a user-entered 350 square feet per container is 3.43 containers and 4 to buy. Every one of these is a unit test, and each asserts the exact quantity is shown next to the rounded-up count.",
+      "The keypad measures before it draws: a UI test lays the calculator out at 320, 375, 393 and 430 points of width - 320 being an iPhone SE in Display Zoom, the narrowest layout iOS 17 presents - and asserts for every key that its frame lies entirely inside the safe area (minX at least 0 and maxX at most the layout width), that no key is smaller than 44 by 44 points, and that every key is hittable by identifier. This is the Sudoku failure, where nine 48dp keys were placed in a 384dp row and the ninth digit became unreachable; it is checked at every width rather than assumed at one.",
+      "The tape takes the room the keypad leaves: the keypad's height is resolved first and the tape is given the remainder. At 320 by 568 points with the accessibility XXL Dynamic Type size the tape is still at least 120 points tall, still scrollable, and the running result is fully visible above the keys with no clipped or truncated text - asserted by a UI test at that exact size, in both light and dark appearance.",
+      "No advertising object exists on the calculator, the tape, the tape line editor, the solvers hub, the roof solver, the stair solver, the area and volume screen, the material estimator, first run or the purchase flow. A UI test walks all ten and asserts the ad container is absent from the hierarchy, not merely hidden, and a second test asserts no banner is created while any solver result is on screen.",
+      "The interstitial is gated on the file, not on the moment: a test asserts FileManager.fileExists returns true for the written PDF or CSV before the interstitial is presented, that killing the app immediately after the write still leaves the file on disk, and that the ad is presented at most once per session, never within 240 seconds of another ad and never on a cold start - driven by a fake clock across the 239 and 241 second boundaries.",
+      "The ATT prompt is requested exactly once, on the first launch after First Run completes and before GoogleMobileAds is initialised. A UI test on a fresh install asserts the prompt appears within 30 seconds without the user saving a job, completing a calculation or opening any solver, that it does not appear during First Run, and that no ad request is made before the ATT response is received.",
+      "Export is complete, free and identical with or without the purchase: a CSV written for a job with 200 tape lines, 4 solver results and 3 material lists parses back with an RFC 4180 parser to identical values, including a job name containing a comma, a quote and non-ASCII characters; the PDF for the same job contains every tape label and every material line, asserted by extracting its text. No export path reads the Remove Ads entitlement, asserted by a source scan.",
+      "Purchasing Remove Ads hides the banner within 1 second without a relaunch and the app relaunches ad-free; a StoreKit test-configuration test covers purchase, relaunch and Restore Purchases, and asserts that every solver, both export formats and every job are byte-identical before and after the purchase.",
+      "In airplane mode every feature except ad loading works with no error surfaced to the user: the calculator, all four solvers, saving and opening jobs, and both exports. A UI test runs that whole sequence offline.",
+      "First run loads exactly one sample job when accepted, flagged in the model, badged in the UI and marked in its own CSV column; 'Remove sample job' deletes exactly that job in one tap and a test asserts every user-created job survives it.",
+      "Every interactive control has an accessibility identifier and a VoiceOver label; a UI test enumerates the controls on all 13 screens and fails on any control missing either. Dimensional values are spoken as words - 14 ft 3-5/8 in reads as 'fourteen feet three and five eighths inches' - asserted for 50 values across both unit systems.",
+      "Numeric entry accepts both ',' and '.' as the decimal separator and produces the same value in en-US, de-DE, fr-FR, tr and ar-SA; unit tests cover all five locales for dimensions, spacings, waste percentages and coverage rates.",
+      "The string catalogue has a translation for 100 per cent of keys in all 9 languages, no string is hardcoded in a view, and the Arabic layout mirrors; a test fails on any missing or untranslated key.",
+      "Cold start reaches an interactive calculator in under 2 seconds on an iPhone SE (2nd generation) with 50 jobs and 5,000 saved tape lines, and scrolling a 5,000-line tape stays at 60 fps.",
+      "Line coverage of the dimensional type, the four solvers and the material estimator is at least 92 per cent, and the whole unit-test suite runs in under 60 seconds.",
+      "No AdMob unit ID, app ID or IAP product ID appears as a literal in tracked Swift source; all come from Config/AdMob.xcconfig, and a check fails the build if a 'ca-app-pub-' literal is found outside that file."
+    ],
+    "banned_phrases": {
+      "_note": "Checked in two places against this one list: a unit test scans the in-app string catalogue in all nine languages, and factory/tools/check_ios_app.py scans store/listing.json. Matching is a plain lowercase substring match, so every entry here was chosen to avoid colliding with words the app legitimately uses. Five traps worth keeping in mind before adding anything, three found by reasoning and two by this check failing on the first draft of the listing. German 'kosten' is a substring of 'kostenlos' (free) and must never be banned. English 'irc' is a substring of 'circle', which this app computes. '$' appears in positional format specifiers like %1$@, so currency symbols are guarded by the NumberFormatter source scan in the acceptance criteria rather than by this list. French 'devis' is a substring of 'devise', the currency word a no-money app actually needs, so French copy says 'champ monétaire' and never 'champ de devise'. Turkish 'fiyat' is a substring of 'sarfiyat', the ordinary trade word for paint consumption, so Turkish copy says 'metrekare verimi' instead.",
+      "code_authority": [
+        "building code",
+        "code compliant",
+        "code-compliant",
+        "meets code",
+        "up to code",
+        "per code",
+        "code minimum",
+        "code maximum",
+        "code requirement",
+        "code approved",
+        "international residential code",
+        "national electrical code",
+        "span table",
+        "allowable span",
+        "maximum span",
+        "load table",
+        "ampacity",
+        "structurally safe",
+        "structurally sound",
+        "safe to cut",
+        "guaranteed accurate",
+        "engineer approved",
+        "engineer-approved",
+        "normativa",
+        "código técnico",
+        "cumple la norma",
+        "bauordnung",
+        "normgerecht",
+        "conforme à la norme",
+        "réglementation",
+        "a norma di legge",
+        "regulamento",
+        "yönetmelik",
+        "standarda uygun",
+        "符合规范",
+        "规范要求",
+        "كود البناء",
+        "مطابق للكود"
+      ],
+      "money": [
+        "cost",
+        "price",
+        "quote",
+        "invoice",
+        "budget",
+        "markup",
+        "coste",
+        "costo",
+        "precio",
+        "presupuesto",
+        "factura",
+        "prix",
+        "devis",
+        "facture",
+        "preis",
+        "kostenvoranschlag",
+        "materialkosten",
+        "prezzo",
+        "preventivo",
+        "fattura",
+        "preço",
+        "orçamento",
+        "custo total",
+        "custo do material",
+        "fiyat",
+        "bütçe",
+        "teklif",
+        "价格",
+        "报价",
+        "预算",
+        "成本",
+        "发票",
+        "سعر",
+        "تكلفة",
+        "فاتورة",
+        "ميزانية"
+      ]
+    }
+  }
+}
