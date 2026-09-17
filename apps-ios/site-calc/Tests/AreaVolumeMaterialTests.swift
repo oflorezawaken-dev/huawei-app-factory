@@ -5,6 +5,21 @@ import XCTest
 /// material estimating, including the exactness regression (180 * 1.1 must
 /// be exactly 198, never 198.00000000000003).
 final class AreaVolumeMaterialTests: XCTestCase {
+    /// The assertions in this file pin en_US_POSIX so they can compare against
+    /// literals from the spec. That is a testing convenience, not the product:
+    /// the listing ships in nine languages and a Spanish or German user must
+    /// see 7,41. Pinned here so the next person whose test fails on "7,41"
+    /// fixes the test rather than hard-coding a dot into the formatter.
+    func testTheDecimalSeparatorFollowsTheViewersLocale() {
+        let value = Rational(741, 100)
+        XCTAssertEqual(LengthFormatting.decimalString(value, decimalPlaces: 2,
+                                                       locale: Locale(identifier: "en_US_POSIX")), "7.41")
+        XCTAssertEqual(LengthFormatting.decimalString(value, decimalPlaces: 2,
+                                                       locale: Locale(identifier: "es_ES")), "7,41")
+        XCTAssertEqual(LengthFormatting.decimalString(value, decimalPlaces: 2,
+                                                       locale: Locale(identifier: "de_DE")), "7,41")
+    }
+
     // qa: "a 20 ft by 30 ft slab at 4 in thick is 200.00 cubic feet and 7.41
     // cubic yards, needing 334 bags at a 0.60 cubic foot yield; with a 10 per
     // cent waste the same slab is 8.15 cubic yards and 367 bags."
@@ -14,13 +29,13 @@ final class AreaVolumeMaterialTests: XCTestCase {
         XCTAssertEqual(volume.converted(to: .feet), Rational(200))
 
         let yards = MaterialEstimator.cubicYards(volume)
-        XCTAssertEqual(LengthFormatting.decimalString(yards, decimalPlaces: 2), "7.41")
+        XCTAssertEqual(LengthFormatting.decimalString(yards, decimalPlaces: 2, locale: Locale(identifier: "en_US_POSIX")), "7.41")
 
         let bags = MaterialEstimator.concreteBags(volume: volume, bagYieldCubicFeet: Rational(3, 5))
         XCTAssertEqual(bags.roundedUp, 334)
 
         let yardsWithWaste = MaterialEstimator.cubicYards(volume, wastePercent: Rational(10))
-        XCTAssertEqual(LengthFormatting.decimalString(yardsWithWaste, decimalPlaces: 2), "8.15")
+        XCTAssertEqual(LengthFormatting.decimalString(yardsWithWaste, decimalPlaces: 2, locale: Locale(identifier: "en_US_POSIX")), "8.15")
         let bagsWithWaste = MaterialEstimator.concreteBags(volume: volume, bagYieldCubicFeet: Rational(3, 5),
                                                             wastePercent: Rational(10))
         XCTAssertEqual(bagsWithWaste.roundedUp, 367)
@@ -66,7 +81,7 @@ final class AreaVolumeMaterialTests: XCTestCase {
     func testPaintContainers() {
         let area = Area(squareInches: Length(1, .feet).inches * Length(1200, .feet).inches)
         let containers = MaterialEstimator.paintContainers(area: area, coverageSquareFeetPerContainer: Rational(350))
-        XCTAssertEqual(LengthFormatting.decimalString(containers.exact, decimalPlaces: 2), "3.43")
+        XCTAssertEqual(LengthFormatting.decimalString(containers.exact, decimalPlaces: 2, locale: Locale(identifier: "en_US_POSIX")), "3.43")
         XCTAssertEqual(containers.roundedUp, 4)
     }
 

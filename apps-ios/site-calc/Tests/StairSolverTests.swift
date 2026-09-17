@@ -15,7 +15,7 @@ final class StairSolverTests: XCTestCase {
 
         XCTAssertEqual(result.riserCount, 15)
         XCTAssertEqual(result.riserHeight.inches, Rational(37, 5)) // 7.400 in exactly
-        XCTAssertEqual(LengthFormatting.decimal(result.riserHeight, unit: .inches, decimalPlaces: 3), "7.400")
+        XCTAssertEqual(LengthFormatting.decimal(result.riserHeight, unit: .inches, decimalPlaces: 3, locale: Locale(identifier: "en_US_POSIX")), "7.400")
         XCTAssertEqual(result.treadCount, 14)
         XCTAssertEqual(LengthFormatting.feetInchFraction(result.totalRun, precision: .eighth), "11' 8\"")
         assertNear(result.stringerLength.inches.doubleValue, 178.664, tolerance: 1.0 / 32)

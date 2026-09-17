@@ -16,15 +16,38 @@ final class DimensionTests: XCTestCase {
         XCTAssertEqual(LengthFormatting.feetInchFraction(sum, precision: .eighth), "24' 3-3/8\"")
     }
 
-    func testHeadlineAdditionHoldsAtEveryFractionPrecision() {
+    func testHeadlineAdditionSurvivesEveryPrecisionThatCanHoldIt() {
         let a = Length(14, .feet) + Length(3, .inches) + Length(Rational(5, 8), .inches)
         let b = Length(9, .feet) + Length(11, .inches) + Length(Rational(3, 4), .inches)
         let sum = a + b
-        for precision in FractionPrecision.allCases {
-            // 291.375 is exactly representable at every precision from 1/2 to 1/64
-            // (since 3/8 = 12/32 = 24/64 etc.), so display never needs to round it.
-            XCTAssertEqual(sum.inches.rounded(toNearestFractionOf: precision.denominator), sum.inches)
+
+        // 3/8 is exactly representable at 1/8 and finer (3/8 = 6/16 = 12/32 =
+        // 24/64), so at those precisions display rounding is the identity and
+        // the headline answer is shown exactly as stored.
+        for precision in [FractionPrecision.eighth, .sixteenth, .thirtySecond, .sixtyFourth] {
+            XCTAssertEqual(sum.inches.rounded(toNearestFractionOf: precision.denominator), sum.inches,
+                           "3/8 in must survive display at 1/\(precision.denominator)")
         }
+
+        // At 1/2 and 1/4 it cannot be held, and pretending otherwise is how a
+        // calculator lies to someone holding a saw. 291-3/8 shows as 291-1/2:
+        // at 1/2 because 3/8 is nearer 1/2 than 0, and at 1/4 because 3/8 is
+        // exactly halfway between 1/4 and 1/2 and Rational rounds halves away
+        // from zero. The stored value is untouched either way.
+        XCTAssertEqual(sum.inches.rounded(toNearestFractionOf: 2), Rational(583, 2))
+        XCTAssertEqual(sum.inches.rounded(toNearestFractionOf: 4), Rational(583, 2))
+        XCTAssertEqual(sum.inches, Rational(2331, 8), "display rounding must never mutate the stored value")
+    }
+
+    /// Half away from zero, pinned in both directions: a construction
+    /// calculator that rounded 1/8 down to 0 at 1/4 precision would quietly
+    /// lose an eighth on every cut, and one that used banker's rounding would
+    /// do it on alternate cuts, which is worse because it looks random.
+    func testHalvesRoundAwayFromZero() {
+        XCTAssertEqual(Rational(1, 8).rounded(toNearestFractionOf: 4), Rational(1, 4))
+        XCTAssertEqual(Rational(-1, 8).rounded(toNearestFractionOf: 4), Rational(-1, 4))
+        XCTAssertEqual(Rational(3, 8).rounded(toNearestFractionOf: 4), Rational(1, 2))
+        XCTAssertEqual(Rational(-3, 8).rounded(toNearestFractionOf: 4), Rational(-1, 2))
     }
 
     // qa: "291-3/8 in divided by 16 in on centre reports 18.2109375 spaces,

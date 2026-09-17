@@ -1,4 +1,5 @@
 import XCTest
+@testable import SiteCalc
 
 /// qa: "a build check fails if 'Double' or 'Float' appears in the
 /// dimensional-type module or in the tape module." Enforced here as a plain
@@ -18,13 +19,56 @@ final class NoFloatingPointTests: XCTestCase {
         try String(contentsOf: projectRoot.appendingPathComponent(relativePath), encoding: .utf8)
     }
 
+    /// Strips `//` and `/* */` comments. The rule is about the code, not the
+    /// prose: the first version of this scan matched the plain substring and
+    /// failed on Rational.swift's own comment explaining the rule, because
+    /// "NoFloatingPointTests" contains "Float". A substring match is weak in
+    /// the other direction too -- it would pass a file whose only mention of
+    /// Double was a comment claiming there is none.
+    private func codeWithoutComments(_ text: String) -> String {
+        var out = ""
+        var index = text.startIndex
+        var inLine = false, inBlock = false
+        while index < text.endIndex {
+            let rest = text[index...]
+            if inLine {
+                if text[index] == "\n" { inLine = false; out.append("\n") }
+            } else if inBlock {
+                if rest.hasPrefix("*/") { inBlock = false; index = text.index(index, offsetBy: 2); continue }
+            } else if rest.hasPrefix("//") {
+                inLine = true; index = text.index(index, offsetBy: 2); continue
+            } else if rest.hasPrefix("/*") {
+                inBlock = true; index = text.index(index, offsetBy: 2); continue
+            } else {
+                out.append(text[index])
+            }
+            index = text.index(after: index)
+        }
+        return out
+    }
+
+    /// Whole-word match, so an identifier that merely contains the name -- or a
+    /// type like `BinaryFloatingPoint` -- is not mistaken for a use of it.
+    private func mentions(_ type: String, in code: String) -> Bool {
+        code.range(of: "\\b\(type)\\b", options: .regularExpression) != nil
+    }
+
     func testDimensionalTypeAndTapeContainNoBinaryFloatingPointType() throws {
         let files = ["Sources/Core/Rational.swift", "Sources/Core/Dimension.swift", "Sources/Core/TapeEngine.swift"]
         for path in files {
-            let text = try source(path)
-            XCTAssertFalse(text.contains("Double"), "\(path) must never mention Double")
-            XCTAssertFalse(text.contains("Float"), "\(path) must never mention Float")
+            let code = codeWithoutComments(try source(path))
+            XCTAssertFalse(mentions("Double", in: code), "\(path) must never use Double")
+            XCTAssertFalse(mentions("Float", in: code), "\(path) must never use Float")
         }
+    }
+
+    /// The scan has to be able to fail, or it proves nothing.
+    func testTheScanActuallyDetectsAFloatingPointUse() {
+        let clean = codeWithoutComments("// Double in a comment is fine\nlet x: Rational = .init(1, 2)\n")
+        XCTAssertFalse(mentions("Double", in: clean))
+        let dirty = codeWithoutComments("let ratio: Double = 0.5 // not fine\n")
+        XCTAssertTrue(mentions("Double", in: dirty))
+        XCTAssertFalse(mentions("Float", in: codeWithoutComments("let v: BinaryFloatingPointish = 1\n")))
     }
 
     // qa: "a test asserts that only the solver modules import Foundation's
@@ -61,7 +105,7 @@ final class NoFloatingPointTests: XCTestCase {
             let result = try RoofSolver.solve(rise: nil, run: run, diagonal: nil, pitchPer12: pitch)
             for precision in FractionPrecision.allCases {
                 let displayed = result.commonRafter.inches.rounded(toNearestFractionOf: precision.denominator)
-                let delta = abs(displayed.doubleValueForTesting - result.commonRafter.inches.doubleValueForTesting)
+                let delta = abs(displayed.doubleValue - result.commonRafter.inches.doubleValue)
                 XCTAssertLessThanOrEqual(delta, 1.0 / Double(2 * precision.denominator) + 1e-9)
             }
             checked += 1
@@ -70,9 +114,3 @@ final class NoFloatingPointTests: XCTestCase {
     }
 }
 
-private extension Rational {
-    /// Test-only bridge (never used by the app itself): avoids re-adding a
-    /// `Double` accessor to the production Rational type just to assert
-    /// against it here.
-    var doubleValueForTesting: Double { Double(numerator) / Double(denominator) }
-}
