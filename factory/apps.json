@@ -312,18 +312,17 @@
       "spec": "specifications/translate.json",
       "store_dir": "apps/translate/store",
       "privacy_path": "docs/translate/privacy",
-      "privacy_tags_configured": "",
-      "status": "built",
+      "privacy_tags_configured": "2026-09-17",
+      "status": "submitted",
       "current_version": {
         "versionCode": 1,
         "versionName": "1.0.0",
-        "status": "planned",
+        "status": "submitted",
+        "submitted_at": "2026-09-17",
         "note": "Rebuild of the portfolio's best app: 245,518 impressions, 4.26% CTR, 5,114 downloads Mar-Aug 2026 -- more downloads than the rest of the portfolio combined. Gated on an engine the factory had never landed; the gate passed on 2026-09-16, translating en->es on a Samsung SM-A045M with wifi and data off. AGC app created 2026-09-16 in the 'Hashtags' project, package com.huaweiappfactory.translate, category App, default language English (US)."
       },
       "app_signing_sha256": "8D:19:78:C1:9E:22:7D:BC:D8:73:CB:B9:A3:22:9F:BB:B8:0F:7B:94:40:FB:BB:EC:8E:0C:BA:41:64:99:E9:1A",
-      "known_gaps": {
-        "privacy_tags_console": "store/privacy-tags.json is written and validated, but nobody has ticked the boxes in AppGallery Connect yet. The publish workflow refuses submit_for_review while privacy_tags_configured is empty."
-      },
+      "known_gaps": {},
       "ads": {
         "banner_ad_id": "l95cgipvhd",
         "interstitial_ad_id": "f9ryktsfdb",
