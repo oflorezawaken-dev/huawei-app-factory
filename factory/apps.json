@@ -390,8 +390,8 @@
       "support_path": "docs/shift-slip/support",
       "status": "live",
       "current_version": {
-        "marketing_version": "1.0.1",
-        "build": 3,
+        "marketing_version": "1.0.2",
+        "build": 4,
         "status": "planned"
       },
       "admob": {
