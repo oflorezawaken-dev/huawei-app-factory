@@ -356,7 +356,7 @@
       "store_dir": "apps-ios/price-jar/store",
       "privacy_path": "docs/price-jar/privacy",
       "support_path": "docs/price-jar/support",
-      "status": "live",
+      "status": "in-review",
       "current_version": {
         "marketing_version": "1.0.1",
         "build": 7,
