@@ -359,7 +359,7 @@
       "status": "live",
       "current_version": {
         "marketing_version": "1.0.1",
-        "build": 6,
+        "build": 7,
         "status": "planned"
       },
       "admob": {
