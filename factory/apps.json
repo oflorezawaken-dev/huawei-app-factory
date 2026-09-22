@@ -420,7 +420,7 @@
       "store_dir": "apps-ios/site-calc/store",
       "privacy_path": "docs/site-calc/privacy",
       "support_path": "docs/site-calc/support",
-      "status": "planned",
+      "status": "live",
       "current_version": {
         "marketing_version": "1.0.0",
         "build": 2,
