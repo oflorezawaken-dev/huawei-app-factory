@@ -10568,55 +10568,55 @@
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "SiteCalc مجاني ويُموَّل عبر Google AdMob، ولهذا ترى إعلانات في هذه الشاشة وشاشة المشاريع."
+            "value": "BuildTape مجاني ويُموَّل عبر Google AdMob، ولهذا ترى إعلانات في هذه الشاشة وشاشة المشاريع."
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "SiteCalc ist kostenlos und wird durch Google AdMob finanziert, deshalb siehst du hier und bei Projekten Werbung."
+            "value": "BuildTape ist kostenlos und wird durch Google AdMob finanziert, deshalb siehst du hier und bei Projekten Werbung."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "SiteCalc is free and funded by Google AdMob, which is why you see ads on this screen and the Jobs screen."
+            "value": "BuildTape is free and funded by Google AdMob, which is why you see ads on this screen and the Jobs screen."
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "SiteCalc es gratis y se financia con Google AdMob, por eso ves anuncios en esta pantalla y en Proyectos."
+            "value": "BuildTape es gratis y se financia con Google AdMob, por eso ves anuncios en esta pantalla y en Proyectos."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "SiteCalc est gratuite et financée par Google AdMob, c'est pourquoi vous voyez des publicités ici et sur l'écran Chantiers."
+            "value": "BuildTape est gratuite et financée par Google AdMob, c'est pourquoi vous voyez des publicités ici et sur l'écran Chantiers."
           }
         },
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "SiteCalc è gratuita e finanziata da Google AdMob, per questo vedi pubblicità qui e nella schermata Cantieri."
+            "value": "BuildTape è gratuita e finanziata da Google AdMob, per questo vedi pubblicità qui e nella schermata Cantieri."
           }
         },
         "pt-PT": {
           "stringUnit": {
             "state": "translated",
-            "value": "O SiteCalc é gratuito e financiado pelo Google AdMob, por isso vês anúncios aqui e em Projetos."
+            "value": "O BuildTape é gratuito e financiado pelo Google AdMob, por isso vês anúncios aqui e em Projetos."
           }
         },
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": "SiteCalc ücretsizdir ve Google AdMob tarafından desteklenir; bu yüzden bu ekranda ve İşler ekranında reklam görürsün."
+            "value": "BuildTape ücretsizdir ve Google AdMob tarafından desteklenir; bu yüzden bu ekranda ve İşler ekranında reklam görürsün."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "SiteCalc 是免费的，由 Google AdMob 提供资金支持，因此你会在此页面和项目页面看到广告。"
+            "value": "BuildTape 是免费的，由 Google AdMob 提供资金支持，因此你会在此页面和项目页面看到广告。"
           }
         }
       }
@@ -11158,55 +11158,55 @@
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "لا يحتوي SiteCalc على أي حد تنظيمي من أي نوع. تُستخدم حدودك أنت فقط."
+            "value": "لا يحتوي BuildTape على أي حد تنظيمي من أي نوع. تُستخدم حدودك أنت فقط."
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "SiteCalc enthält keinerlei behördlichen Grenzwert. Nur deine eigenen Grenzwerte werden verwendet."
+            "value": "BuildTape enthält keinerlei behördlichen Grenzwert. Nur deine eigenen Grenzwerte werden verwendet."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "SiteCalc holds no regulatory limit of any kind. Your own limits are the only ones used."
+            "value": "BuildTape holds no regulatory limit of any kind. Your own limits are the only ones used."
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "SiteCalc no contiene ningún límite reglamentario. Solo se usan tus propios límites."
+            "value": "BuildTape no contiene ningún límite reglamentario. Solo se usan tus propios límites."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "SiteCalc ne contient aucune limite réglementaire. Seules vos propres limites sont utilisées."
+            "value": "BuildTape ne contient aucune limite réglementaire. Seules vos propres limites sont utilisées."
           }
         },
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "SiteCalc non contiene alcun limite regolamentare. Vengono usati solo i tuoi limiti."
+            "value": "BuildTape non contiene alcun limite regolamentare. Vengono usati solo i tuoi limiti."
           }
         },
         "pt-PT": {
           "stringUnit": {
             "state": "translated",
-            "value": "O SiteCalc não contém qualquer limite regulamentar. Só se usam os teus próprios limites."
+            "value": "O BuildTape não contém qualquer limite regulamentar. Só se usam os teus próprios limites."
           }
         },
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": "SiteCalc hiçbir türde resmi bir sınır değeri taşımaz. Yalnızca senin kendi sınırların kullanılır."
+            "value": "BuildTape hiçbir türde resmi bir sınır değeri taşımaz. Yalnızca senin kendi sınırların kullanılır."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "SiteCalc 不包含任何形式的法规限值，只使用你自己设定的限值。"
+            "value": "BuildTape 不包含任何形式的法规限值，只使用你自己设定的限值。"
           }
         }
       }
@@ -12574,55 +12574,55 @@
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "يبقى فارغًا حتى تملأ كليهما. لا يحمل SiteCalc أي قائمة أو درجة خاصة به -- حدودك أنت هي الوحيدة الحالية."
+            "value": "يبقى فارغًا حتى تملأ كليهما. لا يحمل BuildTape أي قائمة أو درجة خاصة به -- حدودك أنت هي الوحيدة الحالية."
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Leer, bis du beide ausgefüllt hast. SiteCalc bringt keine eigene Steigung oder Auftrittstiefe mit -- nur deine eigenen Grenzwerte sind aktuell."
+            "value": "Leer, bis du beide ausgefüllt hast. BuildTape bringt keine eigene Steigung oder Auftrittstiefe mit -- nur deine eigenen Grenzwerte sind aktuell."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Empty until you fill both in. SiteCalc ships no maximum riser or minimum tread of its own -- your own limits are the only current ones."
+            "value": "Empty until you fill both in. BuildTape ships no maximum riser or minimum tread of its own -- your own limits are the only current ones."
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Vacío hasta que rellenes ambos. SiteCalc no trae contrahuella ni huella propias -- tus propios límites son los únicos vigentes."
+            "value": "Vacío hasta que rellenes ambos. BuildTape no trae contrahuella ni huella propias -- tus propios límites son los únicos vigentes."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Vide tant que les deux ne sont pas remplis. SiteCalc n'embarque aucune contremarche ni giron -- vos propres limites sont les seules à jour."
+            "value": "Vide tant que les deux ne sont pas remplis. BuildTape n'embarque aucune contremarche ni giron -- vos propres limites sont les seules à jour."
           }
         },
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Vuoto finché non compili entrambi. SiteCalc non porta alzata o pedata proprie -- i tuoi limiti sono gli unici aggiornati."
+            "value": "Vuoto finché non compili entrambi. BuildTape non porta alzata o pedata proprie -- i tuoi limiti sono gli unici aggiornati."
           }
         },
         "pt-PT": {
           "stringUnit": {
             "state": "translated",
-            "value": "Vazio até preencheres os dois. O SiteCalc não traz espelho nem cobertor próprios -- os teus limites são os únicos atuais."
+            "value": "Vazio até preencheres os dois. O BuildTape não traz espelho nem cobertor próprios -- os teus limites são os únicos atuais."
           }
         },
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": "İkisini de doldurana kadar boş kalır. SiteCalc kendine ait bir rıht veya basamak değeri taşımaz -- güncel olan yalnızca senin sınırlarındır."
+            "value": "İkisini de doldurana kadar boş kalır. BuildTape kendine ait bir rıht veya basamak değeri taşımaz -- güncel olan yalnızca senin sınırlarındır."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "两项都填写之前保持空白。SiteCalc 不自带任何踢面或踏面数值——只有你自己填写的限值才是最新的。"
+            "value": "两项都填写之前保持空白。BuildTape 不自带任何踢面或踏面数值——只有你自己填写的限值才是最新的。"
           }
         }
       }
