@@ -72,46 +72,37 @@ what those weeks cost.
    ShiftSlip passed because the incumbents' revenue *is* the arithmetic and the
    export, so matching us would cut their own subscription. If the answer is
    "nothing, they just have not bothered", reject.
-2. **Findability.** Name the search term a buyer would already type into the App Store
-   before they know this app exists, and check it is a term with traffic -- not a phrase
-   invented to describe the product. An app nobody searches for has no free distribution,
-   and this factory has no paid distribution at all: three apps shipped and the only one
-   that reached the store took four days to earn zero downloads. That is a discovery
-   problem, and nothing in the product filters below catches it. "Construction calculator"
-   passes. "Shift log with tip-out arithmetic" does not -- people search "tip tracker".
-   If the honest answer is "they would not search for this, they would have to be shown
-   it", the idea needs paid acquisition the owner does not do, and it is out.
-3. **Ratings floor.** The category leader must have **>2,000 App Store
+2. **Ratings floor.** The category leader must have **>2,000 App Store
    ratings**. A field whose apps total under ~500 ratings is a disqualifier,
    not an opening — PriceJar entered a field of 11–19 ratings and the factory
    paid for it. Ratings measure demand *for an app*. Population or activity
    figures (millions of people who do X) measure the activity, and are not a
    substitute for it.
-4. **Clone-flood check.** Search the App Store for the pitch itself and read the
+3. **Clone-flood check.** Search the App Store for the pitch itself and read the
    numeric IDs. Four or more apps whose IDs were issued in roughly the last 18
    months already advertising our positioning = reject on guideline 4.3, however
    weak the paid leader is.
-5. **Paywall-change signals expire.** A leader that cut its free tier is a real
+4. **Paywall-change signals expire.** A leader that cut its free tier is a real
    signal only if the change is dated **within 60 days** and free replacements
    have not already shipped. Measured once: that window closed in about eight
    months.
-6. **Statutory anchors must be national and stable.** A legal record-keeping
+5. **Statutory anchors must be national and stable.** A legal record-keeping
    obligation is the best spec a factory app can have — IRS Pub 531 shaped
    ShiftSlip — but only where one rule covers the whole market. Fifty divergent
    state rules cannot ship offline (stale law is worse than no law), and
    stripping them out usually removes the differentiator with them.
-7. **Prefer non-US anchors.** The listing ships in nine languages; a US-only
+6. **Prefer non-US anchors.** The listing ships in nine languages; a US-only
    idea wastes eight of them. EU/LatAm obligations — utility meter readings and
    bill checks, vehicle inspection cycles, tenancy documentation — are still
    unexplored.
-8. **No ads next to health or reproductive data**, even where HealthKit is not
+7. **No ads next to health or reproductive data**, even where HealthKit is not
    involved and no guideline literally binds. The factory has no process for
    health-data ad disclosure, and an interstitial standing between a user and
    logging a dose is a missed dose, not a bad review.
-9. **Do not enter a category Apple owns or has just crowned** — a free system
+8. **Do not enter a category Apple owns or has just crowned** — a free system
    app (Journal, Health → Medications, Reminders, Cycle Tracking, Wallet) or an
    Apple App of the Year.
-10. **Count this account's own catalogue against 4.3.** PriceJar and ShiftSlip
+9. **Count this account's own catalogue against 4.3.** PriceJar and ShiftSlip
    are both money apps; a third would hand a reviewer the duplication argument
    for free.
 
