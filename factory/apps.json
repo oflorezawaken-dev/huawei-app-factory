@@ -411,6 +411,7 @@
     {
       "slug": "site-calc",
       "name": "BuildTape",
+      "scheme": "SiteCalc",
       "platform": "ios",
       "path": "apps-ios/site-calc",
       "bundle_id": "com.proapps.sitecalc",
