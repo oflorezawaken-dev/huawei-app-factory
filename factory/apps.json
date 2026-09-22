@@ -410,7 +410,7 @@
     },
     {
       "slug": "site-calc",
-      "name": "BuildTape",
+      "name": "InchWise",
       "scheme": "SiteCalc",
       "platform": "ios",
       "path": "apps-ios/site-calc",
@@ -424,7 +424,7 @@
       "status": "live",
       "current_version": {
         "marketing_version": "1.0.1",
-        "build": 3,
+        "build": 4,
         "status": "planned"
       },
       "admob": {
