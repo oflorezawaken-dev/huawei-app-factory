@@ -71,7 +71,16 @@ first; it is the registry of apps and the source of factory-wide rules.
       certificate's fingerprint; if they match, AGC is not holding a key of its own and
       App Signing is not on.
     - App Signing is mandatory for AAB uploads and optional for APK.
-12. **Small, explained commits.** One concern per commit. Never force-push. Never commit
+12. **Before the first submission, two console steps that no API replaces.**
+    `app-submit` refuses the app for either, with the same code and no earlier warning:
+    - **Privacy tags** (rule 9 covers what to declare). On the version page, not a
+      page of its own.
+    - **The content rating questionnaire**: *Content rating -> Rate by age -> Set*.
+      Thirteen questions; No to all but the two about user information collection,
+      which are Yes for every app that ships Petal Ads -- answering them No
+      contradicts the privacy tags. Rating 3+, not "intended only for kids".
+    See docs/APPGALLERY_PUBLISHING.md for the exact questions and the two errors.
+13. **Small, explained commits.** One concern per commit. Never force-push. Never commit
    secrets, build output, or `.gradle/`.
 
 ## Where things live

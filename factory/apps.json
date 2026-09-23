@@ -137,7 +137,14 @@
     "agc": {
       "_note": "AppGallery app-info fields the Publishing API can set, so they stop being console steps. Write them BEFORE the first submission: a PUT to app-info on a released app opens a draft version even when nothing changes (measured on habit-cue 2026-09-14, see docs/APPGALLERY_PUBLISHING.md).",
       "publish_country": "FJ,TW,MO,HK,TH,MY,SG,MV,CK,ID,AU,SB,TO,PF,NR,AS,VU,AZ,PG,LK,GE,KH,NZ,PH,KZ,MN,BD,VN,MM,LA,KR,KG,AM,BN,JP,UZ,NP,TM,TJ,PS,AF,IQ,QA,IL,KW,LB,SA,BH,PK,JO,AE,OM,BA,HR,AD,LT,MK,IT,DE,GB,ME,SM,MT,MC,RS,FR,VA,PL,AT,NL,BE,SE,DK,ES,CH,FI,GI,SI,CZ,PT,RO,SK,LV,GR,EE,BG,CY,NO,LU,IS,FO,GL,HU,IE,TR,MD,LI,UA,AL,AO,BF,BI,BJ,BW,TD,CG,GM,MW,ML,GW,MG,RW,SN,NA,NE,SC,MA,SS,ZA,YT,RE,MR,TG,ST,SO,KE,EG,CI,MU,ZW,MZ,CV,CF,KM,CM,DZ,NG,GH,ER,ET,DJ,GQ,LS,LR,GA,GN,CD,LY,SL,SZ,YE,ZM,TZ,UG,TN,VC,GP,AW,GD,MQ,MS,GT,GF,SR,VG,AN,LC,TT,AI,MX,AR,CR,CO,CL,BR,PE,PY,UY,VE,EC,JM,BB,BZ,AG,BS,KY,DO,BO,HN,NI,GY,HT,SV,PA,PR,CA",
-      "_publish_country_note": "196 country codes, read back from habit-cue on 2026-09-14 -- the distribution the owner had already chosen by hand. Excludes RU and BY (AppGallery blocks settlement there for ad-monetised apps), CN (needs a China-capable entity) and US (no full AppGallery store). Comma-separated; 'OTHER' is allowed as a member but never on its own."
+      "_publish_country_note": "196 country codes, read back from habit-cue on 2026-09-14 -- the distribution the owner had already chosen by hand. Excludes RU and BY (AppGallery blocks settlement there for ad-monetised apps), CN (needs a China-capable entity) and US (no full AppGallery store). Comma-separated; 'OTHER' is allowed as a member but never on its own.",
+      "device_types": [
+        {
+          "deviceType": 4,
+          "appAdapters": "4,5,15"
+        }
+      ],
+      "_device_types_note": "Mobile phone, with the adaptation flags AppGallery demands at submit time. A new app arrives with deviceType 4 and no appAdapters, and app-submit then fails with 204144660 'The appAdapters is necessary !'. Nothing in the console names the field; '4,5,15' was read back on 2026-09-15 from the four apps of this account that have been through review."
     }
   },
   "apps": [
@@ -280,12 +287,12 @@
       "store_dir": "apps/hashtags/store",
       "privacy_path": "docs/hashtags/privacy",
       "privacy_tags_configured": "2026-09-14",
-      "status": "in_console",
+      "status": "submitted",
       "current_version": {
         "versionCode": 1,
         "versionName": "1.0.0",
-        "status": "planned",
-        "note": "Rebuild of the owner's highest-traffic, worst-converting app: 195,198 impressions produced 127 downloads (0.46% CTR) Mar-Aug 2026, against 4-5% everywhere else. The original cannot be updated -- keystore lost, App Signing never enabled -- and its name carries a trademark that rule 10 now forbids. First app to run through the automated console steps: app-config pushes countries and category before the first submission. AppGallery app created from the console on 2026-09-14 by browser automation: project 'Hashtags' (101653523865041681), app 118993543, package com.huaweiappfactory.hashtags, category App, default language English (US)."
+        "status": "submitted",
+        "note": "Rebuild of the owner's highest-traffic, worst-converting app: 195,198 impressions produced 127 downloads (0.46% CTR) Mar-Aug 2026, against 4-5% everywhere else. The original cannot be updated -- keystore lost, App Signing never enabled -- and its name carries a trademark that rule 10 now forbids. First app to run through the automated console steps: app-config pushes countries and category before the first submission. AppGallery app created from the console on 2026-09-14 by browser automation: project 'Hashtags' (101653523865041681), app 118993543, package com.huaweiappfactory.hashtags, category App, default language English (US). Submitted for review 2026-09-15 with the real ad units; the submit call failed twice first, on deviceTypes.appAdapters and then on the content rating questionnaire, both console-side gaps now closed."
       },
       "known_gaps": {},
       "app_signing_sha256": "75:12:57:A1:DC:96:69:F4:E3:53:CE:A9:76:84:57:C0:E1:40:2C:D7:79:17:33:89:82:56:BE:4E:18:D1:CE:B4",
