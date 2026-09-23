@@ -144,7 +144,12 @@ class Handler(BaseHTTPRequestHandler):
             else:
                 rows = [{"id": r["id"], "attributes": {"locale": loc}}
                         for loc, r in STATE["version_locs"].items()]
-                self._json(200, {"data": rows[:1]})
+                # Honour ?limit= the way Apple does. This used to return
+                # rows[:1] unconditionally -- the mock had been written to
+                # match the call's own limit=1, so it could never show that
+                # the first row was the wrong language.
+                limit = int(params.get("limit", 50))
+                self._json(200, {"data": rows[:limit]})
         elif path.startswith("/v1/appScreenshots/"):
             # Apple validates the image asynchronously: the reservation and the
             # PATCH both succeed even for an image it goes on to reject.
@@ -542,9 +547,31 @@ def main() -> int:
     check("attach_build recorded the build on the mock version",
           STATE["attached_build"] == "b1")
 
+    # Apple lists the version's locales in its own order, and the primary is
+    # not first -- a real run logged es-ES, the next de-DE. The mock used to
+    # hold en-US alone, so "the first row" and "the right row" were the same
+    # and the bug that wrote English into German could not show up here.
+    english_only = dict(STATE["version_locs"])
+    STATE["version_locs"] = {
+        "de-DE": {"id": "loc-de", "attrs": {"whatsNew": "Gleiche App, leichter zu finden."}},
+        "es-ES": {"id": "loc-es", "attrs": {"whatsNew": "La misma app, más fácil de encontrar."}},
+        **english_only,
+    }
     asc_publish.set_release_notes(VERSION_ID, "Fixes the watering reminder.", None)
-    check("release notes landed on the existing locale row",
+    check("release notes landed on en-US even though Apple lists other locales first",
           STATE["version_locs"]["en-US"]["attrs"].get("whatsNew") == "Fixes the watering reminder.")
+    check("and the German What's New the listing step wrote is untouched",
+          STATE["version_locs"]["de-DE"]["attrs"].get("whatsNew") == "Gleiche App, leichter zu finden.")
+    check("and so is the Spanish one",
+          STATE["version_locs"]["es-ES"]["attrs"].get("whatsNew") == "La misma app, más fácil de encontrar.")
+    try:
+        asc_publish.set_release_notes(VERSION_ID, "Fixes the watering reminder.", None, locale="ja")
+        msg = ""
+    except asc_publish.ASCError as exc:
+        msg = str(exc)
+    check("a locale the version does not have is refused, not written somewhere else",
+          "refusing" in msg and "ja" in msg, msg)
+    STATE["version_locs"] = english_only
 
     asc_publish.submit_for_review(ASC_APP_ID, None)
     submitted = [s for s in STATE["submissions"].values() if s["attributes"]["submitted"]]

@@ -116,14 +116,30 @@ def attach_build(version_id: str, build_id: str, token: str) -> None:
     log(f"attached build {build_id} to appStoreVersion {version_id}")
 
 
-def set_release_notes(version_id: str, notes: str, token: str) -> None:
+def set_release_notes(version_id: str, notes: str, token: str, locale: str = "en-US") -> None:
+    """Write What's New for ONE named locale.
+
+    This used to take `limit=1` and write into whatever row Apple listed first.
+    Apple does not list the primary locale first: ShiftSlip 1.0.1 logged
+    "release notes set on locale es-ES" and 1.0.2 "de-DE", so the English text
+    passed with --notes overwrote the Spanish and then the German What's New
+    that the listing step had just written correctly. German users of 1.0.2
+    read the release notes in English. The notes are written in the listing's
+    reference language, so they go to that locale by name, or nowhere.
+    """
     data = api_call("GET", f"/v1/appStoreVersions/{version_id}/appStoreVersionLocalizations"
-                    "?fields[appStoreVersionLocalizations]=locale&limit=1", token=token)
+                    "?fields[appStoreVersionLocalizations]=locale&limit=200", token=token)
     rows = data.get("data", [])
     if not rows:
         raise ASCError(
             "no appStoreVersionLocalizations yet; run asc_metadata.py --what text "
             "before submitting so there is a locale row to carry the release notes")
+    match = [r for r in rows if (r.get("attributes") or {}).get("locale") == locale]
+    if not match:
+        present = sorted((r.get("attributes") or {}).get("locale", "?") for r in rows)
+        raise ASCError(f"the version has no {locale} localization to carry the release notes "
+                       f"(it has {present}); refusing to write them into another language")
+    rows = match
     loc_id = rows[0]["id"]
     try:
         api_call("PATCH", f"/v1/appStoreVersionLocalizations/{loc_id}",
